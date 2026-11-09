@@ -1,8 +1,8 @@
 {
-  "name": "hiresettle-backend",
+  "name": "stellarsorter-backend",
   "version": "0.1.0",
-  "description": "HireSettle — NestJS backend API for recruiter fee escrow on Stellar",
-  "author": "HireSettle Team",
+  "description": "StellarSorter — NestJS backend API for recruiter fee escrow on Stellar",
+  "author": "StellarSorter Team",
   "private": true,
   "license": "MIT",
   "scripts": {
