@@ -19,12 +19,12 @@ process.env.JWT_SECRET = 'generate-openapi-dummy-secret-32chars!!';
 process.env.DATABASE_URL =
   process.env.DATABASE_URL ?? 'postgresql://dummy:dummy@localhost:5432/dummy';
 
-import './src/tracing';
+import '../src/tracing';
 import * as path from 'path';
 import * as fs from 'fs';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './src/app.module';
+import { AppModule } from '../src/app.module';
 
 async function main() {
   const app = await NestFactory.create(AppModule, {
@@ -56,7 +56,7 @@ async function main() {
   // Deterministic key order makes git diffs readable.
   const json = JSON.stringify(document, Object.keys(document).sort(), 2);
 
-  const outDir = path.resolve(__dirname, 'docs');
+  const outDir = path.resolve(__dirname, '..', 'docs');
   fs.mkdirSync(outDir, { recursive: true });
 
   const outFile = path.join(outDir, 'openapi.json');
