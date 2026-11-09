@@ -92,7 +92,7 @@ describe('CalendarController (API)', () => {
 
     expect(res.headers['content-type']).toMatch(/^text\/calendar/);
     expect(res.text.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
-    expect(res.text).toContain('UID:milestone-ms-0@hiresettle');
+    expect(res.text).toContain('UID:milestone-ms-0@stellarsorter');
     expect(res.text.trimEnd().endsWith('END:VCALENDAR')).toBe(true);
   });
 

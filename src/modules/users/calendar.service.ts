@@ -96,7 +96,7 @@ export class CalendarService {
       if (!due || due < now) continue;
       const label = m.kind === 'PLACEMENT' ? 'placement proof due' : 'retention window ends';
       events.push({
-        uid: `milestone-${m.id}@hiresettle`,
+        uid: `milestone-${m.id}@stellarsorter`,
         date: due,
         summary: `${m.engagement.jobTitle}: ${m.name} (${label})`,
         description:
@@ -115,10 +115,10 @@ export class CalendarService {
     const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//HireSettle//Milestone Calendar//EN',
+      'PRODID:-//StellarSorter//Milestone Calendar//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
-      'X-WR-CALNAME:HireSettle milestones',
+      'X-WR-CALNAME:StellarSorter milestones',
     ];
     const stamp = CalendarService.formatDateTime(now);
     for (const event of events) {

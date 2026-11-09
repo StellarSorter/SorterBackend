@@ -102,7 +102,7 @@ describe('CalendarService', () => {
 
       const ics = await service.renderFeed('token', NOW);
 
-      expect(ics).toContain('UID:milestone-ms-0@hiresettle');
+      expect(ics).toContain('UID:milestone-ms-0@stellarsorter');
       expect(ics).toContain('DTSTART;VALUE=DATE:20261005');
       expect(ics).toContain('DTSTART;VALUE=DATE:20261230');
       // chronological order
@@ -137,7 +137,7 @@ describe('CalendarService', () => {
 
       expect(events).toHaveLength(1);
       expect(events[0]).toMatchObject({
-        uid: 'milestone-ms-0@hiresettle',
+        uid: 'milestone-ms-0@stellarsorter',
         date: placementMilestone.placementDueAt,
         summary: 'Senior Engineer: Placement (placement proof due)',
       });
@@ -146,7 +146,7 @@ describe('CalendarService', () => {
 
   describe('buildIcs() — RFC 5545 compliance', () => {
     const event = {
-      uid: 'milestone-ms-0@hiresettle',
+      uid: 'milestone-ms-0@stellarsorter',
       date: new Date('2026-10-05T09:00:00.000Z'),
       summary: 'Engineer, Backend; Remote',
       description: 'Line one\nLine two \\ done',
@@ -158,7 +158,7 @@ describe('CalendarService', () => {
 
       expect(lines[0]).toBe('BEGIN:VCALENDAR');
       expect(lines).toContain('VERSION:2.0');
-      expect(lines).toContain('PRODID:-//HireSettle//Milestone Calendar//EN');
+      expect(lines).toContain('PRODID:-//StellarSorter//Milestone Calendar//EN');
       expect(lines).toContain('BEGIN:VEVENT');
       expect(lines).toContain('DTSTAMP:20260927T120000Z');
       expect(lines).toContain('DTSTART;VALUE=DATE:20261005');

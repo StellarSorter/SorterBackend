@@ -283,15 +283,15 @@ export class UsersService {
 
     const html = `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Confirm your new email – HireSettle</title></head>
+<head><meta charset="utf-8"><title>Confirm your new email – StellarSorter</title></head>
 <body style="font-family:sans-serif;background:#f4f4f4;margin:0;padding:0;">
   <div style="max-width:600px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;">
     <div style="background:#007bff;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;text-align:center;">
-      <h1 style="margin:0;">HireSettle</h1>
+      <h1 style="margin:0;">StellarSorter</h1>
     </div>
     <div style="padding:20px;">
       <h2>Confirm your new email address</h2>
-      <p>You requested to change your HireSettle email to this address. Click the button below to confirm.</p>
+      <p>You requested to change your StellarSorter email to this address. Click the button below to confirm.</p>
       <p style="text-align:center;">
         <a href="${confirmUrl}"
            style="display:inline-block;padding:12px 24px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">
@@ -306,9 +306,9 @@ export class UsersService {
 </html>`;
 
     await this.transporter.sendMail({
-      from: this.config.get('SMTP_FROM', 'noreply@hiresettle.com'),
+      from: this.config.get('SMTP_FROM', 'noreply@stellarsorter.com'),
       to,
-      subject: '✉️ Confirm your new email – HireSettle',
+      subject: '✉️ Confirm your new email – StellarSorter',
       html,
     });
   }
@@ -316,25 +316,25 @@ export class UsersService {
   private async sendEmailChangeNotification(oldEmail: string, newEmail: string, locale: string) {
     const html = `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Email change notice – HireSettle</title></head>
+<head><meta charset="utf-8"><title>Email change notice – StellarSorter</title></head>
 <body style="font-family:sans-serif;background:#f4f4f4;margin:0;padding:0;">
   <div style="max-width:600px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;">
     <div style="background:#007bff;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;text-align:center;">
-      <h1 style="margin:0;">HireSettle</h1>
+      <h1 style="margin:0;">StellarSorter</h1>
     </div>
     <div style="padding:20px;">
       <h2>Your email address is being changed</h2>
-      <p>A request was made to change the email address on your HireSettle account to <strong>${newEmail}</strong>.</p>
-      <p>If you did not request this, please contact support immediately at <a href="mailto:support@hiresettle.com">support@hiresettle.com</a>.</p>
+      <p>A request was made to change the email address on your StellarSorter account to <strong>${newEmail}</strong>.</p>
+      <p>If you did not request this, please contact support immediately at <a href="mailto:support@stellarsorter.com">support@stellarsorter.com</a>.</p>
     </div>
   </div>
 </body>
 </html>`;
 
     await this.transporter.sendMail({
-      from: this.config.get('SMTP_FROM', 'noreply@hiresettle.com'),
+      from: this.config.get('SMTP_FROM', 'noreply@stellarsorter.com'),
       to: oldEmail,
-      subject: '⚠️ Email change requested – HireSettle',
+      subject: '⚠️ Email change requested – StellarSorter',
       html,
     });
   }

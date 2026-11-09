@@ -51,7 +51,7 @@ export class CalendarController {
       .status(HttpStatus.OK)
       .set({
         "Content-Type": "text/calendar; charset=utf-8",
-        "Content-Disposition": 'inline; filename="hiresettle-milestones.ics"',
+        "Content-Disposition": 'inline; filename="stellarsorter-milestones.ics"',
         "Cache-Control": "private, max-age=300",
       })
       .send(ics);

@@ -8,7 +8,7 @@ export class UserProfileDto {
   @ApiProperty({ example: "ada@example.com" })
   email: string | null;
 
-  @ApiProperty({ example: "HireSettle Inc." })
+  @ApiProperty({ example: "StellarSorter Inc." })
   company: string | null;
 
   @ApiProperty({ example: "UTC" })

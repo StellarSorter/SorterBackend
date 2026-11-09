@@ -45,7 +45,7 @@ describe('UsersService', () => {
     it('returns public fields when user exists', async () => {
       const mockUser = {
         name: 'Ada',
-        company: 'HireSettle',
+        company: 'StellarSorter',
         role: UserRole.RECRUITER,
         verifiedAt: null,
       };
@@ -75,7 +75,7 @@ describe('UsersService', () => {
       const mockUser = {
         name: 'Ada Lovelace',
         email: 'ada@example.com',
-        company: 'HireSettle Inc.',
+        company: 'StellarSorter Inc.',
         stellarAddress:
           'GABC123DEFGHIJKLMNOPQRSTUVWXYZ234567GABC123DEFGHIJKLMNOPQR',
         avatarUrl: null,
@@ -154,7 +154,7 @@ describe('UsersService', () => {
       const mockUser = {
         name: 'Ada Lovelace',
         email: 'ada@example.com',
-        company: 'HireSettle Inc.',
+        company: 'StellarSorter Inc.',
         stellarAddress:
           'GABC123DEFGHIJKLMNOPQRSTUVWXYZ234567GABC123DEFGHIJKLMNOPQR',
         avatarUrl: null,
@@ -262,7 +262,7 @@ describe('UsersService', () => {
       const mockUser = {
         name: 'Ada Lovelace',
         email: 'ada@example.com',
-        company: 'HireSettle Inc.',
+        company: 'StellarSorter Inc.',
         stellarAddress:
           'GABC123DEFGHIJKLMNOPQRSTUVWXYZ234567GABC123DEFGHIJKLMNOPQR',
         avatarUrl: 'https://cdn.example.com/avatars/user-123/1234567890.jpg',
