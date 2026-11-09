@@ -92,7 +92,7 @@ describe('WeeklyDigestService', () => {
     expect(notifications.sendDigestEmail).toHaveBeenCalledTimes(1);
     expect(notifications.sendDigestEmail).toHaveBeenCalledWith(
       'one@example.com',
-      'Your weekly HireSettle digest',
+      'Your weekly StellarSorter digest',
       expect.stringContaining('Your payment of 100 USDC was released.'),
     );
     expect(result).toEqual(
@@ -133,7 +133,7 @@ describe('WeeklyDigestService', () => {
     expect(notifications.sendDigestEmail).toHaveBeenCalledTimes(1);
     expect(notifications.sendDigestEmail).toHaveBeenCalledWith(
       'two@example.com',
-      'Your weekly HireSettle digest',
+      'Your weekly StellarSorter digest',
       expect.stringContaining('An engagement was created.'),
     );
     expect(result).toEqual(

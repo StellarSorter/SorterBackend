@@ -127,7 +127,7 @@ describe('NotificationsService', () => {
       expect(mockNodemailerSendMail).toHaveBeenCalledWith({
         from: 'test@example.com',
         to: email,
-        subject: '💰 HireSettle — Test Notification',
+        subject: '💰 StellarSorter — Test Notification',
         html: '<p>rendered html</p>',
       });
       expect(prisma.notification.update).toHaveBeenCalledWith({
@@ -214,7 +214,7 @@ describe('NotificationsService', () => {
       await service.notifyUser(stellarAddress, notificationType, title, message, data);
 
       expect(mockNodemailerSendMail).toHaveBeenCalledWith(expect.objectContaining({
-        from: 'noreply@hiresettle.com',
+        from: 'noreply@stellarsorter.com',
       }));
     });
 
@@ -223,7 +223,7 @@ describe('NotificationsService', () => {
       await service.notifyUser(stellarAddress, notificationType, title, message, data);
 
       expect(mockNodemailerSendMail).toHaveBeenCalledWith(expect.objectContaining({
-        subject: '⚠️ HireSettle — Test Notification',
+        subject: '⚠️ StellarSorter — Test Notification',
       }));
     });
 
@@ -264,7 +264,7 @@ describe('NotificationsService', () => {
       await service.notifyUser(stellarAddress, notificationType, title, message, data);
 
       expect(mockNodemailerSendMail).toHaveBeenCalledWith(expect.objectContaining({
-        subject: '❌ HireSettle — Test Notification',
+        subject: '❌ StellarSorter — Test Notification',
       }));
     });
   });
@@ -472,7 +472,7 @@ describe('NotificationsService', () => {
   describe('sendDigestEmail', () => {
     it('should send a pre-rendered HTML digest via the transporter', async () => {
       const to = 'digest@example.com';
-      const subject = 'Your weekly HireSettle digest';
+      const subject = 'Your weekly StellarSorter digest';
       const html = '<p>digest content</p>';
 
       await service.sendDigestEmail(to, subject, html);

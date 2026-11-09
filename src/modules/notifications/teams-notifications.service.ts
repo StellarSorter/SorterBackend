@@ -56,7 +56,7 @@ export class TeamsNotificationsService {
   ): Record<string, any> {
     const emoji = TYPE_EMOJI[type] ?? '📬';
     const body = message?.trim() ? message.trim() : title;
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.hiresettle.com');
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.stellarsorter.com');
 
     const cardBody: Record<string, any>[] = [
       {
@@ -81,7 +81,7 @@ export class TeamsNotificationsService {
 
     cardBody.push({
       type: 'TextBlock',
-      text: 'HireSettle',
+      text: 'StellarSorter',
       size: 'Small',
       isSubtle: true,
       spacing: 'Medium',
@@ -101,7 +101,7 @@ export class TeamsNotificationsService {
             actions: [
               {
                 type: 'Action.OpenUrl',
-                title: 'View in HireSettle',
+                title: 'View in StellarSorter',
                 url: frontendUrl,
               },
             ],

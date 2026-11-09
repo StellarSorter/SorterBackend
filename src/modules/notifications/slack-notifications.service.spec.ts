@@ -16,7 +16,7 @@ describe('SlackNotificationsService', () => {
   beforeEach(async () => {
     mockAxiosPost.mockResolvedValue({ status: 200 });
     service = new SlackNotificationsService(
-      new ConfigService({ FRONTEND_URL: 'https://app.hiresettle.com' }),
+      new ConfigService({ FRONTEND_URL: 'https://app.stellarsorter.com' }),
     );
   });
 
@@ -104,7 +104,7 @@ describe('SlackNotificationsService', () => {
       const context = payload.blocks[payload.blocks.length - 1];
       expect(context.type).toBe('context');
       expect(JSON.stringify(context)).toContain(
-        '<https://app.hiresettle.com|View in HireSettle>',
+        '<https://app.stellarsorter.com|View in StellarSorter>',
       );
     });
   });

@@ -58,7 +58,7 @@ describe('WebPushService', () => {
 
     await service.sendNotification(notification);
 
-    expect(webpush.setVapidDetails).toHaveBeenCalledWith('mailto:noreply@hiresettle.com', 'pub', 'priv');
+    expect(webpush.setVapidDetails).toHaveBeenCalledWith('mailto:noreply@stellarsorter.com', 'pub', 'priv');
     expect(mockSend).toHaveBeenCalledWith(
       { endpoint: sub.endpoint, keys: { p256dh: 'p', auth: 'a' } },
       expect.stringContaining('"title":"Payment released"'),

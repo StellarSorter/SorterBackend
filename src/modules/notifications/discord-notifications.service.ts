@@ -42,7 +42,7 @@ export class DiscordNotificationsService {
           title: `${emoji} ${title}`,
           description: message?.trim() || title,
           color: 0x5865f2, // Discord blurple
-          footer: { text: "HireSettle" },
+          footer: { text: "StellarSorter" },
           timestamp: new Date().toISOString(),
         },
       ],

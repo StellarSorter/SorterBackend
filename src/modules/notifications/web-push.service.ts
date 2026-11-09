@@ -34,7 +34,7 @@ export class WebPushService implements OnModuleInit {
       this.logger.warn('VAPID keys not configured — web push notifications are disabled');
       return;
     }
-    const subject = this.config.get<string>('VAPID_SUBJECT', 'mailto:noreply@hiresettle.com');
+    const subject = this.config.get<string>('VAPID_SUBJECT', 'mailto:noreply@stellarsorter.com');
     webpush.setVapidDetails(subject, publicKey, privateKey);
     this.configured = true;
   }
@@ -102,7 +102,7 @@ export class WebPushService implements OnModuleInit {
     });
     if (subscriptions.length === 0) return;
 
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.hiresettle.com');
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.stellarsorter.com');
     const payload = JSON.stringify({
       id: notification.id,
       type: notification.type,

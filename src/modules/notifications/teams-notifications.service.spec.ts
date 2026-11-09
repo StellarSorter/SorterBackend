@@ -17,7 +17,7 @@ describe('TeamsNotificationsService', () => {
   beforeEach(async () => {
     mockAxiosPost.mockResolvedValue({ status: 200 });
     service = new TeamsNotificationsService(
-      new ConfigService({ FRONTEND_URL: 'https://app.hiresettle.com' }),
+      new ConfigService({ FRONTEND_URL: 'https://app.stellarsorter.com' }),
     );
   });
 
@@ -127,8 +127,8 @@ describe('TeamsNotificationsService', () => {
       expect(cardOf(payload).actions).toEqual([
         {
           type: 'Action.OpenUrl',
-          title: 'View in HireSettle',
-          url: 'https://app.hiresettle.com',
+          title: 'View in StellarSorter',
+          url: 'https://app.stellarsorter.com',
         },
       ]);
     });

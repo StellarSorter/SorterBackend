@@ -363,7 +363,7 @@ export class NotificationsService {
    */
   async sendDigestEmail(to: string, subject: string, html: string) {
     await this.transporter.sendMail({
-      from: this.config.get("EMAIL_FROM") ?? "noreply@hiresettle.com",
+      from: this.config.get("EMAIL_FROM") ?? "noreply@stellarsorter.com",
       to,
       subject,
       html,
@@ -486,7 +486,7 @@ export class NotificationsService {
     };
 
     const html = this.emailTemplates.render(type.toLowerCase(), locale, {
-      subject: `HireSettle — ${subject}`,
+      subject: `StellarSorter — ${subject}`,
       message,
       ctaLink: data?.ctaLink,
       year: new Date().getFullYear(),
@@ -496,9 +496,9 @@ export class NotificationsService {
 
     try {
       await this.transporter.sendMail({
-        from: this.config.get("EMAIL_FROM") ?? "noreply@hiresettle.com",
+        from: this.config.get("EMAIL_FROM") ?? "noreply@stellarsorter.com",
         to,
-        subject: `${typeEmoji[type] ?? "📬"} HireSettle — ${subject}`,
+        subject: `${typeEmoji[type] ?? "📬"} StellarSorter — ${subject}`,
         html,
       });
       this.logger.log(`Email sent to ${to}: ${subject}`);

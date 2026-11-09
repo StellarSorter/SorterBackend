@@ -141,7 +141,7 @@ export class WeeklyDigestService {
         const html = this.buildDigestHtml(user.name, notifications, windowStart, windowDays);
         await this.notifications.sendDigestEmail(
           user.email!,
-          'Your weekly HireSettle digest',
+          'Your weekly StellarSorter digest',
           html,
         );
         sent++;
@@ -213,21 +213,21 @@ export class WeeklyDigestService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your weekly HireSettle digest</title>
+  <title>Your weekly StellarSorter digest</title>
 </head>
 <body style="font-family:sans-serif;background:#f4f4f4;margin:0;padding:0;">
   <div style="max-width:600px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;">
     <div style="background:#007bff;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;text-align:center;">
-      <h1>HireSettle</h1>
+      <h1>StellarSorter</h1>
     </div>
     <div style="padding:20px;color:#333;line-height:1.6;">
       <p>Hi ${greeting},</p>
-      <p>Here's a summary of your activity on HireSettle over the last ${windowDays} days (${rangeLabel}):</p>
+      <p>Here's a summary of your activity on StellarSorter over the last ${windowDays} days (${rangeLabel}):</p>
       ${sections}
       <p>You're receiving this digest because you opted in. You can turn it off anytime in your notification settings.</p>
     </div>
     <div style="text-align:center;padding:20px;font-size:12px;color:#777;">
-      <p>&copy; ${new Date().getFullYear()} HireSettle. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} StellarSorter. All rights reserved.</p>
     </div>
   </div>
 </body>

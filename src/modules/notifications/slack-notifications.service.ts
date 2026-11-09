@@ -73,7 +73,7 @@ export class SlackNotificationsService {
     const emoji = TYPE_EMOJI[type] ?? '📬';
     const label = TYPE_LABELS[type] ?? this.humanizeType(type);
     const body = message?.trim() ? message.trim() : title;
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.hiresettle.com');
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.stellarsorter.com');
 
     const blocks: Record<string, any>[] = [
       {
@@ -89,7 +89,7 @@ export class SlackNotificationsService {
         elements: [
           {
             type: 'mrkdwn',
-            text: `HireSettle · <${frontendUrl}|View in HireSettle>`,
+            text: `StellarSorter · <${frontendUrl}|View in StellarSorter>`,
           },
         ],
       },
