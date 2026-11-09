@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// HireSettle — Database schema
+// StellarSorter — Database schema
 // Run: npx prisma migrate dev --name init
 
 generator client {

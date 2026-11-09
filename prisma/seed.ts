@@ -1,5 +1,5 @@
 // prisma/seed.ts
-// HireSettle — database seed script with realistic demo data.
+// StellarSorter — database seed script with realistic demo data.
 // Run: npx prisma db seed
 //
 // Refuses to run when NODE_ENV=production so demo data can never be
