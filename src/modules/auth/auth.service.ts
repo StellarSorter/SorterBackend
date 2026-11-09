@@ -986,4 +986,50 @@ export class AuthService {
 
     return { accessToken, user };
   }
+
+  generateRebindChallenge(userId: string): string {
+    const nonce = require('crypto').randomBytes(32).toString('hex');
+    this.authChallenges.set(userId, { nonce, createdAt: Date.now() });
+    return nonce;
+  }
+
+  async getLoginHistory(userId: string, page = 1, limit = 20) {
+    const windowDays = 90;
+    const since = new Date(Date.now() - windowDays * 86_400_000);
+    const [data, total] = await Promise.all([
+      this.prisma.securityEvent.findMany({
+        where: { userId, createdAt: { gte: since } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: { id: true, action: true, ip: true, userAgent: true, createdAt: true },
+      }),
+      this.prisma.securityEvent.count({ where: { userId, createdAt: { gte: since } } }),
+    ]);
+    return { data, meta: { total, page, limit, windowDays } };
+  }
+
+  async listTrustedDevices(userId: string) {
+    const now = new Date();
+    return this.prisma.trustedDevice.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: now } },
+      orderBy: { lastUsedAt: 'desc' },
+      select: { id: true, name: true, lastUsedAt: true, expiresAt: true, createdAt: true },
+    });
+  }
+
+  async revokeTrustedDevice(deviceId: string, userId: string) {
+    const device = await this.prisma.trustedDevice.findUnique({ where: { id: deviceId } });
+    if (!device || device.userId !== userId) {
+      throw new BadRequestException('Device not found or does not belong to this user');
+    }
+    if (device.revokedAt) {
+      throw new BadRequestException('Device is already revoked');
+    }
+    await this.prisma.trustedDevice.update({
+      where: { id: deviceId },
+      data: { revokedAt: new Date() },
+    });
+    return { revoked: true };
+  }
 }
