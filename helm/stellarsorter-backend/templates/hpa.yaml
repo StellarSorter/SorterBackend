@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "hiresettle-backend.fullname" . }}
+  name: {{ include "stellarsorter-backend.fullname" . }}
   labels:
-    {{- include "hiresettle-backend.labels" . | nindent 4 }}
+    {{- include "stellarsorter-backend.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "hiresettle-backend.fullname" . }}
+    name: {{ include "stellarsorter-backend.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

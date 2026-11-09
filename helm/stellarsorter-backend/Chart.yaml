@@ -1,0 +1,14 @@
+apiVersion: v2
+name: stellarsorter-backend
+description: Reference Helm chart for the StellarSorter NestJS API (recruiter fee escrow on Stellar)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.23.0-0"
+keywords:
+  - stellarsorter
+  - nestjs
+  - stellar
+home: https://github.com/TrustHire/stellarsorter-backend
+sources:
+  - https://github.com/TrustHire/stellarsorter-backend

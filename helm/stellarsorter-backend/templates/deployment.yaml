@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "hiresettle-backend.fullname" . }}
+  name: {{ include "stellarsorter-backend.fullname" . }}
   labels:
-    {{- include "hiresettle-backend.labels" . | nindent 4 }}
+    {{- include "stellarsorter-backend.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -16,7 +16,7 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      {{- include "hiresettle-backend.selectorLabels" . | nindent 6 }}
+      {{- include "stellarsorter-backend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -27,12 +27,12 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "hiresettle-backend.labels" . | nindent 8 }}
+        {{- include "stellarsorter-backend.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "hiresettle-backend.serviceAccountName" . }}
+      serviceAccountName: {{ include "stellarsorter-backend.serviceAccountName" . }}
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.imagePullSecrets }}
@@ -44,12 +44,12 @@ spec:
       {{- if .Values.migrations.enabled }}
       initContainers:
         - name: migrate
-          image: {{ include "hiresettle-backend.image" . }}
+          image: {{ include "stellarsorter-backend.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             {{- toYaml .Values.migrations.command | nindent 12 }}
           envFrom:
-            {{- include "hiresettle-backend.envFrom" . | nindent 12 }}
+            {{- include "stellarsorter-backend.envFrom" . | nindent 12 }}
           env:
             - name: HOME
               value: /tmp
@@ -63,14 +63,14 @@ spec:
       {{- end }}
       containers:
         - name: api
-          image: {{ include "hiresettle-backend.image" . }}
+          image: {{ include "stellarsorter-backend.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
               protocol: TCP
           envFrom:
-            {{- include "hiresettle-backend.envFrom" . | nindent 12 }}
+            {{- include "stellarsorter-backend.envFrom" . | nindent 12 }}
           env:
             - name: HOME
               value: /tmp
@@ -125,7 +125,7 @@ spec:
         {{- if .Values.jwtSigningKeys.enabled }}
         - name: jwt-signing-keys
           secret:
-            secretName: {{ include "hiresettle-backend.jwtKeysSecretName" . }}
+            secretName: {{ include "stellarsorter-backend.jwtKeysSecretName" . }}
             defaultMode: 0400
             items:
               - key: {{ .Values.jwtSigningKeys.key }}
@@ -138,7 +138,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              {{- include "hiresettle-backend.selectorLabels" . | nindent 14 }}
+              {{- include "stellarsorter-backend.selectorLabels" . | nindent 14 }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

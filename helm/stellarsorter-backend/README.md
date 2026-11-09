@@ -1,6 +1,6 @@
-# hiresettle-backend Helm chart
+# stellarsorter-backend Helm chart
 
-Reference deployment for the HireSettle API (#510). It renders:
+Reference deployment for the StellarSorter API (#510). It renders:
 
 | Resource | Notes |
 | --- | --- |
@@ -24,17 +24,17 @@ Both paths, like `/.well-known/jwks.json`, are served outside the `api/v1` prefi
 ## Install
 
 ```bash
-kubectl create secret generic hiresettle-backend-env \
+kubectl create secret generic stellarsorter-backend-env \
   --from-literal=DATABASE_URL=... --from-literal=REDIS_URL=... \
   --from-literal=JWT_SECRET=... --from-literal=SOROBAN_CONTRACT_ADDRESS=... \
   --from-literal=SMTP_HOST=... --from-literal=SMTP_USER=... --from-literal=SMTP_PASS=...
 
-kubectl create secret generic hiresettle-backend-jwt-keys \
+kubectl create secret generic stellarsorter-backend-jwt-keys \
   --from-file=signing-keys.json=./signing-keys.json
 
-helm upgrade --install hiresettle ./helm/hiresettle-backend \
-  --set secrets.existingSecret=hiresettle-backend-env \
-  --set jwtSigningKeys.existingSecret=hiresettle-backend-jwt-keys
+helm upgrade --install stellarsorter ./helm/stellarsorter-backend \
+  --set secrets.existingSecret=stellarsorter-backend-env \
+  --set jwtSigningKeys.existingSecret=stellarsorter-backend-jwt-keys
 ```
 
 ## JWT signing keys and rotation (#481)
@@ -53,7 +53,7 @@ Generate a key with `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:307
 To rotate:
 
 1. Add the new key (with `privateKey`) first in the array. Change the old entry to `publicKey` only.
-2. Update the Secret and run `kubectl rollout restart deployment/<release>-hiresettle-backend`.
+2. Update the Secret and run `kubectl rollout restart deployment/<release>-stellarsorter-backend`.
    New tokens are signed with the new `kid`. Tokens signed with the old key still verify.
 3. Once the longest token lifetime has passed (`JWT_REFRESH_EXPIRES_IN`), remove the old entry.
 
@@ -62,8 +62,8 @@ Set `JWT_ACTIVE_KID` through `extraEnv` to choose the signing key explicitly.
 ## Validate locally
 
 ```bash
-helm lint helm/hiresettle-backend -f helm/hiresettle-backend/ci/default-values.yaml
-helm template t helm/hiresettle-backend -f helm/hiresettle-backend/ci/default-values.yaml \
+helm lint helm/stellarsorter-backend -f helm/stellarsorter-backend/ci/default-values.yaml
+helm template t helm/stellarsorter-backend -f helm/stellarsorter-backend/ci/default-values.yaml \
   | kubeconform -strict -summary -kubernetes-version 1.29.0
 ```
 

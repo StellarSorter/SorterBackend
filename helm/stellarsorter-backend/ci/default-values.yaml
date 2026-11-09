@@ -1,7 +1,7 @@
 # Rendered in CI with the chart defaults plus inline secrets.
 secrets:
   values:
-    DATABASE_URL: postgresql://hiresettle:password@postgres:5432/hiresettle_db
+    DATABASE_URL: postgresql://stellarsorter:password@postgres:5432/stellarsorter_db
     REDIS_URL: redis://redis:6379
     JWT_SECRET: ci-only-placeholder-secret-0123456789abcdef
     SOROBAN_CONTRACT_ADDRESS: CCIPLACEHOLDER

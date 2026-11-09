@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "title": "hiresettle-backend values",
+  "title": "stellarsorter-backend values",
   "type": "object",
   "required": ["image", "service", "containerPort", "probes", "secrets", "jwtSigningKeys", "autoscaling"],
   "properties": {

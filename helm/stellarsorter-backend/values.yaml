@@ -1,10 +1,10 @@
-# Reference values for the HireSettle API (#510).
+# Reference values for the StellarSorter API (#510).
 # Override per environment with -f values-<env>.yaml or --set.
 
 replicaCount: 2
 
 image:
-  repository: ghcr.io/trusthire/hiresettle-backend
+  repository: ghcr.io/trusthire/stellarsorter-backend
   # Defaults to the chart appVersion when empty.
   tag: ""
   pullPolicy: IfNotPresent
@@ -50,7 +50,7 @@ config:
   API_PREFIX: api/v1
   LOG_LEVEL: log
   STELLAR_NETWORK: testnet
-  ALLOWED_ORIGINS: https://app.hiresettle.example
+  ALLOWED_ORIGINS: https://app.stellarsorter.example
   # JWT_SIGNING_KEYS_FILE is injected automatically when jwtSigningKeys.enabled.
 
 # Secret environment variables (DATABASE_URL, JWT_SECRET, SMTP_*, REDIS_URL,
@@ -61,7 +61,7 @@ secrets:
   existingSecret: ""
   # Only used when existingSecret is empty. Do not commit real values.
   values: {}
-    # DATABASE_URL: postgresql://user:pass@postgres:5432/hiresettle_db
+    # DATABASE_URL: postgresql://user:pass@postgres:5432/stellarsorter_db
     # REDIS_URL: redis://redis:6379
     # JWT_SECRET: <openssl rand -base64 32>
     # SOROBAN_CONTRACT_ADDRESS: C...
@@ -78,7 +78,7 @@ jwtSigningKeys:
   # [{ "kid": "...", "privateKey": "...", "publicKey": "..." }, ...].
   existingSecret: ""
   key: signing-keys.json
-  mountPath: /etc/hiresettle/jwt
+  mountPath: /etc/stellarsorter/jwt
 
 # Extra plain env vars, e.g. JWT_ACTIVE_KID during a rotation.
 extraEnv: []

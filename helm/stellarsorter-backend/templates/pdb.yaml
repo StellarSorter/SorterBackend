@@ -2,12 +2,12 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "hiresettle-backend.fullname" . }}
+  name: {{ include "stellarsorter-backend.fullname" . }}
   labels:
-    {{- include "hiresettle-backend.labels" . | nindent 4 }}
+    {{- include "stellarsorter-backend.labels" . | nindent 4 }}
 spec:
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
   selector:
     matchLabels:
-      {{- include "hiresettle-backend.selectorLabels" . | nindent 6 }}
+      {{- include "stellarsorter-backend.selectorLabels" . | nindent 6 }}
 {{- end }}

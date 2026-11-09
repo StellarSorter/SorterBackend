@@ -1,14 +1,14 @@
 {{/*
 Chart name, truncated to the 63-char DNS label limit.
 */}}
-{{- define "hiresettle-backend.name" -}}
+{{- define "stellarsorter-backend.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Fully qualified app name.
 */}}
-{{- define "hiresettle-backend.fullname" -}}
+{{- define "stellarsorter-backend.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -21,26 +21,26 @@ Fully qualified app name.
 {{- end }}
 {{- end }}
 
-{{- define "hiresettle-backend.chart" -}}
+{{- define "stellarsorter-backend.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{- define "hiresettle-backend.labels" -}}
-helm.sh/chart: {{ include "hiresettle-backend.chart" . }}
-{{ include "hiresettle-backend.selectorLabels" . }}
+{{- define "stellarsorter-backend.labels" -}}
+helm.sh/chart: {{ include "stellarsorter-backend.chart" . }}
+{{ include "stellarsorter-backend.selectorLabels" . }}
 app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/part-of: hiresettle
+app.kubernetes.io/part-of: stellarsorter
 {{- end }}
 
-{{- define "hiresettle-backend.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "hiresettle-backend.name" . }}
+{{- define "stellarsorter-backend.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "stellarsorter-backend.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{- define "hiresettle-backend.serviceAccountName" -}}
+{{- define "stellarsorter-backend.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "hiresettle-backend.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "stellarsorter-backend.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -49,27 +49,27 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Secret holding the app's sensitive env vars.
 */}}
-{{- define "hiresettle-backend.secretName" -}}
-{{- default (include "hiresettle-backend.fullname" .) .Values.secrets.existingSecret }}
+{{- define "stellarsorter-backend.secretName" -}}
+{{- default (include "stellarsorter-backend.fullname" .) .Values.secrets.existingSecret }}
 {{- end }}
 
 {{/*
 Secret holding the JWT signing keys file.
 */}}
-{{- define "hiresettle-backend.jwtKeysSecretName" -}}
-{{- default (printf "%s-jwt-keys" (include "hiresettle-backend.fullname" .)) .Values.jwtSigningKeys.existingSecret }}
+{{- define "stellarsorter-backend.jwtKeysSecretName" -}}
+{{- default (printf "%s-jwt-keys" (include "stellarsorter-backend.fullname" .)) .Values.jwtSigningKeys.existingSecret }}
 {{- end }}
 
-{{- define "hiresettle-backend.image" -}}
+{{- define "stellarsorter-backend.image" -}}
 {{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion) }}
 {{- end }}
 
 {{/*
 Shared env sources for the API and migration containers.
 */}}
-{{- define "hiresettle-backend.envFrom" -}}
+{{- define "stellarsorter-backend.envFrom" -}}
 - configMapRef:
-    name: {{ include "hiresettle-backend.fullname" . }}
+    name: {{ include "stellarsorter-backend.fullname" . }}
 - secretRef:
-    name: {{ include "hiresettle-backend.secretName" . }}
+    name: {{ include "stellarsorter-backend.secretName" . }}
 {{- end }}
