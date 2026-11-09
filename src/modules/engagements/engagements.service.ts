@@ -1227,4 +1227,94 @@ export class EngagementsService {
 
     return this.findOne(engagementId);
   }
+
+  async createComment(engagementId: string, user: { id: string }, body: string) {
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    return this.prisma.engagementComment.create({
+      data: { engagementId, authorId: user.id, body },
+      include: { author: { select: { id: true, email: true } } },
+    });
+  }
+
+  async listComments(engagementId: string, user: { id: string }) {
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    return this.prisma.engagementComment.findMany({
+      where: { engagementId },
+      orderBy: { createdAt: 'asc' },
+      include: { author: { select: { id: true, email: true } } },
+    });
+  }
+
+  async updateComment(commentId: string, user: { id: string }, body: string) {
+    const comment = await this.prisma.engagementComment.findUnique({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException(`Comment ${commentId} not found`);
+    if (comment.authorId !== user.id) throw new ForbiddenException('Can only edit own comments');
+    const ageMs = Date.now() - comment.createdAt.getTime();
+    if (ageMs > 15 * 60 * 1000) throw new ForbiddenException('Comments can only be edited within 15 minutes');
+    return this.prisma.engagementComment.update({
+      where: { id: commentId },
+      data: { body, editedAt: new Date() },
+    });
+  }
+
+  async addWatcher(engagementId: string, user: { id: string }, watcherUserId: string) {
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    return this.prisma.engagementWatcher.create({
+      data: { engagementId, userId: watcherUserId, addedBy: user.id },
+    });
+  }
+
+  async removeWatcher(engagementId: string, user: { id: string }, watcherUserId: string) {
+    const watcher = await this.prisma.engagementWatcher.findUnique({
+      where: { engagementId_userId: { engagementId, userId: watcherUserId } },
+    });
+    if (!watcher) throw new NotFoundException('Watcher not found');
+    return this.prisma.engagementWatcher.delete({
+      where: { engagementId_userId: { engagementId, userId: watcherUserId } },
+    });
+  }
+
+  async listWatchers(engagementId: string, user: { id: string }) {
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    return this.prisma.engagementWatcher.findMany({
+      where: { engagementId },
+      include: { user: { select: { id: true, email: true } } },
+    });
+  }
+
+  async updateCandidateDetails(engagementId: string, user: { id: string }, dto: any) {
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    return this.prisma.engagement.update({
+      where: { id: engagementId },
+      data: {
+        candidateName: dto.candidateName,
+        candidateEmail: dto.candidateEmail,
+        candidatePhone: dto.candidatePhone,
+        candidateStartDate: dto.candidateStartDate ? new Date(dto.candidateStartDate) : undefined,
+        candidateRole: dto.candidateRole,
+      },
+    });
+  }
+
+  async getCandidateDetails(engagementId: string, user: { id: string }) {
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+      select: {
+        id: true,
+        candidateName: true,
+        candidateEmail: true,
+        candidatePhone: true,
+        candidateStartDate: true,
+        candidateRole: true,
+        placedAt: true,
+      },
+    });
+    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    return engagement;
+  }
 }
