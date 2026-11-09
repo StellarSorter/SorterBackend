@@ -1,4 +1,4 @@
-# Contributing to HireSettle Backend
+# Contributing to StellarSorter Backend
 
 Thank you for your interest in contributing! This document covers the branching strategy, PR process, commit conventions, and how to run tests.
 

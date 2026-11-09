@@ -1,6 +1,6 @@
 # TypeScript SDK
 
-The HireSettle API provides a type-safe TypeScript SDK generated from the OpenAPI specification.
+The StellarSorter API provides a type-safe TypeScript SDK generated from the OpenAPI specification.
 
 ## Generating the SDK
 
@@ -24,9 +24,9 @@ The generated client includes:
 ## Using the SDK
 
 ```typescript
-import { HireSettleClient } from './client';
+import { StellarSorterClient } from './client';
 
-const client = new HireSettleClient({
+const client = new StellarSorterClient({
   baseUrl: process.env.API_BASE_URL || 'http://localhost:3000/api/v1',
   apiKey: process.env.API_KEY,
 });
