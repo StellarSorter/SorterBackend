@@ -1,5 +1,5 @@
 import { Processor, WorkerHost, OnWorkerEvent } from "@nestjs/bullmq";
-import { Logger } from "@nestjs/common";
+import { Logger, Optional } from "@nestjs/common";
 import { Job } from "bullmq";
 import axios from "axios";
 import { QUEUE_WEBHOOK } from "./queues.module";
@@ -10,6 +10,7 @@ import {
 } from "../modules/webhooks/webhook-signing.util";
 import { buildWebhookRawBody } from "../modules/webhooks/webhook-payload.util";
 import { PrismaService } from "../common/prisma/prisma.service";
+import { MetricsService } from "../metrics/metrics.service";
 
 export interface WebhookJobData {
   url: string;
@@ -67,7 +68,7 @@ export class WebhookProcessor extends WorkerHost {
 
     // Record successful delivery metrics
     if (this.metrics) {
-      const duration = Date.now() - startTime;
+      const duration = Date.now() - (job.data.startTime ?? Date.now());
       this.metrics.recordWebhookDelivery(
         "success",
         payload.event,
