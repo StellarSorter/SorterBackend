@@ -1,14 +1,14 @@
-# HireSettle — Backend Repo
+# StellarSorter — Backend Repo
 
 > **NestJS API for milestone-based recruiter fee escrow on Stellar**
 
-This is **Repo 2 of 3** in the HireSettle project:
+This is **Repo 2 of 3** in the StellarSorter project:
 
 | Repo | Description |
 |------|-------------|
-| `hiresettle-contract` | Soroban smart contract (Rust) |
-| `hiresettle-backend` ← you are here | NestJS REST API + event poller + retention scheduler |
-| `hiresettle-frontend` | Next.js + Freighter wallet UI |
+| `stellarsorter-contract` | Soroban smart contract (Rust) |
+| `stellarsorter-backend` ← you are here | NestJS REST API + event poller + retention scheduler |
+| `stellarsorter-frontend` | Next.js + Freighter wallet UI |
 
 ---
 
@@ -30,7 +30,7 @@ For more detailed technical documentation, see the docs/ directory.
 
 ### `RetentionSchedulerService` — the key addition
 
-This is the most HireSettle-specific service. It runs two independent cron jobs:
+This is the most StellarSorter-specific service. It runs two independent cron jobs:
 
 **Approaching notification (every hour)**
 Reads the `RetentionSchedule` table for records where `notifyAt <= now` and `notified = false`. Sends a "retention window closes in 3 days" notification to both the company and recruiter. The `notifyAt` is set to `unlockAt - 3 days` when the engagement is created.
@@ -114,7 +114,7 @@ All endpoints prefixed with `/v1`. Protected routes require `Authorization: Bear
 ## Project Structure
 
 ```
-hiresettle-backend/
+stellarsorter-backend/
 ├── .env.example
 ├── .gitignore
 ├── nest-cli.json
@@ -205,20 +205,20 @@ Metrics: `http://localhost:3000/metrics`
 | `STELLAR_NETWORK` | **Yes** | — | `testnet` or `mainnet` |
 | `STELLAR_RPC_URL` | **Yes** | — | Soroban RPC endpoint |
 | `STELLAR_HORIZON_URL` | **Yes** | — | Horizon REST endpoint |
-| `HIRESETTLE_CONTRACT_ID` | **Yes** | — | Deployed Soroban contract address |
+| `STELLARSORTER_CONTRACT_ID` | **Yes** | — | Deployed Soroban contract address |
 | `STELLAR_SECRET_KEY` | **Yes** | — | Read-only keypair for event polling |
 | `ALLOWED_TOKENS` | **Yes** | — | JSON array of accepted token configs |
 | `SMTP_HOST` | **Yes** | — | SMTP server hostname |
 | `SMTP_PORT` | No | `587` | SMTP port |
 | `SMTP_USER` | **Yes** | — | SMTP username |
 | `SMTP_PASS` | **Yes** | — | SMTP password / app password |
-| `EMAIL_FROM` | No | `noreply@hiresettle.com` | From address for outgoing email |
+| `EMAIL_FROM` | No | `noreply@stellarsorter.com` | From address for outgoing email |
 | `THROTTLE_TTL` | No | `60` | Rate limit window in seconds |
 | `THROTTLE_LIMIT` | No | `100` | Max requests per window |
 | `EVENT_POLLING_INTERVAL_MS` | No | `5000` | How often to poll for chain events |
 | `LEDGERS_PER_DAY` | No | `17280` | Used for retention timer math |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OpenTelemetry collector URL (unset = tracing disabled) |
-| `OTEL_SERVICE_NAME` | No | `hiresettle-backend` | Service name in traces |
+| `OTEL_SERVICE_NAME` | No | `stellarsorter-backend` | Service name in traces |
 | `SENTRY_DSN` | No | — | Sentry error tracking DSN (unset = disabled) |
 | `S3_ACCESS_KEY_ID` | **Yes** | — | AWS / S3-compatible access key |
 | `S3_SECRET_ACCESS_KEY` | **Yes** | — | AWS / S3-compatible secret |
