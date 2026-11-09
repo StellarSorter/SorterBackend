@@ -38,7 +38,13 @@ export class EngagementsService {
     private readonly stellar: StellarService,
     private readonly notifications: NotificationsService,
     private readonly auditLog: AuditLogService,
+    @Optional() private readonly exchangeRate?: ExchangeRateService,
   ) {}
+
+  private async fetchUsdRate(tokenAddress: string): Promise<number | null> {
+    if (!this.exchangeRate) return null;
+    return this.exchangeRate.getRate(tokenAddress, 'USD');
+  }
 
   // ----------------------------------------------------------
   // CREATE — validates, checks balance, submits on-chain, persists
@@ -68,7 +74,6 @@ export class EngagementsService {
         jobDescription: mergedData.jobDescription,
         salaryRange: mergedData.salaryRange,
         location: mergedData.location,
-        customFields: mergedData.customFields ?? undefined,
         targetStartDate: mergedData.targetStartDate ? new Date(mergedData.targetStartDate) : null,
         status: 'PENDING_ACCEPTANCE',
         templateVersionId: templateVersion?.id,
