@@ -1,6 +1,6 @@
 # Idempotent requests
 
-HireSettle supports idempotency keys on selected write endpoints. An idempotency
+StellarSorter supports idempotency keys on selected write endpoints. An idempotency
 key lets a client safely retry a request after a timeout or interrupted
 connection without creating the same resource twice.
 

@@ -1,6 +1,6 @@
 # Distributed Tracing (OpenTelemetry)
 
-HireSettle backend is instrumented with [OpenTelemetry](https://opentelemetry.io/)
+StellarSorter backend is instrumented with [OpenTelemetry](https://opentelemetry.io/)
 for end-to-end request tracing.
 
 ## Enabling tracing
@@ -11,7 +11,7 @@ disabled entirely and there is no instrumentation overhead.
 
 ```
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-OTEL_SERVICE_NAME=hiresettle-backend
+OTEL_SERVICE_NAME=stellarsorter-backend
 ```
 
 Tracing bootstrap lives in `src/tracing.ts` and is imported as the very first
@@ -72,4 +72,4 @@ If spans never show up in your collector or UI, work through these checks in ord
 5. **Generate traffic after startup.**
    Spans appear only when instrumented code runs (HTTP requests, Prisma queries, etc.).
    Hit a health or API route, then search in your backend using the configured
-   `OTEL_SERVICE_NAME` (default `hiresettle-backend`).
+   `OTEL_SERVICE_NAME` (default `stellarsorter-backend`).

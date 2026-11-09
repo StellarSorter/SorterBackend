@@ -1,15 +1,15 @@
 # Outgoing Webhooks
 
-HireSettle delivers event notifications (`COMPLETED`, `CANCELLED`,
+StellarSorter delivers event notifications (`COMPLETED`, `CANCELLED`,
 `REPLACEMENT_REQUESTED`, `DISPUTE_RAISED`, `PAYMENT_RELEASED`) to the
 `webhookUrl` configured on a company's profile (`PATCH /auth/me`).
 
 ## Signature verification
 
-Every outgoing webhook request includes an `X-HireSettle-Signature` header:
+Every outgoing webhook request includes an `X-StellarSorter-Signature` header:
 
 ```
-X-HireSettle-Signature: <hex-encoded HMAC-SHA256 of the raw request body>
+X-StellarSorter-Signature: <hex-encoded HMAC-SHA256 of the raw request body>
 ```
 
 The signature is computed as:
@@ -46,9 +46,9 @@ newly rotated secret.
 ## Verifying the signature on your server
 
 Use the following steps on your webhook receiver to confirm each delivery
-actually came from HireSettle and was not tampered with in transit.
+actually came from StellarSorter and was not tampered with in transit.
 
-**Header name:** `X-HireSettle-Signature`  
+**Header name:** `X-StellarSorter-Signature`  
 **Algorithm:** HMAC-SHA256, hex-encoded
 
 ### Step-by-step
@@ -58,7 +58,7 @@ actually came from HireSettle and was not tampered with in transit.
    and break the comparison.
 2. Compute `HMAC-SHA256(webhookSecret, rawBody)` using the signing secret you
    received when you first set your `webhookUrl`.
-3. Compare the result to the `X-HireSettle-Signature` header value using a
+3. Compare the result to the `X-StellarSorter-Signature` header value using a
    **constant-time** equality function to prevent timing attacks.
 4. Reject the request with `401` if the values do not match.
 
@@ -70,8 +70,8 @@ const crypto = require('crypto');
 
 // Use express.raw() (or similar) so req.body is a Buffer, not a parsed object.
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-hiresettle-signature'];
-  const secret    = process.env.HIRESETTLE_WEBHOOK_SECRET;
+  const signature = req.headers['x-stellarsorter-signature'];
+  const secret    = process.env.STELLARSORTER_WEBHOOK_SECRET;
 
   if (!isValidSignature(req.body, signature, secret)) {
     return res.status(401).send('Invalid signature');
@@ -105,8 +105,8 @@ app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    signature = request.headers.get('X-HireSettle-Signature', '')
-    secret    = os.environ['HIRESETTLE_WEBHOOK_SECRET'].encode()
+    signature = request.headers.get('X-StellarSorter-Signature', '')
+    secret    = os.environ['STELLARSORTER_WEBHOOK_SECRET'].encode()
     raw_body  = request.get_data()  # raw bytes, before any parsing
 
     expected = hmac.new(secret, raw_body, hashlib.sha256).hexdigest()
@@ -131,8 +131,8 @@ import (
 
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
     rawBody, _ := io.ReadAll(r.Body)
-    signature  := r.Header.Get("X-HireSettle-Signature")
-    secret     := []byte(os.Getenv("HIRESETTLE_WEBHOOK_SECRET"))
+    signature  := r.Header.Get("X-StellarSorter-Signature")
+    secret     := []byte(os.Getenv("STELLARSORTER_WEBHOOK_SECRET"))
 
     mac := hmac.New(sha256.New, secret)
     mac.Write(rawBody)

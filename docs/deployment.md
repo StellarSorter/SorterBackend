@@ -1,6 +1,6 @@
 # Production Deployment
 
-This document describes how the HireSettle backend is built and deployed,
+This document describes how the StellarSorter backend is built and deployed,
 where each step is defined in the repo, and the required ordering of
 database migrations relative to application startup.
 
@@ -143,7 +143,7 @@ Secrets that must be present in the deploy environment:
 
 Also set non-secret but required configuration for production (see
 `.env.example` and the README env table), including at least:
-`STELLAR_NETWORK`, `STELLAR_RPC_URL`, `HIRESETTLE_CONTRACT_ID`,
+`STELLAR_NETWORK`, `STELLAR_RPC_URL`, `STELLARSORTER_CONTRACT_ID`,
 `ALLOWED_TOKENS`, `SMTP_HOST`, `SMTP_USER`, `S3_ACCESS_KEY_ID`,
 `S3_REGION`, and `S3_BUCKET`.
 

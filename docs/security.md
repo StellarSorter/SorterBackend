@@ -1,6 +1,6 @@
 # Dependency Vulnerability Scanning
 
-This document describes how HireSettle backend detects and triages known
+This document describes how StellarSorter backend detects and triages known
 vulnerabilities in npm dependencies.
 
 ## Where scanning happens
@@ -84,7 +84,7 @@ present, you have two options:
    should be triaged within 1 business day.
 2. **Assess severity and reachability** — run `npm audit --audit-level=high`
    locally and check whether the vulnerable code path is actually exercised
-   by HireSettle (e.g. a vulnerable dev-only dependency is lower priority
+   by StellarSorter (e.g. a vulnerable dev-only dependency is lower priority
    than one used in the request path).
 3. **Patch**:
    - Prefer `npm audit fix` for non-breaking patch/minor upgrades.

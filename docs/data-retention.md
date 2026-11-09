@@ -1,6 +1,6 @@
 # Data Retention Policy
 
-This document describes how HireSettle stores, retains, and erases personal data (PII) across the platform's lifecycle stages, and specifies the scheduled jobs that enforce each retention window.
+This document describes how StellarSorter stores, retains, and erases personal data (PII) across the platform's lifecycle stages, and specifies the scheduled jobs that enforce each retention window.
 
 ---
 

@@ -1,6 +1,6 @@
 # Feature Flags
 
-HireSettle uses a lightweight database-backed feature flag system to enable or
+StellarSorter uses a lightweight database-backed feature flag system to enable or
 disable functionality at runtime without a code deployment. Flags are stored in
 the `feature_flags` table, served through `FeatureFlagsService`, and managed
 via admin API endpoints.

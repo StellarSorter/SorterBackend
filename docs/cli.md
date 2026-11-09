@@ -1,6 +1,6 @@
 # Admin CLI
 
-`src/cli/admin.ts` is a thin Node.js script that wraps the HireSettle admin
+`src/cli/admin.ts` is a thin Node.js script that wraps the StellarSorter admin
 REST API. It is the fastest way to perform common admin operations from a
 terminal without opening the Swagger UI.
 
@@ -11,7 +11,7 @@ terminal without opening the Swagger UI.
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `ADMIN_API_KEY` | **yes** | — | API key whose owner has the `ADMIN` role. |
-| `ADMIN_API_URL` | no | `http://localhost:3000/api/v1` | Base URL of the HireSettle API. |
+| `ADMIN_API_URL` | no | `http://localhost:3000/api/v1` | Base URL of the StellarSorter API. |
 
 The script reads both variables from `process.env`. It will exit with code `1`
 and print an error if `ADMIN_API_KEY` is missing.
@@ -44,7 +44,7 @@ npm run build
 
 # Run compiled CLI
 ADMIN_API_KEY=hs_... \
-ADMIN_API_URL=https://api.hiresettle.com/api/v1 \
+ADMIN_API_URL=https://api.stellarsorter.com/api/v1 \
 node dist/cli/admin.js <command>
 ```
 

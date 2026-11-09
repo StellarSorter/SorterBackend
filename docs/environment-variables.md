@@ -1,6 +1,6 @@
 # Environment Variables
 
-Complete reference for every environment variable consumed by the HireSettle backend.
+Complete reference for every environment variable consumed by the StellarSorter backend.
 
 ## Reading this document
 
@@ -53,7 +53,7 @@ Complete reference for every environment variable consumed by the HireSettle bac
 | `JWT_REFRESH_EXPIRES_DAYS` | No | `7` | No | Refresh token database record expiration in days. Controls when the `RefreshToken.expiresAt` date is set. |
 | `IDLE_SESSION_WINDOW_DAYS` | No | `7` | **Yes** | Refresh tokens unused for longer than this window are rejected on `POST /auth/refresh`. `RefreshToken.lastUsedAt` is updated on every refresh. Must be between 1 and 365. |
 | `SKIP_ACCOUNT_VALIDATION` | No | `false` | No | When truthy (`true` / `1`), skips the Stellar account existence check during registration. Useful for testing against a local Stellar network without pre-funded accounts. |
-| `HIRESETTLE_CONTRACT_VERSION` | No | `1` | No | Expected return value of the Soroban contract `version()` method. Startup fails if the configured contract reports a different version. |
+| `STELLARSORTER_CONTRACT_VERSION` | No | `1` | No | Expected return value of the Soroban contract `version()` method. Startup fails if the configured contract reports a different version. |
 | `SKIP_CONTRACT_COMPATIBILITY_CHECK` | No | `false` | No | Skips the Soroban contract version check. Use only when running against a local mock contract. |
 
 ---
@@ -66,7 +66,7 @@ Complete reference for every environment variable consumed by the HireSettle bac
 | `STELLAR_RPC_URL` | No | Per‑network default | No | Soroban RPC endpoint. Defaults to `https://soroban-testnet.stellar.org` for testnet, `https://soroban-mainnet.stellar.org` for mainnet. Must be set explicitly for `futurenet`. |
 | `STELLAR_HORIZON_URL` | No | Per‑network default | No | Horizon REST API endpoint. Defaults to `https://horizon-testnet.stellar.org` for testnet, `https://horizon.stellar.org` for mainnet. Must be set explicitly for `futurenet`. |
 | `SOROBAN_CONTRACT_ADDRESS` | **Yes** | — | **Yes** | Primary Soroban contract address to monitor for events. |
-| `HIRESETTLE_CONTRACT_ID` | No | — | No | Legacy / alternative contract address. Only used as a fallback when `SOROBAN_CONTRACT_ADDRESS` is not set. Prefer `SOROBAN_CONTRACT_ADDRESS`. |
+| `STELLARSORTER_CONTRACT_ID` | No | — | No | Legacy / alternative contract address. Only used as a fallback when `SOROBAN_CONTRACT_ADDRESS` is not set. Prefer `SOROBAN_CONTRACT_ADDRESS`. |
 | `STELLAR_SECRET_KEY` | **Yes** | — | No | Read-only Stellar secret key used by `StellarService` to query chain events and call contract functions. This key holds no funds — the backend never signs fund-moving transactions. See [docs/secrets.md](./secrets.md) for rotation. |
 | `ALLOWED_TOKENS` | No | `[]` | No | JSON array of token configurations accepted by the platform. Example: `[{"code":"USDC","issuer":"G...","decimals":7}]`. Parsed in `StellarService` constructor. |
 | `STELLAR_BALANCE_ALERT_INTERVAL_MS` | No | `300000` | **Yes** | Interval in milliseconds between checks of the configured Stellar account's native XLM balance. Must be at least 60000. |
@@ -82,7 +82,7 @@ Complete reference for every environment variable consumed by the HireSettle bac
 | `SMTP_PORT` | No | `587` | No | SMTP server port. Default 587 (STARTTLS). Set to `465` for implicit TLS. |
 | `SMTP_USER` | **Yes** | — | **Yes** | SMTP authentication username. |
 | `SMTP_PASS` | **Yes** | — | **Yes** | SMTP authentication password or app-specific password. See [docs/secrets.md](./secrets.md) for rotation. |
-| `EMAIL_FROM` | No | `noreply@hiresettle.com` | No | `From` address for all outgoing emails sent by `NotificationsService`. |
+| `EMAIL_FROM` | No | `noreply@stellarsorter.com` | No | `From` address for all outgoing emails sent by `NotificationsService`. |
 
 ---
 
@@ -92,7 +92,7 @@ Complete reference for every environment variable consumed by the HireSettle bac
 | --- | --- | --- | --- | --- |
 | `VAPID_PUBLIC_KEY` | No | — | **Yes** | VAPID public key served at `GET /notifications/push/vapid-public-key` and used by browsers as `applicationServerKey`. Generate a pair with `npx web-push generate-vapid-keys`. Web push is disabled when unset. |
 | `VAPID_PRIVATE_KEY` | No | — | **Yes** | VAPID private key used to sign push messages. Keep secret. |
-| `VAPID_SUBJECT` | No | `mailto:noreply@hiresettle.com` | **Yes** | Contact URI (`mailto:` or `https://`) sent to push services. |
+| `VAPID_SUBJECT` | No | `mailto:noreply@stellarsorter.com` | **Yes** | Contact URI (`mailto:` or `https://`) sent to push services. |
 
 ---
 
@@ -131,7 +131,7 @@ Complete reference for every environment variable consumed by the HireSettle bac
 | Variable | Required | Default | Validated at startup | Description |
 | --- | --- | --- | --- | --- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | No | OpenTelemetry collector endpoint URL. When set, the Node SDK starts and exports traces via OTLP over HTTP. When absent, tracing is disabled entirely. Example: `http://localhost:4318`. |
-| `OTEL_SERVICE_NAME` | No | `hiresettle-backend` | No | Service name reported in OpenTelemetry traces (the `service.name` resource attribute). |
+| `OTEL_SERVICE_NAME` | No | `stellarsorter-backend` | No | Service name reported in OpenTelemetry traces (the `service.name` resource attribute). |
 | `SENTRY_DSN` | No | — | No | Sentry DSN for error tracking. When set and `NODE_ENV` is not `test`/`ci`, Sentry is initialised with `tracesSampleRate: 1.0` and request/error handlers are mounted. See [docs/security.md](./security.md). |
 | `METRICS_ALLOWED_IPS` | No | `127.0.0.1,::1` | No | Comma-separated list of IP addresses allowed to scrape the `/metrics` endpoint. When empty, the endpoint is open to all IPs. Uses `x-forwarded-for` header when present. |
 

@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the technical documentation for the HireSettle backend.
+This directory contains the technical documentation for the StellarSorter backend.
 
 ## Available Documents
 

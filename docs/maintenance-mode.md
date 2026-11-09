@@ -1,6 +1,6 @@
 # API Maintenance Mode
 
-HireSettle backend features a dynamic maintenance mode (read-only mode) that can be enabled and disabled at runtime by administrators without requiring service restarts.
+StellarSorter backend features a dynamic maintenance mode (read-only mode) that can be enabled and disabled at runtime by administrators without requiring service restarts.
 
 When maintenance mode is active, read operations continue to function normally, while write operations (mutations) are rejected with HTTP `503 Service Unavailable`.
 
@@ -33,7 +33,7 @@ Both maintenance endpoints require an authenticated administrator account (`ADMI
 **Example Request:**
 
 ```sh
-curl -X GET "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
+curl -X GET "https://api.stellarsorter.com/api/v1/admin/maintenance-mode" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}"
 ```
 
@@ -56,7 +56,7 @@ curl -X GET "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
 **Enable Maintenance Mode (Read-Only):**
 
 ```sh
-curl -X PUT "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
+curl -X PUT "https://api.stellarsorter.com/api/v1/admin/maintenance-mode" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"enabled": true}'
@@ -65,7 +65,7 @@ curl -X PUT "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
 **Disable Maintenance Mode (Resume Normal Operation):**
 
 ```sh
-curl -X PUT "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
+curl -X PUT "https://api.stellarsorter.com/api/v1/admin/maintenance-mode" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"enabled": false}'
@@ -125,21 +125,21 @@ Follow this checklist during scheduled maintenance windows (e.g., schema migrati
 2. Confirm operator access with valid admin token or `ADMIN_API_KEY`.
 3. Check system health and verify all queues and dead letters are in a clean state:
    ```sh
-   curl -H "Authorization: Bearer ${ADMIN_TOKEN}" "https://api.hiresettle.com/api/v1/admin/metrics"
+   curl -H "Authorization: Bearer ${ADMIN_TOKEN}" "https://api.stellarsorter.com/api/v1/admin/metrics"
    ```
 
 ### Phase 2: Entering Maintenance Mode
 
 1. Enable maintenance mode:
    ```sh
-   curl -X PUT "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
+   curl -X PUT "https://api.stellarsorter.com/api/v1/admin/maintenance-mode" \
      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
      -H "Content-Type: application/json" \
      -d '{"enabled": true}'
    ```
 2. Verify state returns `true`:
    ```sh
-   curl -H "Authorization: Bearer ${ADMIN_TOKEN}" "https://api.hiresettle.com/api/v1/admin/maintenance-mode"
+   curl -H "Authorization: Bearer ${ADMIN_TOKEN}" "https://api.stellarsorter.com/api/v1/admin/maintenance-mode"
    ```
 3. Test that read requests still work (`GET /api/v1/admin/users` returns `200`).
 4. Test that write requests are blocked (a test mutation returns `503`).
@@ -154,7 +154,7 @@ Follow this checklist during scheduled maintenance windows (e.g., schema migrati
 1. Perform administrative smoke tests.
 2. Disable maintenance mode:
    ```sh
-   curl -X PUT "https://api.hiresettle.com/api/v1/admin/maintenance-mode" \
+   curl -X PUT "https://api.stellarsorter.com/api/v1/admin/maintenance-mode" \
      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
      -H "Content-Type: application/json" \
      -d '{"enabled": false}'

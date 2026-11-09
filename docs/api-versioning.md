@@ -1,6 +1,6 @@
 # API Versioning
 
-This document defines the URL versioning convention for the HireSettle HTTP
+This document defines the URL versioning convention for the StellarSorter HTTP
 API and the policy for retiring an older version.
 
 ## Current Version
