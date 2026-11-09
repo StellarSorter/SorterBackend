@@ -17,12 +17,12 @@ describe('EmailTemplateService', () => {
     // English set — full coverage.
     write(
       'en/base.html',
-      '<html><body><p>Dear User,</p>{{> @partial-block}}{{#if ctaLink}}<a href="{{ctaLink}}">View Details</a>{{/if}}<p>The HireSettle Team</p></body></html>',
+      '<html><body><p>Dear User,</p>{{> @partial-block}}{{#if ctaLink}}<a href="{{ctaLink}}">View Details</a>{{/if}}<p>The StellarSorter Team</p></body></html>',
     );
     write('en/payment_released.html', '{{#> base}}<p>A payment of {{amount}} was released.</p>{{/base}}');
     write('en/milestone_confirmed.html', '{{#> base}}<p>Milestone {{milestoneIndex}} was confirmed.</p>{{/base}}');
     // Spanish set — intentionally missing `milestone_confirmed` to exercise the fallback.
-    write('es/base.html', '<html><body><p>Estimado usuario,</p>{{> @partial-block}}{{#if ctaLink}}<a href="{{ctaLink}}">Ver detalles</a>{{/if}}<p>El equipo de HireSettle</p></body></html>');
+    write('es/base.html', '<html><body><p>Estimado usuario,</p>{{> @partial-block}}{{#if ctaLink}}<a href="{{ctaLink}}">Ver detalles</a>{{/if}}<p>El equipo de StellarSorter</p></body></html>');
     write('es/payment_released.html', '{{#> base}}<p>Se ha liberado un pago de {{amount}}.</p>{{/base}}');
   });
 

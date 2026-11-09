@@ -113,7 +113,7 @@ export class StellarService implements OnModuleInit {
     }
 
     const expectedVersion = this.config.get<string>(
-      'HIRESETTLE_CONTRACT_VERSION',
+      'STELLARSORTER_CONTRACT_VERSION',
       DEFAULT_EXPECTED_CONTRACT_VERSION,
     );
 
@@ -163,7 +163,7 @@ export class StellarService implements OnModuleInit {
   // ----------------------------------------------------------
 
   /**
-   * Fetch HireSettle contract events from a given ledger range.
+   * Fetch StellarSorter contract events from a given ledger range.
    * Called by EventsService every 5 seconds.
    */
   async fetchContractEvents(

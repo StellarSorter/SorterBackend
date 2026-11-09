@@ -4,7 +4,7 @@ import axios from 'axios';
 import { CacheService } from '../cache/cache.service';
 
 /**
- * CoinGecko coin IDs for the tokens HireSettle allows on-chain. CoinGecko's
+ * CoinGecko coin IDs for the tokens StellarSorter allows on-chain. CoinGecko's
  * `/simple/price` endpoint accepts these ids; unknown symbols simply yield
  * no rate (fiat fields are omitted rather than erroring).
  */

@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 
 const HIBP_API = 'https://api.pwnedpasswords.com/range/';
 // Keep the User-Agent small and descriptive — HIBP asks callers to identify themselves.
-const USER_AGENT = 'hiresettle-backend/hibp-check';
+const USER_AGENT = 'stellarsorter-backend/hibp-check';
 const REQUEST_TIMEOUT_MS = 3_000;
 
 @Injectable()
