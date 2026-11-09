@@ -27,6 +27,8 @@ import {
   TeamsNotificationsService,
   isTeamsKeyType,
 } from "./teams-notifications.service";
+import { WebPushService } from "./web-push.service";
+import { NOTIFICATION_ADDED } from "./notification-pubsub";
 
 @Injectable()
 export class NotificationsService {
@@ -48,6 +50,8 @@ export class NotificationsService {
     private readonly discordNotifications?: DiscordNotificationsService,
     @Optional()
     private readonly teamsNotifications?: TeamsNotificationsService,
+    @Optional() private readonly pubSub?: PubSub,
+    @Optional() private readonly webPush?: WebPushService,
   ) {
     this.transporter = nodemailer.createTransport({
       host: this.config.get("SMTP_HOST"),
