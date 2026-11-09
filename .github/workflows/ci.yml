@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: hiresettle_test
-          POSTGRES_USER: hiresettle
-          POSTGRES_PASSWORD: hiresettle
+          POSTGRES_DB: stellarsorter_test
+          POSTGRES_USER: stellarsorter
+          POSTGRES_PASSWORD: stellarsorter
         ports:
           - 5432:5432
         options: >-
@@ -26,7 +26,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://hiresettle:hiresettle@localhost:5432/hiresettle_test
+      DATABASE_URL: postgresql://stellarsorter:stellarsorter@localhost:5432/stellarsorter_test
       NODE_ENV: test
 
     steps:
