@@ -37,7 +37,7 @@ const DEFAULT_ALERT_THRESHOLD = 5;
 /**
  * IncomingPaymentPollerService
  *
- * Polls Horizon's /payments endpoint for the HireSettle escrow contract address
+ * Polls Horizon's /payments endpoint for the StellarSorter escrow contract address
  * every 30 seconds. For each incoming payment_to the contract:
  *  1. Check whether the memo matches an active engagement ID.
  *  2. If matched  → silently skip (already handled via contract events).

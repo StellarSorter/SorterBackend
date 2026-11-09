@@ -201,15 +201,15 @@ export class TeamInvitesService {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>You've been invited to join HireSettle</title>
+  <title>You've been invited to join StellarSorter</title>
 </head>
 <body style="font-family:sans-serif;background:#f4f4f4;margin:0;padding:0;">
   <div style="max-width:600px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;">
     <div style="background:#007bff;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;text-align:center;">
-      <h1>HireSettle</h1>
+      <h1>StellarSorter</h1>
     </div>
     <div style="padding:20px;color:#333;line-height:1.6;">
-      <p>You've been invited to join <strong>${companyName}</strong> on HireSettle.</p>
+      <p>You've been invited to join <strong>${companyName}</strong> on StellarSorter.</p>
       <p>Click the button below to accept the invitation and create your account. The link is valid for ${INVITE_TTL_DAYS} days.</p>
       <p>
         <a href="${acceptUrl}"
@@ -221,7 +221,7 @@ export class TeamInvitesService {
       <p>If you weren't expecting this invitation, you can safely ignore this email.</p>
     </div>
     <div style="text-align:center;padding:20px;font-size:12px;color:#777;">
-      <p>&copy; ${new Date().getFullYear()} HireSettle. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} StellarSorter. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -229,9 +229,9 @@ export class TeamInvitesService {
 
     try {
       await this.transporter.sendMail({
-        from: this.config.get('EMAIL_FROM') ?? 'noreply@hiresettle.com',
+        from: this.config.get('EMAIL_FROM') ?? 'noreply@stellarsorter.com',
         to,
-        subject: `✉️ You've been invited to join ${companyName} on HireSettle`,
+        subject: `✉️ You've been invited to join ${companyName} on StellarSorter`,
         html,
       });
       this.logger.log(`Invite email sent to ${to}`);

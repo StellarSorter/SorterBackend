@@ -8,7 +8,7 @@ import { NotificationType } from "@prisma/client";
 /**
  * RetentionSchedulerService
  *
- * This is the HireSettle-specific cron service — the key difference from
+ * This is the StellarSorter-specific cron service — the key difference from
  * ChainSettle. It runs two jobs:
  *
  * 1. APPROACHING NOTIFICATION (every hour)

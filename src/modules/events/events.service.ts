@@ -13,7 +13,7 @@ import { DistributedLockService } from '../../common/lock/distributed-lock.servi
 /**
  * EventsService
  *
- * Polls the Stellar RPC every 5 seconds for HireSettle contract events.
+ * Polls the Stellar RPC every 5 seconds for StellarSorter contract events.
  * When events are detected:
  * 1. Routes each event to the correct handler
  * 2. Updates Prisma DB records (engagement status, milestone status)

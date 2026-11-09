@@ -55,7 +55,7 @@ export class Sep10Service {
         ? Networks.PUBLIC
         : Networks.TESTNET;
 
-    this.homeDomain = this.config.get<string>('APP_DOMAIN', 'hiresettle.com');
+    this.homeDomain = this.config.get<string>('APP_DOMAIN', 'stellarsorter.com');
   }
 
   /**
