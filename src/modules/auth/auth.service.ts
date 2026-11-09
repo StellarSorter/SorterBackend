@@ -989,7 +989,7 @@ export class AuthService {
 
   generateRebindChallenge(userId: string): string {
     const nonce = require('crypto').randomBytes(32).toString('hex');
-    this.authChallenges.set(userId, { nonce, createdAt: Date.now() });
+    this.authChallenges.set(userId, nonce);
     return nonce;
   }
 
