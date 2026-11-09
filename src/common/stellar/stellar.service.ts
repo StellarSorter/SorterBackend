@@ -919,6 +919,35 @@ export class StellarService implements OnModuleInit {
   }
 
   /**
+   * Extract all decorated signatures from a signed XDR transaction envelope.
+   */
+  extractSignatures(signedXdr: string): xdr.DecoratedSignature[] {
+    const tx = TransactionBuilder.fromXDR(signedXdr, this.networkPassphrase) as Transaction;
+    return [...tx.signatures];
+  }
+
+  /**
+   * Rebuild a transaction from its unsigned XDR, attach the provided signatures, and submit.
+   */
+  async submitMultisigTransaction(
+    unsignedXdr: string,
+    signatures: xdr.DecoratedSignature[],
+  ): Promise<{ txHash: string }> {
+    const tx = TransactionBuilder.fromXDR(unsignedXdr, this.networkPassphrase) as Transaction;
+    for (const sig of signatures) {
+      tx.signatures.push(sig);
+    }
+    const result = await this.rpcClient.sendTransaction(tx);
+    if (result.status === 'ERROR') {
+      throw new StellarError(
+        StellarErrorCode.SUBMISSION_FAILED,
+        `Multisig transaction submission failed: ${(result as any).errorResult?.toXDR?.('base64') ?? 'unknown'}`,
+      );
+    }
+    return { txHash: result.hash };
+  }
+
+  /**
    * Get the current base fee and recommended Soroban fee.
    * @returns { baseFee: number, sorobanFee: number } in stroops
    */
