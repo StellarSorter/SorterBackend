@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "name": "HireSettle API",
-    "description": "HireSettle API Collection for milestone-based recruiter fee escrow on Stellar",
+    "name": "StellarSorter API",
+    "description": "StellarSorter API Collection for milestone-based recruiter fee escrow on Stellar",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
@@ -110,7 +110,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongPassword123!\",\n  \"stellarAddress\": \"GABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOP\",\n  \"name\": \"Ada Lovelace\",\n  \"company\": \"HireSettle Inc.\",\n  \"role\": \"COMPANY\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongPassword123!\",\n  \"stellarAddress\": \"GABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOP\",\n  \"name\": \"Ada Lovelace\",\n  \"company\": \"StellarSorter Inc.\",\n  \"role\": \"COMPANY\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1/auth/register",
@@ -132,7 +132,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongPassword123!\",\n  \"stellarAddress\": \"GABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOP\",\n  \"name\": \"Ada Lovelace\",\n  \"company\": \"HireSettle Inc.\",\n  \"role\": \"COMPANY\"\n}"
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongPassword123!\",\n  \"stellarAddress\": \"GABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOP\",\n  \"name\": \"Ada Lovelace\",\n  \"company\": \"StellarSorter Inc.\",\n  \"role\": \"COMPANY\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/v1/auth/register",
@@ -150,7 +150,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\"refreshToken\":\"refresh-token-1234...\",\"user\":{\"id\":\"user-1\",\"email\":\"user@example.com\",\"name\":\"Ada Lovelace\",\"company\":\"HireSettle Inc.\",\"role\":\"COMPANY\"}}"
+              "body": "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\"refreshToken\":\"refresh-token-1234...\",\"user\":{\"id\":\"user-1\",\"email\":\"user@example.com\",\"name\":\"Ada Lovelace\",\"company\":\"StellarSorter Inc.\",\"role\":\"COMPANY\"}}"
             }
           ]
         },
@@ -206,7 +206,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\"refreshToken\":\"refresh-token-1234...\",\"user\":{\"id\":\"user-1\",\"email\":\"user@example.com\",\"name\":\"Ada Lovelace\",\"company\":\"HireSettle Inc.\",\"role\":\"COMPANY\"}}"
+              "body": "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\"refreshToken\":\"refresh-token-1234...\",\"user\":{\"id\":\"user-1\",\"email\":\"user@example.com\",\"name\":\"Ada Lovelace\",\"company\":\"StellarSorter Inc.\",\"role\":\"COMPANY\"}}"
             }
           ]
         },
@@ -1179,7 +1179,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\"name\":\"Ada Lovelace\",\"company\":\"HireSettle Inc.\",\"role\":\"COMPANY\"}"
+              "body": "{\"name\":\"Ada Lovelace\",\"company\":\"StellarSorter Inc.\",\"role\":\"COMPANY\"}"
             }
           ]
         },

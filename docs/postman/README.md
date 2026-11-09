@@ -1,11 +1,11 @@
 # Postman Collection
 
-This directory contains the Postman collection and local environment file for the HireSettle API.
+This directory contains the Postman collection and local environment file for the StellarSorter API.
 
 | File | Purpose |
 |------|---------|
-| `hiresettle-api.postman_collection.json` | All API requests, organised by module |
-| `hiresettle-local.postman_environment.json` | Environment variables for local development |
+| `stellarsorter-api.postman_collection.json` | All API requests, organised by module |
+| `stellarsorter-local.postman_environment.json` | Environment variables for local development |
 
 ---
 
@@ -14,15 +14,15 @@ This directory contains the Postman collection and local environment file for th
 ### 1. Import the collection
 
 1. Open Postman and click **Import** (top-left).
-2. Select **File** and choose `hiresettle-api.postman_collection.json`.
-3. Click **Import**. The collection **HireSettle API** will appear in the sidebar.
+2. Select **File** and choose `stellarsorter-api.postman_collection.json`.
+3. Click **Import**. The collection **StellarSorter API** will appear in the sidebar.
 
 ### 2. Import the environment
 
 1. Click **Import** again.
-2. Select `hiresettle-local.postman_environment.json`.
-3. Click **Import**. The environment **HireSettle - Local** will appear in the Environments list.
-4. Select **HireSettle - Local** from the environment dropdown (top-right corner).
+2. Select `stellarsorter-local.postman_environment.json`.
+3. Click **Import**. The environment **StellarSorter - Local** will appear in the Environments list.
+4. Select **StellarSorter - Local** from the environment dropdown (top-right corner).
 
 ---
 
