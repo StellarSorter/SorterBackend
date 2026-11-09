@@ -36,9 +36,9 @@ async function main() {
   app.setGlobalPrefix(apiPrefix);
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('HireSettle API')
+    .setTitle('StellarSorter API')
     .setDescription(
-      'Backend API for HireSettle — milestone-based recruiter fee escrow on Stellar Soroban',
+      'Backend API for StellarSorter — milestone-based recruiter fee escrow on Stellar Soroban',
     )
     .setVersion('1.0')
     .addBearerAuth()

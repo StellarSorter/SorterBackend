@@ -12,7 +12,7 @@ const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 if (otlpEndpoint) {
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'hiresettle-backend',
+      [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'stellarsorter-backend',
     }),
     traceExporter: new OTLPTraceExporter({ url: `${otlpEndpoint}/v1/traces` }),
     instrumentations: [

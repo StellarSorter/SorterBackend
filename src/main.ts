@@ -122,9 +122,9 @@ async function bootstrap() {
 
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('HireSettle API')
+      .setTitle('StellarSorter API')
       .setDescription(
-        'Backend API for HireSettle — milestone-based recruiter fee escrow on Stellar Soroban',
+        'Backend API for StellarSorter — milestone-based recruiter fee escrow on Stellar Soroban',
       )
       .setVersion('1.0')
       .addBearerAuth()
@@ -198,7 +198,7 @@ async function bootstrap() {
   }
 
   await app.listen(port);
-  logger.log(`HireSettle API running on http://localhost:${port}/${apiPrefix}`);
+  logger.log(`StellarSorter API running on http://localhost:${port}/${apiPrefix}`);
 }
 
 bootstrap();
