@@ -12,7 +12,7 @@ export class JwksController {
   constructor(private readonly keyStore: JwtKeyStore) {}
 
   /**
-   * Public signing keys (RFC 7517) for services that verify HireSettle access
+   * Public signing keys (RFC 7517) for services that verify StellarSorter access
    * tokens (#481). Served outside the API prefix and the response envelope so
    * standard JWKS clients can consume it as-is.
    */

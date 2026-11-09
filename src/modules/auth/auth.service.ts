@@ -67,7 +67,7 @@ export class AuthService {
   ) {}
 
   generateNonce(stellarAddress: string): string {
-    const nonce = `hiresettle:${stellarAddress}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const nonce = `stellarsorter:${stellarAddress}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
     this.nonces.set(stellarAddress, {
       nonce,
       expiresAt: Date.now() + 5 * 60 * 1000,
@@ -519,7 +519,7 @@ export class AuthService {
     }
 
     const totp = new TOTP({
-      issuer: 'HireSettle',
+      issuer: 'StellarSorter',
       label: user.email || user.stellarAddress || userId,
       algorithm: 'SHA1',
       digits: 6,
@@ -821,7 +821,7 @@ export class AuthService {
       update: {},
     });
 
-    const rpName = this.config.get<string>('WEBAUTHN_RP_NAME', 'HireSettle');
+    const rpName = this.config.get<string>('WEBAUTHN_RP_NAME', 'StellarSorter');
     const rpID = this.config.get<string>('WEBAUTHN_RP_ID', this.config.get<string>('HOST') || 'localhost');
 
     const options = generateRegistrationOptions({

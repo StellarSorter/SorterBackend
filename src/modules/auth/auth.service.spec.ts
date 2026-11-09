@@ -530,10 +530,10 @@ describe('AuthService', () => {
   describe('generateNonce()', () => {
     it('delegates to WalletAuthService and returns its result', () => {
       const walletAuth = (service as any).walletAuth as { generateNonce: jest.Mock };
-      walletAuth.generateNonce.mockReturnValue('hiresettle:GABC:12345:abc');
+      walletAuth.generateNonce.mockReturnValue('stellarsorter:GABC:12345:abc');
 
       const nonce = service.generateNonce('GABC');
-      expect(nonce).toBe('hiresettle:GABC:12345:abc');
+      expect(nonce).toBe('stellarsorter:GABC:12345:abc');
       expect(walletAuth.generateNonce).toHaveBeenCalledWith('GABC');
     });
   });

@@ -20,7 +20,7 @@ export class WalletAuthService {
 
   /** Generate and store a 5-minute challenge nonce for a Stellar address. */
   generateNonce(stellarAddress: string): string {
-    const nonce = `hiresettle:${stellarAddress}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const nonce = `stellarsorter:${stellarAddress}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
     this.nonces.set(stellarAddress, { nonce, expiresAt: Date.now() + 5 * 60 * 1000 });
     return nonce;
   }

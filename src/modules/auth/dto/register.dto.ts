@@ -32,7 +32,7 @@ export class RegisterDto {
   @IsNotEmpty()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'HireSettle Inc.' })
+  @ApiPropertyOptional({ example: 'StellarSorter Inc.' })
   @IsOptional()
   @IsString()
   @IsNotEmpty()

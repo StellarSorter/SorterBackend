@@ -27,9 +27,9 @@ describe('WalletAuthService', () => {
   // ── generateNonce ──────────────────────────────────────────────────────────
 
   describe('generateNonce()', () => {
-    it('returns a nonce prefixed with hiresettle:<address>:', () => {
+    it('returns a nonce prefixed with stellarsorter:<address>:', () => {
       const nonce = service.generateNonce('GABC');
-      expect(nonce).toMatch(/^hiresettle:GABC:/);
+      expect(nonce).toMatch(/^stellarsorter:GABC:/);
     });
 
     it('each call returns a different nonce', () => {

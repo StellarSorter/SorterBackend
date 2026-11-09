@@ -30,7 +30,7 @@ export class TwoFactorService {
     }
 
     const totp = new TOTP({
-      issuer: 'HireSettle',
+      issuer: 'StellarSorter',
       label: user.email || user.stellarAddress || userId,
       algorithm: 'SHA1',
       digits: 6,
