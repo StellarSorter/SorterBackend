@@ -84,7 +84,7 @@ export function assertMainnetConfigSafe(config: StellarConfig): void {
 
   if (!config.contractAddress) {
     problems.push(
-      "No contract address configured (set SOROBAN_CONTRACT_ADDRESS or HIRESETTLE_CONTRACT_ID).",
+      "No contract address configured (set SOROBAN_CONTRACT_ADDRESS or STELLARSORTER_CONTRACT_ID).",
     );
   } else if (config.contractAddress.toUpperCase().includes("TEST")) {
     problems.push(
@@ -110,7 +110,7 @@ export default registerAs("stellar", () => {
     networkPassphrase: defaults.networkPassphrase,
     contractAddress:
       process.env.SOROBAN_CONTRACT_ADDRESS ??
-      process.env.HIRESETTLE_CONTRACT_ID,
+      process.env.STELLARSORTER_CONTRACT_ID,
   };
 
   assertMainnetConfigSafe(config);

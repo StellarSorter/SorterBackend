@@ -14,7 +14,7 @@ describe("stellarConfig", () => {
     delete process.env.STELLAR_RPC_URL;
     delete process.env.STELLAR_HORIZON_URL;
     delete process.env.SOROBAN_CONTRACT_ADDRESS;
-    delete process.env.HIRESETTLE_CONTRACT_ID;
+    delete process.env.STELLARSORTER_CONTRACT_ID;
   });
 
   afterAll(() => {
@@ -52,15 +52,15 @@ describe("stellarConfig", () => {
 
   it("prefers SOROBAN_CONTRACT_ADDRESS over the legacy contract id variable", () => {
     process.env.SOROBAN_CONTRACT_ADDRESS = "CNEW";
-    process.env.HIRESETTLE_CONTRACT_ID = "COLD";
+    process.env.STELLARSORTER_CONTRACT_ID = "COLD";
 
     expect(stellarConfig()).toMatchObject({
       contractAddress: "CNEW",
     });
   });
 
-  it("keeps legacy HIRESETTLE_CONTRACT_ID as a fallback", () => {
-    process.env.HIRESETTLE_CONTRACT_ID = "COLD";
+  it("keeps legacy STELLARSORTER_CONTRACT_ID as a fallback", () => {
+    process.env.STELLARSORTER_CONTRACT_ID = "COLD";
 
     expect(stellarConfig()).toMatchObject({
       contractAddress: "COLD",
