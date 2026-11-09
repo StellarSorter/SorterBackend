@@ -26,11 +26,11 @@ For more detailed technical documentation, see the docs/ directory.
 
 ---
 
-## What's Different From ChainSettle Backend
+## Key Services
 
-### `RetentionSchedulerService` — the key addition
+### `RetentionSchedulerService`
 
-This is the most StellarSorter-specific service. It runs two independent cron jobs:
+Runs two independent cron jobs:
 
 **Approaching notification (every hour)**
 Reads the `RetentionSchedule` table for records where `notifyAt <= now` and `notified = false`. Sends a "retention window closes in 3 days" notification to both the company and recruiter. The `notifyAt` is set to `unlockAt - 3 days` when the engagement is created.
@@ -44,13 +44,13 @@ The actual `unlock_milestone()` on-chain call is intentionally left to the front
 
 A dedicated Prisma model that tracks when each retention milestone should unlock and whether it has been notified and unlocked. Created automatically when an engagement is registered in the DB.
 
-### New API endpoints
+### API endpoints
 
 - `GET /engagements/:id/milestones/:index/timer` — returns `{ daysRemaining, ledgersRemaining, unlockable, estimatedUnlockAt }` for the frontend countdown
 - `POST /engagements/:id/sync` — force re-read from Stellar chain
 - Milestone controller now nested under engagements: `/engagements/:engagementId/milestones`
 
-### Updated Prisma schema
+### Prisma schema
 
 - `Milestone` now has `kind`, `retentionDays`, `validAfterLedger`, `unlockEstimatedAt` fields
 - `Engagement` has `REPLACEMENT_REQUESTED` status
@@ -107,7 +107,7 @@ All endpoints prefixed with `/v1`. Protected routes require `Authorization: Bear
 | `GET` | `/engagements/:id/milestones/:index` | ✓ | Single milestone |
 | `GET` | `/engagements/:id/milestones/:index/timer` | ✓ | Retention countdown timer |
 
-### Events, Notifications, Health — same as ChainSettle backend
+### Events, Notifications, Health
 
 ---
 
@@ -320,7 +320,6 @@ The `GET /milestones/:index/timer` endpoint queries the chain directly to get th
 
 MIT
 
-## Handsoff notes
+## Roadmap
 
-<!-- handsoff-issue-405 -->
-- #405: Add admin endpoints to pause and resume queues
+- Add admin endpoints to pause and resume queues

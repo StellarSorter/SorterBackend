@@ -8,8 +8,8 @@ import { NotificationType } from "@prisma/client";
 /**
  * RetentionSchedulerService
  *
- * This is the StellarSorter-specific cron service — the key difference from
- * ChainSettle. It runs two jobs:
+ * Cron service that manages retention milestone notifications and unlock checks.
+ * It runs two jobs:
  *
  * 1. APPROACHING NOTIFICATION (every hour)
  *    Finds RetentionSchedule records where notifyAt <= now and notified = false.
