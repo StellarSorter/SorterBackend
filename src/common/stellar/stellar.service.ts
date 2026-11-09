@@ -940,8 +940,8 @@ export class StellarService implements OnModuleInit {
     const result = await this.rpcClient.sendTransaction(tx);
     if (result.status === 'ERROR') {
       throw new StellarError(
-        StellarErrorCode.SUBMISSION_FAILED,
         `Multisig transaction submission failed: ${(result as any).errorResult?.toXDR?.('base64') ?? 'unknown'}`,
+        StellarErrorCode.SUBMISSION_FAILED,
       );
     }
     return { txHash: result.hash };
