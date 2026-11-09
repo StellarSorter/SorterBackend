@@ -5,7 +5,7 @@
  * integer minor units (stroops for on-chain tokens) as bigint, and rates are
  * basis points (1 bp = 0.01%), so no floating-point rounding is involved.
  *
- * HireSettle's fees are B2B services, so the place of supply is the
+ * StellarSorter's fees are B2B services, so the place of supply is the
  * customer's country:
  *
  *   1. Seller not VAT-registered (no seller country/VAT ID)  → NOT_REGISTERED, no VAT.

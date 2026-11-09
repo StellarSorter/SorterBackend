@@ -148,7 +148,7 @@ export class WebhooksController {
         timeout: 10000,
         headers: {
           'Content-Type': 'application/json',
-          'X-HireSettle-Signature': signWebhookBody(rawBody, secret),
+          'X-StellarSorter-Signature': signWebhookBody(rawBody, secret),
         },
       });
       return {

@@ -1,7 +1,7 @@
 import { computeInvoiceTax, OUTSIDE_SCOPE_NOTICE, REVERSE_CHARGE_NOTICE } from './invoice-tax.calculator';
 import { buildInvoiceContent, escapePdfText, InvoicePdfInput, renderInvoicePdf } from './invoice-pdf';
 
-const SELLER = { name: 'HireSettle Ltd', country: 'IE', taxId: 'IE1234567T' };
+const SELLER = { name: 'StellarSorter Ltd', country: 'IE', taxId: 'IE1234567T' };
 const LINES = [{ description: 'Senior Engineer (eng-1)', amount: 1_000_000n }];
 
 function makeInput(customer: { country: string | null; taxId: string | null }): InvoicePdfInput {

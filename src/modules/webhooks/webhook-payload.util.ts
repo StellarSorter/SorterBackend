@@ -20,7 +20,7 @@ export function getAppBaseUrl(): string {
   return (
     process.env.APP_BASE_URL ||
     process.env.PUBLIC_APP_URL ||
-    "https://api.hiresettle.com"
+    "https://api.stellarsorter.com"
   );
 }
 

@@ -17,7 +17,7 @@ export interface InvoiceSeller extends TaxParty {
  * Applies the invoice VAT rules (#506) with the platform's seller details
  * from configuration:
  *
- *   INVOICE_SELLER_NAME         Legal name printed on invoices (default "HireSettle")
+ *   INVOICE_SELLER_NAME         Legal name printed on invoices (default "StellarSorter")
  *   INVOICE_SELLER_COUNTRY      ISO country of the VAT registration, e.g. "IE"
  *   INVOICE_SELLER_TAX_ID       Seller VAT number, e.g. "IE1234567T"
  *   INVOICE_VAT_RATE_OVERRIDES  JSON map of country → basis points, e.g. {"DE":1900}
@@ -31,7 +31,7 @@ export class InvoiceTaxService {
 
   seller(): InvoiceSeller {
     return {
-      name: this.config.get<string>('INVOICE_SELLER_NAME') || 'HireSettle',
+      name: this.config.get<string>('INVOICE_SELLER_NAME') || 'StellarSorter',
       country: normalizeCountry(this.config.get<string>('INVOICE_SELLER_COUNTRY')),
       taxId: normalizeTaxId(this.config.get<string>('INVOICE_SELLER_TAX_ID')),
     };

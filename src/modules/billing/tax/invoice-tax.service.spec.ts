@@ -10,7 +10,7 @@ function makeTaxService(values: Record<string, unknown>) {
 }
 
 const SELLER_CONFIG = {
-  INVOICE_SELLER_NAME: 'HireSettle Ltd',
+  INVOICE_SELLER_NAME: 'StellarSorter Ltd',
   INVOICE_SELLER_COUNTRY: 'IE',
   INVOICE_SELLER_TAX_ID: 'IE1234567T',
 };
@@ -18,7 +18,7 @@ const SELLER_CONFIG = {
 describe('InvoiceTaxService (#506)', () => {
   it('reads the seller registration from config', () => {
     expect(makeTaxService(SELLER_CONFIG).seller()).toEqual({
-      name: 'HireSettle Ltd',
+      name: 'StellarSorter Ltd',
       country: 'IE',
       taxId: 'IE1234567T',
     });

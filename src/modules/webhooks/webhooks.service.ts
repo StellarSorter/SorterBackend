@@ -171,7 +171,7 @@ export class WebhooksService {
       "x-billing-signature",
       "x-provider-signature",
       "x-signature",
-      "x-hiresettle-signature",
+      "x-stellarsorter-signature",
       "x-hire-settle-signature",
       "x-webhook-signature",
     ];

@@ -20,7 +20,7 @@ export const SUPPORTED_WEBHOOK_EVENTS = [
 export type WebhookEventType = (typeof SUPPORTED_WEBHOOK_EVENTS)[number];
 
 export class CreateWebhookSubscriptionDto {
-  @ApiProperty({ example: "https://example.com/webhooks/hiresettle" })
+  @ApiProperty({ example: "https://example.com/webhooks/stellarsorter" })
   @IsString()
   @IsNotEmpty()
   @IsUrl(
