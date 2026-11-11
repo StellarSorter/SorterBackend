@@ -21,4 +21,11 @@ export class UserDataExportDto {
     items: { type: 'object' },
   })
   notifications: unknown[];
+
+  @ApiProperty({
+    description: 'Engagement comments authored by the requester',
+    type: 'array',
+    items: { type: 'object' },
+  })
+  comments: unknown[];
 }
