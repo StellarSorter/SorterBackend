@@ -400,9 +400,11 @@ model Engagement {
   notes           EngagementNote[]
   comments        EngagementComment[]
   watchers        EngagementWatcher[]
-  review          RecruiterReview?
-  disputes        Dispute[]
-  arbiterRecusals ArbiterRecusal[]
+  review              RecruiterReview?
+  disputes            Dispute[]
+  arbiterRecusals     ArbiterRecusal[]
+  milestoneComments   MilestoneComment[]
+  milestonePartialReleases MilestonePartialRelease[]
 
   @@index([status])
   @@index([companyAddress])
@@ -1410,17 +1412,20 @@ model RecruiterPortfolioEntry {
 }
 
 model MilestoneComment {
-  id          String   @id @default(uuid())
-  milestoneId String
-  authorId    String
-  body        String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  milestoneId  String
+  engagementId String
+  authorId     String
+  body         String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  milestone  Milestone  @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([milestoneId])
+  @@index([engagementId])
   @@index([authorId])
   @@map("milestone_comments")
 }
@@ -1441,13 +1446,15 @@ model CreditLedger {
 }
 
 model MilestoneProofVersion {
-  id          String             @id @default(uuid())
-  milestoneId String
-  version     Int
-  proofUrl    String?
-  ipfsHash    String?
-  status      ProofVersionStatus @default(SUBMITTED)
-  submittedAt DateTime           @default(now())
+  id              String             @id @default(uuid())
+  milestoneId     String
+  versionNumber   Int
+  proofUrl        String?
+  ipfsHash        String?
+  status          ProofVersionStatus @default(SUBMITTED)
+  submittedAt     DateTime           @default(now())
+  submittedById   String?
+  rejectionReason String?
 
   milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
 
@@ -1456,14 +1463,22 @@ model MilestoneProofVersion {
 }
 
 model MilestonePartialRelease {
-  id          String   @id @default(uuid())
-  milestoneId String
-  amount      Decimal  @db.Decimal(18, 7)
-  txHash      String?
-  releasedAt  DateTime @default(now())
+  id              String   @id @default(uuid())
+  milestoneId     String
+  engagementId    String
+  releaseAmount   Decimal  @db.Decimal(18, 7)
+  remainderAmount Decimal  @db.Decimal(18, 7) @default(0)
+  remainderAction String?
+  status          String   @default("PENDING")
+  proposedById    String?
+  txHash          String?
+  releasedAt      DateTime?
+  createdAt       DateTime @default(now())
 
-  milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  milestone   Milestone  @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  engagement  Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
 
   @@index([milestoneId])
+  @@index([engagementId])
   @@map("milestone_partial_releases")
 }
