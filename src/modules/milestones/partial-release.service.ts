@@ -14,6 +14,7 @@ import {
   PartialReleaseStatus,
   PartialRemainderAction,
   Prisma,
+  RefundStatus,
   UserRole,
 } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -257,18 +258,18 @@ export class PartialReleaseService {
     await this.prisma.milestone.update({
       where: { id: milestone.id },
       data: {
-        paymentReleased: previouslyReleased + release.releaseAmount,
+        paymentReleased: previouslyReleased + BigInt(release.releaseAmount.toFixed(0)),
         ...(refundRemainder ? { status: MilestoneStatus.CONFIRMED, confirmedAt: now } : {}),
       },
     });
     await this.prisma.engagement.update({
       where: { id: engagement.id },
-      data: { releasedAmount: { increment: release.releaseAmount } },
+      data: { releasedAmount: { increment: BigInt(release.releaseAmount.toFixed(0)) } },
     });
     if (refundRemainder) {
       const refund = {
-        amount: release.remainderAmount,
-        status: 'COMPLETED' as const,
+        amount: BigInt(release.remainderAmount.toFixed(0)),
+        status: RefundStatus.COMPLETED,
         reason: `Remainder of partial release ${release.id} refunded on-chain (tx ${txHash})`,
       };
       await this.prisma.refund.upsert({
@@ -291,7 +292,7 @@ export class PartialReleaseService {
       releaseAmount: release.releaseAmount.toString(),
       remainderAmount: release.remainderAmount.toString(),
       remainderAction: release.remainderAction,
-      totalReleased: (previouslyReleased + release.releaseAmount).toString(),
+      totalReleased: (previouslyReleased + BigInt(release.releaseAmount.toFixed(0))).toString(),
     });
 
     const message =

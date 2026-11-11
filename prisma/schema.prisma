@@ -1487,6 +1487,7 @@ model MilestonePartialRelease {
   txHash              String?
   executedAt          DateTime?
   releasedAt          DateTime?
+  failureReason       String?
   createdAt           DateTime               @default(now())
 
   milestone   Milestone  @relation(fields: [milestoneId], references: [id], onDelete: Cascade)

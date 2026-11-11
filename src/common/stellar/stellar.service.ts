@@ -934,6 +934,45 @@ export class StellarService implements OnModuleInit {
   }
 
   /**
+   * Release a partial payment from a milestone escrow.
+   * Returns the transaction hash.
+   */
+  async releasePartialMilestonePayment(
+    engagementId: string,
+    milestoneIndex: number,
+    releaseAmount: { toString(): string },
+    refundRemainder: boolean,
+  ): Promise<string> {
+    const keypair = this.backendKeypair;
+    if (!keypair) {
+      throw new StellarError(
+        'Backend Stellar keypair is not configured',
+        StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
+      );
+    }
+    const amountBigInt = BigInt(releaseAmount.toString().split('.')[0]);
+    const contract = new Contract(this.contractId);
+    const account = await this.rpcClient.getAccount(keypair.publicKey());
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(
+        contract.call(
+          'release_partial_milestone_payment',
+          nativeToScVal(engagementId, { type: 'string' }),
+          nativeToScVal(milestoneIndex, { type: 'u32' }),
+          nativeToScVal(amountBigInt, { type: 'i128' }),
+          nativeToScVal(refundRemainder, { type: 'bool' }),
+        ),
+      )
+      .setTimeout(60)
+      .build();
+    const { txHash } = await this.submitAndConfirm(tx);
+    return txHash;
+  }
+
+  /**
    * Extract all decorated signatures from a signed XDR transaction envelope.
    */
   extractSignatures(signedXdr: string): xdr.DecoratedSignature[] {
