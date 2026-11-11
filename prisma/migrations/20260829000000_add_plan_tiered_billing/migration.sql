@@ -57,17 +57,4 @@ CREATE UNIQUE INDEX "discount_redemptions_discountCodeId_companyId_key" ON "disc
 ALTER TABLE "discount_redemptions" ADD CONSTRAINT "discount_redemptions_discountCodeId_fkey" FOREIGN KEY ("discountCodeId") REFERENCES "discount_codes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "discount_redemptions" ADD CONSTRAINT "discount_redemptions_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AlterTable
-ALTER TABLE "companies" ADD COLUMN "discountCodeId" TEXT;
-
--- AddForeignKey
-ALTER TABLE "companies" ADD CONSTRAINT "companies_discountCodeId_fkey" FOREIGN KEY ("discountCodeId") REFERENCES "discount_codes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AlterTable
-ALTER TABLE "invoices" ADD COLUMN "discountCodeId" TEXT;
-ALTER TABLE "invoices" ADD COLUMN "discountAmount" INTEGER NOT NULL DEFAULT 0;
-
--- AddForeignKey
-ALTER TABLE "invoices" ADD CONSTRAINT "invoices_discountCodeId_fkey" FOREIGN KEY ("discountCodeId") REFERENCES "discount_codes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "discount_redemptions" ADD CONSTRAINT "discount_redemptions_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

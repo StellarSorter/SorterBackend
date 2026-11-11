@@ -16,7 +16,7 @@ CREATE INDEX "AdminUserNote_userId_idx" ON "AdminUserNote"("userId");
 CREATE INDEX "AdminUserNote_authorId_idx" ON "AdminUserNote"("authorId");
 
 -- AddForeignKey
-ALTER TABLE "AdminUserNote" ADD CONSTRAINT "AdminUserNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AdminUserNote" ADD CONSTRAINT "AdminUserNote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AdminUserNote" ADD CONSTRAINT "AdminUserNote_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AdminUserNote" ADD CONSTRAINT "AdminUserNote_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
