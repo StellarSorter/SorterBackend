@@ -27,7 +27,7 @@ export class MilestoneCommentsService {
     requirePartyRole(engagement, user, [...PARTICIPANTS], PARTICIPANT_ONLY);
 
     const comment = await this.prisma.milestoneComment.create({
-      data: { milestoneId: milestone.id, engagementId, authorId: user.id, body },
+      data: { milestoneId: milestone.id, engagementId, authorId: user.id ?? '', body },
       include: { author: { select: { id: true, name: true, role: true } } },
     });
 
