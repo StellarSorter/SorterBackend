@@ -184,7 +184,7 @@ export class BillingService {
     const lines = [
       `Invoice: ${invoiceId}`,
       `Period: ${from?.toISOString() ?? 'start'} – ${to?.toISOString() ?? 'end'}`,
-      `Total: ${summary.totalEscrowed} stroops escrowed`,
+      `Total: ${summary.summary.totalEscrowed} stroops escrowed`,
     ];
     return Buffer.from(lines.join('\n'), 'utf8');
   }
