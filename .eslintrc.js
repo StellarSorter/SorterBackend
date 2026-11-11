@@ -17,6 +17,9 @@ module.exports = {
   },
   ignorePatterns: [
     '.eslintrc.js',
+    'dist/**',
+    'test/**',
+    'prisma/**',
     'src/admin/**',
     'src/announcements/**',
     'src/billing/**',
@@ -24,7 +27,6 @@ module.exports = {
     'src/notifications/**',
     'src/recruiters/**',
     'src/webhooks/**',
-    'prisma/**',
     '**/*.spec.ts',
     '**/*.test.ts',
   ],
