@@ -26,6 +26,7 @@ export class BillingService {
     companyUser: User,
     fromDate?: Date,
     toDate?: Date,
+    fiat?: string,
   ) {
     // Get current calendar month if no dates provided
     const now = new Date();
@@ -82,8 +83,8 @@ export class BillingService {
     };
   }
 
-  async exportBillingToCsv(companyUser: User, fromDate?: Date, toDate?: Date) {
-    const billingData = await this.getBillingSummary(companyUser, fromDate, toDate);
+  async exportBillingToCsv(companyUser: User, fromDate?: Date, toDate?: Date, fiat?: string) {
+    const billingData = await this.getBillingSummary(companyUser, fromDate, toDate, fiat);
     
     // Build CSV header
     const headers = ['Engagement ID', 'Job Title', 'Created At', 'Total Escrowed', 'Total Released', 'Status'];
@@ -168,5 +169,39 @@ export class BillingService {
     );
 
     return [CSV_HEADER, ...rows].join('\n');
+  }
+
+  async getCompanyUsage(userId: string) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const count = await this.prisma.apiKey.count({
+      where: { userId, createdAt: { gte: since } },
+    });
+    return { count, since };
+  }
+
+  async generateInvoicePdf(user: User, invoiceId: string, from?: Date, to?: Date): Promise<Buffer> {
+    const summary = await this.getBillingSummary(user, from, to);
+    const lines = [
+      `Invoice: ${invoiceId}`,
+      `Period: ${from?.toISOString() ?? 'start'} – ${to?.toISOString() ?? 'end'}`,
+      `Total: ${summary.totalEscrowed} stroops escrowed`,
+    ];
+    return Buffer.from(lines.join('\n'), 'utf8');
+  }
+
+  async getTaxProfile(companyId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: companyId },
+      select: { id: true, taxCountry: true },
+    });
+    return user ?? { id: companyId, taxCountry: null };
+  }
+
+  async updateTaxProfile(companyId: string, dto: { taxCountry?: string }) {
+    return this.prisma.user.update({
+      where: { id: companyId },
+      data: { taxCountry: dto.taxCountry },
+      select: { id: true, taxCountry: true },
+    });
   }
 }
