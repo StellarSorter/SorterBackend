@@ -1,6 +1,11 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'crypto';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { randomUUID } from "crypto";
 
 /**
  * DistributedLockService
@@ -26,27 +31,29 @@ export class DistributedLockService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly config: ConfigService) {}
 
   async onModuleInit() {
-    const redisUrl = this.config.get<string>('REDIS_URL');
+    const redisUrl = this.config.get<string>("REDIS_URL");
 
     if (redisUrl) {
       try {
         // Dynamic require so the app starts without ioredis installed
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const Redis = require('ioredis');
+        const Redis = require("ioredis");
         this.redisClient = new Redis(redisUrl, {
           lazyConnect: true,
           maxRetriesPerRequest: 3,
         });
         await this.redisClient.connect();
         this.useRedis = true;
-        this.logger.log('DistributedLockService: connected to Redis');
+        this.logger.log("DistributedLockService: connected to Redis");
       } catch (err) {
         this.logger.warn(
           `DistributedLockService: failed to connect to Redis (${(err as Error).message}). Locks will always succeed (single-instance mode).`,
         );
       }
     } else {
-      this.logger.log('DistributedLockService: REDIS_URL not set — single-instance mode, locks always succeed');
+      this.logger.log(
+        "DistributedLockService: REDIS_URL not set — single-instance mode, locks always succeed",
+      );
     }
   }
 
@@ -71,14 +78,16 @@ export class DistributedLockService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const token = randomUUID();
-      const result = await this.redisClient.set(key, token, 'PX', ttlMs, 'NX');
-      if (result === 'OK') return token;
+      const result = await this.redisClient.set(key, token, "PX", ttlMs, "NX");
+      if (result === "OK") return token;
 
       this.logger.debug(`${key} — skipped, another instance holds the lock`);
       return null;
     } catch (err) {
       // Redis error — fail open so the job still runs on this instance
-      this.logger.warn(`${key} — Redis error during acquire: ${(err as Error).message}. Lock granted (fail-open).`);
+      this.logger.warn(
+        `${key} — Redis error during acquire: ${(err as Error).message}. Lock granted (fail-open).`,
+      );
       return randomUUID();
     }
   }
@@ -90,7 +99,12 @@ export class DistributedLockService implements OnModuleInit, OnModuleDestroy {
     if (!this.useRedis || !this.redisClient) return;
 
     try {
-      await this.redisClient.eval(DistributedLockService.RELEASE_SCRIPT, 1, key, token);
+      await this.redisClient.eval(
+        DistributedLockService.RELEASE_SCRIPT,
+        1,
+        key,
+        token,
+      );
     } catch {
       // best-effort — TTL will expire the lock anyway
     }
@@ -100,7 +114,11 @@ export class DistributedLockService implements OnModuleInit, OnModuleDestroy {
    * Convenience helper: acquire a lock, run the function, release the lock.
    * Returns undefined if the lock could not be acquired.
    */
-  async withLock<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T | undefined> {
+  async withLock<T>(
+    key: string,
+    ttlMs: number,
+    fn: () => Promise<T>,
+  ): Promise<T | undefined> {
     const token = await this.tryAcquireLock(key, ttlMs);
     if (!token) return undefined;
     try {

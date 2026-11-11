@@ -5,10 +5,14 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { S3Service } from '../../common/s3/s3.service';
 import { CacheService } from '../../common/cache/cache.service';
+import { SecurityEventsService } from '../../common/security-events/security-events.service';
+import { ConfigService } from '@nestjs/config';
+import { StellarService } from '../../common/stellar/stellar.service';
 
 const mockPrisma = {
   user: { findUnique: jest.fn(), update: jest.fn() },
   notificationPreference: { findMany: jest.fn(), upsert: jest.fn() },
+  recruiterReview: { aggregate: jest.fn().mockResolvedValue({ _avg: { rating: null } }) },
 };
 
 const mockS3Service = {
@@ -31,6 +35,9 @@ describe('UsersService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: S3Service, useValue: mockS3Service },
         { provide: CacheService, useValue: mockCacheService },
+        { provide: SecurityEventsService, useValue: { log: jest.fn().mockResolvedValue(undefined), list: jest.fn().mockResolvedValue([]) } },
+        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(undefined) } },
+        { provide: StellarService, useValue: {} },
       ],
     }).compile();
 
@@ -53,10 +60,10 @@ describe('UsersService', () => {
 
       const result = await service.findByStellarAddress(address);
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ ...mockUser, averageRating: null });
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { stellarAddress: address },
-        select: { name: true, company: true, role: true, verifiedAt: true },
+        select: { id: true, name: true, company: true, role: true, verifiedAt: true },
       });
     });
 
@@ -92,6 +99,7 @@ describe('UsersService', () => {
           name: true,
           email: true,
           company: true,
+          timezone: true,
           stellarAddress: true,
           avatarUrl: true,
           role: true,
@@ -111,10 +119,10 @@ describe('UsersService', () => {
   describe('updateProfile()', () => {
     const userId = 'user-123';
 
-    it('updates name, company, and email successfully', async () => {
+    it('updates name and company successfully', async () => {
       const mockUser = {
         name: 'Updated Name',
-        email: 'updated@example.com',
+        email: 'original@example.com',
         company: 'Updated Company',
         stellarAddress:
           'GABC123DEFGHIJKLMNOPQRSTUVWXYZ234567GABC123DEFGHIJKLMNOPQR',
@@ -126,7 +134,6 @@ describe('UsersService', () => {
       const dto = {
         name: 'Updated Name',
         company: 'Updated Company',
-        email: 'updated@example.com',
       };
       const result = await service.updateProfile(userId, dto);
 
@@ -136,12 +143,12 @@ describe('UsersService', () => {
         data: {
           name: 'Updated Name',
           company: 'Updated Company',
-          email: 'updated@example.com',
         },
         select: {
           name: true,
           email: true,
           company: true,
+          timezone: true,
           stellarAddress: true,
           avatarUrl: true,
           role: true,

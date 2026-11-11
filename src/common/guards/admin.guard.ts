@@ -1,5 +1,10 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from "@nestjs/common";
+import { UserRole } from "@prisma/client";
 
 /**
  * Allows only platform admins. Apply after JwtAuthGuard / JwtOrApiKeyGuard so
@@ -12,10 +17,12 @@ export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const user = context.switchToHttp().getRequest().user;
     if (!user || user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Admin access required');
+      throw new ForbiddenException("Admin access required");
     }
     if (user.impersonated) {
-      throw new ForbiddenException('Admin endpoints are not available while impersonating');
+      throw new ForbiddenException(
+        "Admin endpoints are not available while impersonating",
+      );
     }
     return true;
   }

@@ -1,4 +1,4 @@
-import { EmailTemplate, EmailTemplateName } from './email-template.enum';
+import { EmailTemplate, EmailTemplateName } from "./email-template.enum";
 
 export interface RenderedEmail {
   subject: string;
@@ -7,10 +7,13 @@ export interface RenderedEmail {
 }
 
 /** Interpolate {{key}} placeholders in a template string. */
-function interpolate(template: string, context: Record<string, unknown>): string {
+function interpolate(
+  template: string,
+  context: Record<string, unknown>,
+): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
     const val = context[key];
-    return val != null ? String(val) : '';
+    return val != null ? String(val) : "";
   });
 }
 

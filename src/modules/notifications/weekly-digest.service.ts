@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { NotificationType } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotificationsService } from './notifications.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { NotificationType } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { NotificationsService } from "./notifications.service";
 
 export interface WeeklyDigestSummary {
   ranAt: Date;
@@ -46,23 +46,32 @@ export class WeeklyDigestService {
   private static readonly TYPE_META: Partial<
     Record<NotificationType, { emoji: string; label: string }>
   > = {
-    ENGAGEMENT_CREATED: { emoji: '🎉', label: 'Engagement created' },
-    MILESTONE_UNLOCKED: { emoji: '🔓', label: 'Milestone unlocked' },
-    PROOF_SUBMITTED: { emoji: '📄', label: 'Proof submitted' },
-    MILESTONE_CONFIRMED: { emoji: '✅', label: 'Milestone confirmed' },
-    PAYMENT_RELEASED: { emoji: '💰', label: 'Payment released' },
-    DISPUTE_RAISED: { emoji: '⚠️', label: 'Dispute raised' },
-    DISPUTE_RESOLVED: { emoji: '⚖️', label: 'Dispute resolved' },
-    REPLACEMENT_REQUESTED: { emoji: '🔄', label: 'Replacement requested' },
-    ENGAGEMENT_CANCELLED: { emoji: '❌', label: 'Engagement cancelled' },
-    RETENTION_WINDOW_APPROACHING: { emoji: '⏰', label: 'Retention window approaching' },
-    PLACEMENT_MILESTONE_DUE_SOON: { emoji: '📅', label: 'Milestone due soon' },
-    ARBITER_ASSIGNED: { emoji: '⚖️', label: 'Arbiter assigned' },
-    ARBITER_REASSIGNED: { emoji: '🔄', label: 'Arbiter reassigned' },
-    ARBITER_RECUSAL_REQUESTED: { emoji: '🙋', label: 'Arbiter recusal requested' },
-    ACCOUNT_MERGE_DETECTED: { emoji: '🔗', label: 'Account merge detected' },
-    FUNDING_SHORTFALL_DETECTED: { emoji: '🚨', label: 'Funding shortfall detected' },
-    STELLAR_BALANCE_LOW: { emoji: '⚠️', label: 'Stellar balance low' },
+    ENGAGEMENT_CREATED: { emoji: "🎉", label: "Engagement created" },
+    MILESTONE_UNLOCKED: { emoji: "🔓", label: "Milestone unlocked" },
+    PROOF_SUBMITTED: { emoji: "📄", label: "Proof submitted" },
+    MILESTONE_CONFIRMED: { emoji: "✅", label: "Milestone confirmed" },
+    PAYMENT_RELEASED: { emoji: "💰", label: "Payment released" },
+    DISPUTE_RAISED: { emoji: "⚠️", label: "Dispute raised" },
+    DISPUTE_RESOLVED: { emoji: "⚖️", label: "Dispute resolved" },
+    REPLACEMENT_REQUESTED: { emoji: "🔄", label: "Replacement requested" },
+    ENGAGEMENT_CANCELLED: { emoji: "❌", label: "Engagement cancelled" },
+    RETENTION_WINDOW_APPROACHING: {
+      emoji: "⏰",
+      label: "Retention window approaching",
+    },
+    PLACEMENT_MILESTONE_DUE_SOON: { emoji: "📅", label: "Milestone due soon" },
+    ARBITER_ASSIGNED: { emoji: "⚖️", label: "Arbiter assigned" },
+    ARBITER_REASSIGNED: { emoji: "🔄", label: "Arbiter reassigned" },
+    ARBITER_RECUSAL_REQUESTED: {
+      emoji: "🙋",
+      label: "Arbiter recusal requested",
+    },
+    ACCOUNT_MERGE_DETECTED: { emoji: "🔗", label: "Account merge detected" },
+    FUNDING_SHORTFALL_DETECTED: {
+      emoji: "🚨",
+      label: "Funding shortfall detected",
+    },
+    STELLAR_BALANCE_LOW: { emoji: "⚠️", label: "Stellar balance low" },
   };
 
   constructor(
@@ -71,15 +80,17 @@ export class WeeklyDigestService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  @Cron('0 9 * * 1', { timeZone: 'UTC', name: 'weekly-digest' })
+  @Cron("0 9 * * 1", { timeZone: "UTC", name: "weekly-digest" })
   async handleWeeklyDigest(): Promise<void> {
     if (this.isRunning) {
-      this.logger.warn('Weekly digest job already running — skipping this tick');
+      this.logger.warn(
+        "Weekly digest job already running — skipping this tick",
+      );
       return;
     }
     this.isRunning = true;
     const startedAt = Date.now();
-    this.logger.log('Weekly digest job started');
+    this.logger.log("Weekly digest job started");
 
     try {
       const summary = await this.runWeeklyDigest();
@@ -89,7 +100,10 @@ export class WeeklyDigestService {
           `skippedEmpty=${summary.skippedEmpty} errors=${summary.errors}`,
       );
     } catch (err) {
-      this.logger.error('Weekly digest job failed with an unhandled error', err);
+      this.logger.error(
+        "Weekly digest job failed with an unhandled error",
+        err,
+      );
     } finally {
       this.isRunning = false;
     }
@@ -101,7 +115,7 @@ export class WeeklyDigestService {
    */
   async runWeeklyDigest(since?: Date): Promise<WeeklyDigestSummary> {
     const ranAt = new Date();
-    const windowDays = this.config.get<number>('DIGEST_WINDOW_DAYS', 7);
+    const windowDays = this.config.get<number>("DIGEST_WINDOW_DAYS", 7);
     const windowStart = since ?? this.daysAgo(windowDays);
 
     const users = await this.prisma.user.findMany({
@@ -122,7 +136,7 @@ export class WeeklyDigestService {
       try {
         const notifications = await this.prisma.notification.findMany({
           where: { userId: user.id, createdAt: { gte: windowStart } },
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: "asc" },
           select: {
             id: true,
             type: true,
@@ -138,10 +152,15 @@ export class WeeklyDigestService {
           continue;
         }
 
-        const html = this.buildDigestHtml(user.name, notifications, windowStart, windowDays);
+        const html = this.buildDigestHtml(
+          user.name,
+          notifications,
+          windowStart,
+          windowDays,
+        );
         await this.notifications.sendDigestEmail(
           user.email!,
-          'Your weekly StellarSorter digest',
+          "Your weekly StellarSorter digest",
           html,
         );
         sent++;
@@ -186,13 +205,13 @@ export class WeeklyDigestService {
       }
     }
 
-    const greeting = userName ? this.escapeHtml(userName) : 'there';
+    const greeting = userName ? this.escapeHtml(userName) : "there";
     const rangeLabel = `${this.formatDate(windowStart)} – ${this.formatDate(new Date())}`;
 
     const sections = [...groups.entries()]
       .map(([type, items]) => {
         const meta = WeeklyDigestService.TYPE_META[type];
-        const emoji = meta?.emoji ?? '📬';
+        const emoji = meta?.emoji ?? "📬";
         const label = meta?.label ?? this.humanizeType(type);
         const rows = items
           .map(
@@ -200,13 +219,13 @@ export class WeeklyDigestService {
               `<li><strong>${this.escapeHtml(item.title)}</strong> — ${this.formatDate(item.createdAt)}<br>` +
               `<small>${this.escapeHtml(item.message)}</small></li>`,
           )
-          .join('\n');
+          .join("\n");
         return (
           `<h3>${emoji} ${this.escapeHtml(label)} (${items.length})</h3>\n` +
           `<ul style="margin:0 0 20px;padding-left:20px;">\n${rows}\n</ul>`
         );
       })
-      .join('\n');
+      .join("\n");
 
     return `<!DOCTYPE html>
 <html>
@@ -235,20 +254,20 @@ export class WeeklyDigestService {
   }
 
   private humanizeType(type: NotificationType): string {
-    return type.toLowerCase().replace(/_/g, ' ');
+    return type.toLowerCase().replace(/_/g, " ");
   }
 
   private formatDate(date: Date): string {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
 
   private escapeHtml(value: string): string {
     return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   private daysAgo(days: number): Date {

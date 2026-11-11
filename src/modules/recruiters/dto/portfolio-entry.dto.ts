@@ -1,13 +1,13 @@
-import { IsInt, IsString, Max, Min, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsInt, IsString, Max, Min, MinLength } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreatePortfolioEntryDto {
-  @ApiProperty({ example: 'Senior Backend Engineer' })
+  @ApiProperty({ example: "Senior Backend Engineer" })
   @IsString()
   @MinLength(1)
   role: string;
 
-  @ApiProperty({ example: 'FinTech' })
+  @ApiProperty({ example: "FinTech" })
   @IsString()
   @MinLength(1)
   industry: string;
@@ -20,12 +20,12 @@ export class CreatePortfolioEntryDto {
 }
 
 export class UpdatePortfolioEntryDto {
-  @ApiProperty({ required: false, example: 'Lead Engineer' })
+  @ApiProperty({ required: false, example: "Lead Engineer" })
   @IsString()
   @MinLength(1)
   role?: string;
 
-  @ApiProperty({ required: false, example: 'HealthTech' })
+  @ApiProperty({ required: false, example: "HealthTech" })
   @IsString()
   @MinLength(1)
   industry?: string;

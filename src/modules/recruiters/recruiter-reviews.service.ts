@@ -4,10 +4,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { EngagementStatus, Prisma, UserRole } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateRecruiterReviewDto } from './dto/create-recruiter-review.dto';
+} from "@nestjs/common";
+import { EngagementStatus, Prisma, UserRole } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { CreateRecruiterReviewDto } from "./dto/create-recruiter-review.dto";
 
 @Injectable()
 export class RecruiterReviewsService {
@@ -22,22 +22,29 @@ export class RecruiterReviewsService {
       where: { id: engagementId },
       include: { review: true },
     });
-    if (!engagement) throw new NotFoundException('Engagement not found');
+    if (!engagement) throw new NotFoundException("Engagement not found");
 
     if (engagement.status !== EngagementStatus.COMPLETED) {
-      throw new BadRequestException('Reviews can only be submitted for completed engagements');
+      throw new BadRequestException(
+        "Reviews can only be submitted for completed engagements",
+      );
     }
 
     const isCompany =
       engagement.companyId === reviewer.id ||
-      (!!reviewer.stellarAddress && engagement.companyAddress === reviewer.stellarAddress);
+      (!!reviewer.stellarAddress &&
+        engagement.companyAddress === reviewer.stellarAddress);
 
     if (!isCompany) {
-      throw new ForbiddenException('Only the company on this engagement can leave a review');
+      throw new ForbiddenException(
+        "Only the company on this engagement can leave a review",
+      );
     }
 
     if (engagement.review) {
-      throw new ConflictException('A review has already been submitted for this engagement');
+      throw new ConflictException(
+        "A review has already been submitted for this engagement",
+      );
     }
 
     const recruiter = await this.prisma.user.findFirst({
@@ -50,7 +57,7 @@ export class RecruiterReviewsService {
       },
     });
     if (!recruiter) {
-      throw new NotFoundException('Recruiter for this engagement not found');
+      throw new NotFoundException("Recruiter for this engagement not found");
     }
 
     try {
@@ -66,9 +73,11 @@ export class RecruiterReviewsService {
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
+        error.code === "P2002"
       ) {
-        throw new ConflictException('A review has already been submitted for this engagement');
+        throw new ConflictException(
+          "A review has already been submitted for this engagement",
+        );
       }
       throw error;
     }
@@ -80,14 +89,14 @@ export class RecruiterReviewsService {
       select: { id: true, role: true },
     });
     if (!recruiter || recruiter.role !== UserRole.RECRUITER) {
-      throw new NotFoundException('Recruiter not found');
+      throw new NotFoundException("Recruiter not found");
     }
 
     const where = { recruiterId };
     const [data, total, avg] = await this.prisma.$transaction([
       this.prisma.recruiterReview.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
         select: {
@@ -114,7 +123,10 @@ export class RecruiterReviewsService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
-        averageRating: avg._avg.rating != null ? Math.round(avg._avg.rating * 10) / 10 : null,
+        averageRating:
+          avg._avg.rating != null
+            ? Math.round(avg._avg.rating * 10) / 10
+            : null,
         reviewCount: avg._count.rating,
       },
     };
@@ -125,13 +137,17 @@ export class RecruiterReviewsService {
       where: { recruiterId },
       _avg: { rating: true },
     });
-    return avg._avg.rating != null ? Math.round(avg._avg.rating * 10) / 10 : null;
+    return avg._avg.rating != null
+      ? Math.round(avg._avg.rating * 10) / 10
+      : null;
   }
 
-  async getAverageRatings(recruiterIds: string[]): Promise<Map<string, number | null>> {
+  async getAverageRatings(
+    recruiterIds: string[],
+  ): Promise<Map<string, number | null>> {
     if (recruiterIds.length === 0) return new Map();
     const rows = await this.prisma.recruiterReview.groupBy({
-      by: ['recruiterId'],
+      by: ["recruiterId"],
       where: { recruiterId: { in: recruiterIds } },
       _avg: { rating: true },
     });

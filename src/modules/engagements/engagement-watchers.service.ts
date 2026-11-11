@@ -1,5 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  Logger,
+} from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
 /**
  * EngagementWatchersService — manages watcher subscriptions on engagements (#443).
@@ -22,11 +28,15 @@ export class EngagementWatchersService {
    * Add `userId` as a watcher of `engagementId`.
    * Throws 404 if the engagement doesn't exist, 409 if already watching.
    */
-  async addWatcher(engagementId: string, userId: string): Promise<{ engagementId: string; userId: string }> {
+  async addWatcher(
+    engagementId: string,
+    userId: string,
+  ): Promise<{ engagementId: string; userId: string }> {
     const engagement = await this.prisma.engagement.findUnique({
       where: { id: engagementId },
     });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
 
     // TODO: once EngagementWatcher model exists in schema.prisma, replace the
     // stub below with:
@@ -36,7 +46,9 @@ export class EngagementWatchersService {
     //   if (existing) throw new ConflictException('Already watching this engagement');
     //   return this.prisma.engagementWatcher.create({ data: { engagementId, userId } });
 
-    this.logger.warn(`addWatcher: EngagementWatcher model not yet in schema — returning stub`);
+    this.logger.warn(
+      `addWatcher: EngagementWatcher model not yet in schema — returning stub`,
+    );
     return { engagementId, userId };
   }
 
@@ -44,11 +56,15 @@ export class EngagementWatchersService {
    * Remove `userId` from the watcher list of `engagementId`.
    * Throws 404 if the engagement or watcher record doesn't exist.
    */
-  async removeWatcher(engagementId: string, userId: string): Promise<{ success: boolean }> {
+  async removeWatcher(
+    engagementId: string,
+    userId: string,
+  ): Promise<{ success: boolean }> {
     const engagement = await this.prisma.engagement.findUnique({
       where: { id: engagementId },
     });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
 
     // TODO: once EngagementWatcher model exists in schema.prisma, replace stub:
     //   const existing = await this.prisma.engagementWatcher.findUnique({
@@ -59,7 +75,9 @@ export class EngagementWatchersService {
     //     where: { engagementId_userId: { engagementId, userId } },
     //   });
 
-    this.logger.warn(`removeWatcher: EngagementWatcher model not yet in schema — returning stub`);
+    this.logger.warn(
+      `removeWatcher: EngagementWatcher model not yet in schema — returning stub`,
+    );
     return { success: true };
   }
 
@@ -70,7 +88,8 @@ export class EngagementWatchersService {
     const engagement = await this.prisma.engagement.findUnique({
       where: { id: engagementId },
     });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
 
     // TODO: once EngagementWatcher model exists in schema.prisma, replace stub:
     //   const watchers = await this.prisma.engagementWatcher.findMany({
@@ -79,7 +98,9 @@ export class EngagementWatchersService {
     //   });
     //   return watchers.map((w) => w.userId);
 
-    this.logger.warn(`listWatchers: EngagementWatcher model not yet in schema — returning empty list`);
+    this.logger.warn(
+      `listWatchers: EngagementWatcher model not yet in schema — returning empty list`,
+    );
     return [];
   }
 }

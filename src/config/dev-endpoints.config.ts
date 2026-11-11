@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+import { ConfigService } from "@nestjs/config";
 
 /**
  * Determines whether the /dev/* endpoints (Friendbot, etc.) should be loaded.
@@ -16,13 +16,13 @@ import { ConfigService } from '@nestjs/config';
  * DI container.
  */
 export function isDevEndpointsEnabled(config: ConfigService): boolean {
-  const enabled = config.get<boolean>('ENABLE_DEV_ENDPOINTS', false);
-  const nodeEnv = config.get<string>('NODE_ENV', 'development');
-  const network = config.get<string>('STELLAR_NETWORK', 'testnet');
+  const enabled = config.get<boolean>("ENABLE_DEV_ENDPOINTS", false);
+  const nodeEnv = config.get<string>("NODE_ENV", "development");
+  const network = config.get<string>("STELLAR_NETWORK", "testnet");
 
   if (!enabled) return false;
-  if (nodeEnv === 'production') return false;
-  if (network === 'mainnet') return false;
+  if (nodeEnv === "production") return false;
+  if (network === "mainnet") return false;
 
   return true;
 }

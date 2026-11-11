@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { NotificationType } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import axios from "axios";
+import { NotificationType } from "@prisma/client";
 
 /**
  * Notification types that are posted to a company's Slack channel when the
@@ -21,27 +21,27 @@ export const SLACK_KEY_TYPES: NotificationType[] = [
 ];
 
 const TYPE_EMOJI: Partial<Record<NotificationType, string>> = {
-  ENGAGEMENT_CREATED: '🎉',
-  PROOF_SUBMITTED: '📄',
-  MILESTONE_CONFIRMED: '✅',
-  PAYMENT_RELEASED: '💰',
-  DISPUTE_RAISED: '⚠️',
-  DISPUTE_RESOLVED: '⚖️',
-  REPLACEMENT_REQUESTED: '🔄',
-  ENGAGEMENT_CANCELLED: '❌',
-  FUNDING_SHORTFALL_DETECTED: '🚨',
+  ENGAGEMENT_CREATED: "🎉",
+  PROOF_SUBMITTED: "📄",
+  MILESTONE_CONFIRMED: "✅",
+  PAYMENT_RELEASED: "💰",
+  DISPUTE_RAISED: "⚠️",
+  DISPUTE_RESOLVED: "⚖️",
+  REPLACEMENT_REQUESTED: "🔄",
+  ENGAGEMENT_CANCELLED: "❌",
+  FUNDING_SHORTFALL_DETECTED: "🚨",
 };
 
 const TYPE_LABELS: Partial<Record<NotificationType, string>> = {
-  ENGAGEMENT_CREATED: 'Engagement created',
-  PROOF_SUBMITTED: 'Proof submitted',
-  MILESTONE_CONFIRMED: 'Milestone confirmed',
-  PAYMENT_RELEASED: 'Payment released',
-  DISPUTE_RAISED: 'Dispute raised',
-  DISPUTE_RESOLVED: 'Dispute resolved',
-  REPLACEMENT_REQUESTED: 'Replacement requested',
-  ENGAGEMENT_CANCELLED: 'Engagement cancelled',
-  FUNDING_SHORTFALL_DETECTED: 'Funding shortfall detected',
+  ENGAGEMENT_CREATED: "Engagement created",
+  PROOF_SUBMITTED: "Proof submitted",
+  MILESTONE_CONFIRMED: "Milestone confirmed",
+  PAYMENT_RELEASED: "Payment released",
+  DISPUTE_RAISED: "Dispute raised",
+  DISPUTE_RESOLVED: "Dispute resolved",
+  REPLACEMENT_REQUESTED: "Replacement requested",
+  ENGAGEMENT_CANCELLED: "Engagement cancelled",
+  FUNDING_SHORTFALL_DETECTED: "Funding shortfall detected",
 };
 
 export function isSlackKeyType(type: NotificationType): boolean {
@@ -70,25 +70,28 @@ export class SlackNotificationsService {
     message: string,
     data?: Record<string, any>,
   ): Record<string, any> {
-    const emoji = TYPE_EMOJI[type] ?? '📬';
+    const emoji = TYPE_EMOJI[type] ?? "📬";
     const label = TYPE_LABELS[type] ?? this.humanizeType(type);
     const body = message?.trim() ? message.trim() : title;
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.stellarsorter.com');
+    const frontendUrl = this.config.get<string>(
+      "FRONTEND_URL",
+      "https://app.stellarsorter.com",
+    );
 
     const blocks: Record<string, any>[] = [
       {
-        type: 'header',
-        text: { type: 'plain_text', text: `${emoji} ${label}`, emoji: true },
+        type: "header",
+        text: { type: "plain_text", text: `${emoji} ${label}`, emoji: true },
       },
       {
-        type: 'section',
-        text: { type: 'mrkdwn', text: this.escape(body) },
+        type: "section",
+        text: { type: "mrkdwn", text: this.escape(body) },
       },
       {
-        type: 'context',
+        type: "context",
         elements: [
           {
-            type: 'mrkdwn',
+            type: "mrkdwn",
             text: `StellarSorter · <${frontendUrl}|View in StellarSorter>`,
           },
         ],
@@ -99,8 +102,8 @@ export class SlackNotificationsService {
     const contextLine = this.buildContextLine(data);
     if (contextLine) {
       blocks.splice(2, 0, {
-        type: 'section',
-        text: { type: 'mrkdwn', text: contextLine },
+        type: "section",
+        text: { type: "mrkdwn", text: contextLine },
       });
     }
 
@@ -121,7 +124,7 @@ export class SlackNotificationsService {
     const payload = this.buildPayload(type, title, message, data);
     await axios.post(webhookUrl, payload, {
       timeout: 10_000,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
     this.logger.log(`Slack notification sent for ${type} to ${webhookUrl}`);
   }
@@ -129,24 +132,25 @@ export class SlackNotificationsService {
   private buildContextLine(data?: Record<string, any>): string | null {
     if (!data) return null;
     const parts: string[] = [];
-    if (data.engagementTitle) parts.push(`*${this.escape(String(data.engagementTitle))}*`);
+    if (data.engagementTitle)
+      parts.push(`*${this.escape(String(data.engagementTitle))}*`);
     if (data.milestoneIndex !== undefined && data.milestoneIndex !== null) {
       parts.push(`milestone *${data.milestoneIndex}*`);
     }
     if (data.amount) parts.push(this.escape(String(data.amount)));
     if (data.reason) parts.push(`reason: ${this.escape(String(data.reason))}`);
-    return parts.length > 0 ? parts.join(' · ') : null;
+    return parts.length > 0 ? parts.join(" · ") : null;
   }
 
   private humanizeType(type: NotificationType): string {
-    return type.toLowerCase().replace(/_/g, ' ');
+    return type.toLowerCase().replace(/_/g, " ");
   }
 
   /** Escape Slack mrkdwn special characters so user content stays readable. */
   private escape(value: string): string {
     return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 }

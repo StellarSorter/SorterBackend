@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma, SecurityEventAction } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { ListSecurityEventsDto } from './dto/list-security-events.dto';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { Prisma, SecurityEventAction } from "@prisma/client";
+import { PrismaService } from "../prisma/prisma.service";
+import { ListSecurityEventsDto } from "./dto/list-security-events.dto";
 
 export interface LogSecurityEventInput {
   userId?: string | null;
@@ -49,7 +49,7 @@ export class SecurityEventsService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.securityEvent.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -62,7 +62,9 @@ export class SecurityEventsService {
   private parseDate(value: string): Date {
     const date = new Date(value);
     if (isNaN(date.getTime())) {
-      throw new BadRequestException('Invalid date format. Use ISO 8601 (e.g. 2026-01-01).');
+      throw new BadRequestException(
+        "Invalid date format. Use ISO 8601 (e.g. 2026-01-01).",
+      );
     }
     return date;
   }

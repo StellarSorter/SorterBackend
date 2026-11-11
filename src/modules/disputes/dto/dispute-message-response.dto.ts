@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class DisputeMessageAuthorDto {
   @ApiProperty() id: string;
@@ -15,7 +15,8 @@ export class DisputeMessageResponseDto {
   @ApiPropertyOptional() attachmentSize?: number | null;
   @ApiPropertyOptional() attachmentMimeType?: string | null;
   /** Malware scan state of the attachment (#471); null when no attachment. */
-  @ApiPropertyOptional({ enum: ['PENDING', 'CLEAN', 'INFECTED'] }) attachmentScanStatus?: string | null;
+  @ApiPropertyOptional({ enum: ["PENDING", "CLEAN", "INFECTED"] })
+  attachmentScanStatus?: string | null;
   /** Pre-signed S3 URL valid for 1 hour; null when no attachment or not yet scanned CLEAN. */
   @ApiPropertyOptional() attachmentUrl?: string | null;
   @ApiProperty() createdAt: Date;

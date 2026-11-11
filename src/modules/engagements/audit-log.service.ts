@@ -1,9 +1,13 @@
 // src/modules/engagements/audit-log.service.ts
 
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { Prisma, EngagementAuditLog, UserRole } from '@prisma/client';
-import { AuditLogEntryDto } from './dto/audit-log-response.dto';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { Prisma, EngagementAuditLog, UserRole } from "@prisma/client";
+import { AuditLogEntryDto } from "./dto/audit-log-response.dto";
 
 @Injectable()
 export class AuditLogService {
@@ -27,10 +31,10 @@ export class AuditLogService {
     return tx.engagementAuditLog.create({
       data: {
         engagementId: params.engagementId,
-        fromStatus:   params.fromStatus,
-        toStatus:     params.toStatus,
-        changedBy:    params.changedBy,
-        reason:       params.reason ?? null,
+        fromStatus: params.fromStatus,
+        toStatus: params.toStatus,
+        changedBy: params.changedBy,
+        reason: params.reason ?? null,
       },
     });
   }
@@ -72,22 +76,22 @@ export class AuditLogService {
     const isAdmin = requestingUserRole === UserRole.ADMIN;
 
     if (!isParty && !isAdmin) {
-      throw new ForbiddenException('You do not have access to this audit log');
+      throw new ForbiddenException("You do not have access to this audit log");
     }
 
     const logs = await this.prisma.engagementAuditLog.findMany({
-      where:   { engagementId },
-      orderBy: { createdAt: 'desc' },
+      where: { engagementId },
+      orderBy: { createdAt: "desc" },
     });
 
     return logs.map((log) => ({
-      id:           log.id,
+      id: log.id,
       engagementId: log.engagementId,
-      fromStatus:   log.fromStatus,
-      toStatus:     log.toStatus,
-      changedBy:    log.changedBy,
-      reason:       log.reason,
-      createdAt:    log.createdAt,
+      fromStatus: log.fromStatus,
+      toStatus: log.toStatus,
+      changedBy: log.changedBy,
+      reason: log.reason,
+      createdAt: log.createdAt,
     }));
   }
 }

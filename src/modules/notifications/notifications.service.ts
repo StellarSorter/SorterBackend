@@ -175,9 +175,14 @@ export class NotificationsService {
       // Browser web push (#392): respects the per-type pushEnabled preference.
       const pushEnabled = pref ? pref.pushEnabled : true;
       if (pushEnabled && this.webPush) {
-        this.webPush.sendNotification(notification).catch((err) =>
-          this.logger.error(`Web push failed for ${notification.id}`, err?.message),
-        );
+        this.webPush
+          .sendNotification(notification)
+          .catch((err) =>
+            this.logger.error(
+              `Web push failed for ${notification.id}`,
+              err?.message,
+            ),
+          );
       }
 
       if (user.email) {

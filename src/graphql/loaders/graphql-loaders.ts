@@ -59,14 +59,17 @@ export function createGraphqlLoaders(prisma: PrismaService): GraphqlLoaders {
   return {
     users: new BatchLoader(usersByStellarAddress(prisma), options),
     companies: new BatchLoader(usersByStellarAddress(prisma), options),
-    milestonesByEngagement: new BatchLoader(async (engagementIds: readonly string[]) => {
-      const rows = await prisma.milestone.findMany({
-        where: { engagementId: { in: [...engagementIds] } },
-        orderBy: [{ engagementId: "asc" }, { milestoneIndex: "asc" }],
-      });
-      return groupByKey(engagementIds, rows, (row) => row.engagementId).map((group) =>
-        group.map(serializeMilestone),
-      );
-    }, options),
+    milestonesByEngagement: new BatchLoader(
+      async (engagementIds: readonly string[]) => {
+        const rows = await prisma.milestone.findMany({
+          where: { engagementId: { in: [...engagementIds] } },
+          orderBy: [{ engagementId: "asc" }, { milestoneIndex: "asc" }],
+        });
+        return groupByKey(engagementIds, rows, (row) => row.engagementId).map(
+          (group) => group.map(serializeMilestone),
+        );
+      },
+      options,
+    ),
   };
 }

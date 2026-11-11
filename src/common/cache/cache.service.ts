@@ -1,5 +1,10 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 interface CacheEntry<T = unknown> {
   value: T;
@@ -29,24 +34,29 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly config: ConfigService) {}
 
   async onModuleInit() {
-    const redisUrl = this.config.get<string>('REDIS_URL');
+    const redisUrl = this.config.get<string>("REDIS_URL");
 
     if (redisUrl) {
       try {
         // Dynamic require so the app starts without ioredis installed
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const Redis = require('ioredis');
-        this.redisClient = new Redis(redisUrl, { lazyConnect: true, maxRetriesPerRequest: 3 });
+        const Redis = require("ioredis");
+        this.redisClient = new Redis(redisUrl, {
+          lazyConnect: true,
+          maxRetriesPerRequest: 3,
+        });
         await this.redisClient.connect();
         this.useRedis = true;
-        this.logger.log('CacheService: connected to Redis');
+        this.logger.log("CacheService: connected to Redis");
       } catch (err) {
         this.logger.warn(
           `CacheService: failed to connect to Redis (${(err as Error).message}). Falling back to in-memory store.`,
         );
       }
     } else {
-      this.logger.log('CacheService: REDIS_URL not set — using in-memory store');
+      this.logger.log(
+        "CacheService: REDIS_URL not set — using in-memory store",
+      );
     }
 
     // Periodic eviction sweep for the in-memory store (every 30 s)
@@ -88,9 +98,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     return entry.value;
   }
 
-  async set<T = unknown>(key: string, value: T, ttlSeconds: number): Promise<void> {
+  async set<T = unknown>(
+    key: string,
+    value: T,
+    ttlSeconds: number,
+  ): Promise<void> {
     if (this.useRedis) {
-      await this.redisClient.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+      await this.redisClient.set(key, JSON.stringify(value), "EX", ttlSeconds);
       return;
     }
 

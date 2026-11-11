@@ -1,8 +1,11 @@
-import { IsString, IsNotEmpty, Length } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, Length } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class EnableTotpDto {
-  @ApiProperty({ description: '6-digit TOTP code from authenticator app', example: '123456' })
+  @ApiProperty({
+    description: "6-digit TOTP code from authenticator app",
+    example: "123456",
+  })
   @IsString()
   @IsNotEmpty()
   @Length(6, 6)
@@ -10,7 +13,10 @@ export class EnableTotpDto {
 }
 
 export class DisableTotpDto {
-  @ApiProperty({ description: '6-digit TOTP code from authenticator app', example: '123456' })
+  @ApiProperty({
+    description: "6-digit TOTP code from authenticator app",
+    example: "123456",
+  })
   @IsString()
   @IsNotEmpty()
   @Length(6, 6)
@@ -19,8 +25,9 @@ export class DisableTotpDto {
 
 export class RegenerateRecoveryCodesDto {
   @ApiProperty({
-    description: '6-digit TOTP code from authenticator app (required to regenerate recovery codes)',
-    example: '123456',
+    description:
+      "6-digit TOTP code from authenticator app (required to regenerate recovery codes)",
+    example: "123456",
   })
   @IsString()
   @IsNotEmpty()
@@ -29,14 +36,17 @@ export class RegenerateRecoveryCodesDto {
 }
 
 export class TotpSecretResponseDto {
-  @ApiProperty({ description: 'Base32 encoded TOTP secret (only shown once during enrollment)' })
+  @ApiProperty({
+    description:
+      "Base32 encoded TOTP secret (only shown once during enrollment)",
+  })
   secret: string;
 
-  @ApiProperty({ description: 'otpauth:// URL for QR code generation' })
+  @ApiProperty({ description: "otpauth:// URL for QR code generation" })
   otpauthUrl: string;
 }
 
 export class TotpStatusResponseDto {
-  @ApiProperty({ description: 'Whether 2FA is enabled for the account' })
+  @ApiProperty({ description: "Whether 2FA is enabled for the account" })
   enabled: boolean;
 }

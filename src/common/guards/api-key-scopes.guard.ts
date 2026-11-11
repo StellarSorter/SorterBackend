@@ -3,9 +3,12 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ApiKeyScope, SCOPES_KEY } from '../decorators/api-key-scopes.decorator';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import {
+  ApiKeyScope,
+  SCOPES_KEY,
+} from "../decorators/api-key-scopes.decorator";
 
 /**
  * Enforces API key scopes declared via @RequireScopes().
@@ -42,7 +45,7 @@ export class ApiKeyScopesGuard implements CanActivate {
     const user = request.user;
 
     // Not authenticated via API key (e.g. JWT) — scopes don't apply.
-    if (!user || user.authType !== 'api_key') {
+    if (!user || user.authType !== "api_key") {
       return true;
     }
 
@@ -57,7 +60,7 @@ export class ApiKeyScopesGuard implements CanActivate {
     const hasScope = requiredScopes.some((s) => keyScopes.includes(s));
     if (!hasScope) {
       throw new ForbiddenException(
-        `API key lacks required scope. Required one of: ${requiredScopes.join(', ')}`,
+        `API key lacks required scope. Required one of: ${requiredScopes.join(", ")}`,
       );
     }
 

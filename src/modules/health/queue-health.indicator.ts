@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { HealthIndicatorResult } from '@nestjs/terminus';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Injectable, Logger } from "@nestjs/common";
+import { HealthIndicatorResult } from "@nestjs/terminus";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 
 /**
  * QueueHealthIndicator
@@ -20,18 +20,21 @@ import { Queue } from 'bullmq';
 export class QueueHealthIndicator {
   private readonly logger = new Logger(QueueHealthIndicator.name);
 
-  constructor(
-    @InjectQueue('email') private readonly emailQueue: Queue,
-  ) {}
+  constructor(@InjectQueue("email") private readonly emailQueue: Queue) {}
 
   async isHealthy(): Promise<HealthIndicatorResult> {
     try {
       // Access the underlying ioredis client and send a PING
-      const client = await this.emailQueue.client as any;
+      const client = (await this.emailQueue.client) as any;
       const pong = await client.ping();
 
-      if (pong !== 'PONG') {
-        return { queues: { status: 'down', message: `Unexpected Redis response: ${pong}` } };
+      if (pong !== "PONG") {
+        return {
+          queues: {
+            status: "down",
+            message: `Unexpected Redis response: ${pong}`,
+          },
+        };
       }
 
       // Surface lightweight queue counts to aid operator visibility
@@ -42,10 +45,19 @@ export class QueueHealthIndicator {
         this.emailQueue.getFailedCount(),
       ]);
 
-      return { queues: { status: 'up', redis: 'connected', waiting, active, delayed, failed } };
+      return {
+        queues: {
+          status: "up",
+          redis: "connected",
+          waiting,
+          active,
+          delayed,
+          failed,
+        },
+      };
     } catch (error) {
-      this.logger.error('Queue health check failed', error.message);
-      return { queues: { status: 'down', message: error.message } };
+      this.logger.error("Queue health check failed", error.message);
+      return { queues: { status: "down", message: error.message } };
     }
   }
 }

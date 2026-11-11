@@ -6,7 +6,7 @@
  * Resolution order for a value: admin override in `system_config` → the
  * environment variable `envKey` → `defaultValue`.
  */
-export type SystemConfigType = 'integer' | 'boolean' | 'string' | 'stroops';
+export type SystemConfigType = "integer" | "boolean" | "string" | "stroops";
 
 export type SystemConfigValue = number | boolean | string;
 
@@ -27,62 +27,69 @@ export interface SystemConfigDefinition {
 
 export const SYSTEM_CONFIG_DEFINITIONS: readonly SystemConfigDefinition[] = [
   {
-    key: 'disputes.slaAssignmentHours',
-    type: 'integer',
-    description: 'Hours an admin has to assign an arbiter before the dispute is escalated',
-    envKey: 'DISPUTE_SLA_ASSIGNMENT_HOURS',
+    key: "disputes.slaAssignmentHours",
+    type: "integer",
+    description:
+      "Hours an admin has to assign an arbiter before the dispute is escalated",
+    envKey: "DISPUTE_SLA_ASSIGNMENT_HOURS",
     defaultValue: 24,
     min: 1,
     max: 720,
   },
   {
-    key: 'disputes.slaReviewHours',
-    type: 'integer',
-    description: 'Hours the arbiter has to decide a dispute',
-    envKey: 'DISPUTE_SLA_REVIEW_HOURS',
+    key: "disputes.slaReviewHours",
+    type: "integer",
+    description: "Hours the arbiter has to decide a dispute",
+    envKey: "DISPUTE_SLA_REVIEW_HOURS",
     defaultValue: 72,
     min: 1,
     max: 720,
   },
   {
-    key: 'disputes.slaAppealHours',
-    type: 'integer',
-    description: 'Hours the appeal arbiter has to decide an appeal',
-    envKey: 'DISPUTE_SLA_APPEAL_HOURS',
+    key: "disputes.slaAppealHours",
+    type: "integer",
+    description: "Hours the appeal arbiter has to decide an appeal",
+    envKey: "DISPUTE_SLA_APPEAL_HOURS",
     defaultValue: 72,
     min: 1,
     max: 720,
   },
   {
-    key: 'disputes.appealWindowHours',
-    type: 'integer',
-    description: 'Hours after a decision during which either party may appeal (0 settles immediately)',
-    envKey: 'DISPUTE_APPEAL_WINDOW_HOURS',
+    key: "disputes.appealWindowHours",
+    type: "integer",
+    description:
+      "Hours after a decision during which either party may appeal (0 settles immediately)",
+    envKey: "DISPUTE_APPEAL_WINDOW_HOURS",
     defaultValue: 72,
     min: 0,
     max: 720,
   },
   {
-    key: 'milestones.placementReminderDays',
-    type: 'integer',
-    description: 'Days before a PLACEMENT milestone due date to remind the recruiter (0 disables)',
-    envKey: 'PLACEMENT_MILESTONE_REMINDER_DAYS',
+    key: "milestones.placementReminderDays",
+    type: "integer",
+    description:
+      "Days before a PLACEMENT milestone due date to remind the recruiter (0 disables)",
+    envKey: "PLACEMENT_MILESTONE_REMINDER_DAYS",
     defaultValue: 7,
     min: 0,
     max: 365,
   },
   {
-    key: 'stellar.balanceAlertThresholdStroops',
-    type: 'stroops',
-    description: 'Alert admins when the backend Stellar account balance drops below this many stroops',
-    envKey: 'STELLAR_BALANCE_ALERT_THRESHOLD_STROOPS',
-    defaultValue: '10000000',
-    min: '0',
-    max: '1000000000000000',
+    key: "stellar.balanceAlertThresholdStroops",
+    type: "stroops",
+    description:
+      "Alert admins when the backend Stellar account balance drops below this many stroops",
+    envKey: "STELLAR_BALANCE_ALERT_THRESHOLD_STROOPS",
+    defaultValue: "10000000",
+    min: "0",
+    max: "1000000000000000",
   },
 ];
 
-export const SYSTEM_CONFIG_DEFINITION_MAP: ReadonlyMap<string, SystemConfigDefinition> = new Map(
+export const SYSTEM_CONFIG_DEFINITION_MAP: ReadonlyMap<
+  string,
+  SystemConfigDefinition
+> = new Map(
   SYSTEM_CONFIG_DEFINITIONS.map((definition) => [definition.key, definition]),
 );
 
@@ -97,50 +104,70 @@ export function validateSystemConfigValue(
   value: unknown,
 ): SystemConfigValue {
   switch (definition.type) {
-    case 'integer': {
-      if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
-        throw new SystemConfigValidationError(`${definition.key} must be an integer`);
+    case "integer": {
+      if (typeof value !== "number" || !Number.isSafeInteger(value)) {
+        throw new SystemConfigValidationError(
+          `${definition.key} must be an integer`,
+        );
       }
       if (definition.min !== undefined && value < Number(definition.min)) {
-        throw new SystemConfigValidationError(`${definition.key} must be >= ${definition.min}`);
+        throw new SystemConfigValidationError(
+          `${definition.key} must be >= ${definition.min}`,
+        );
       }
       if (definition.max !== undefined && value > Number(definition.max)) {
-        throw new SystemConfigValidationError(`${definition.key} must be <= ${definition.max}`);
+        throw new SystemConfigValidationError(
+          `${definition.key} must be <= ${definition.max}`,
+        );
       }
       return value;
     }
-    case 'stroops': {
-      const text = typeof value === 'number' && Number.isSafeInteger(value) ? String(value) : value;
-      if (typeof text !== 'string' || !/^(0|[1-9]\d{0,18})$/.test(text)) {
+    case "stroops": {
+      const text =
+        typeof value === "number" && Number.isSafeInteger(value)
+          ? String(value)
+          : value;
+      if (typeof text !== "string" || !/^(0|[1-9]\d{0,18})$/.test(text)) {
         throw new SystemConfigValidationError(
           `${definition.key} must be a non-negative integer number of stroops (string)`,
         );
       }
       const amount = BigInt(text);
       if (definition.min !== undefined && amount < BigInt(definition.min)) {
-        throw new SystemConfigValidationError(`${definition.key} must be >= ${definition.min}`);
+        throw new SystemConfigValidationError(
+          `${definition.key} must be >= ${definition.min}`,
+        );
       }
       if (definition.max !== undefined && amount > BigInt(definition.max)) {
-        throw new SystemConfigValidationError(`${definition.key} must be <= ${definition.max}`);
+        throw new SystemConfigValidationError(
+          `${definition.key} must be <= ${definition.max}`,
+        );
       }
       return text;
     }
-    case 'boolean': {
-      if (typeof value !== 'boolean') {
-        throw new SystemConfigValidationError(`${definition.key} must be true or false`);
+    case "boolean": {
+      if (typeof value !== "boolean") {
+        throw new SystemConfigValidationError(
+          `${definition.key} must be true or false`,
+        );
       }
       return value;
     }
-    case 'string': {
-      if (typeof value !== 'string') {
-        throw new SystemConfigValidationError(`${definition.key} must be a string`);
+    case "string": {
+      if (typeof value !== "string") {
+        throw new SystemConfigValidationError(
+          `${definition.key} must be a string`,
+        );
       }
       if (definition.allowed && !definition.allowed.includes(value)) {
         throw new SystemConfigValidationError(
-          `${definition.key} must be one of: ${definition.allowed.join(', ')}`,
+          `${definition.key} must be one of: ${definition.allowed.join(", ")}`,
         );
       }
-      if (definition.maxLength !== undefined && value.length > definition.maxLength) {
+      if (
+        definition.maxLength !== undefined &&
+        value.length > definition.maxLength
+      ) {
         throw new SystemConfigValidationError(
           `${definition.key} must be at most ${definition.maxLength} characters`,
         );
@@ -164,14 +191,14 @@ export function parseSystemConfigValue(
   definition: SystemConfigDefinition,
   raw: string | number | boolean | undefined | null,
 ): SystemConfigValue | undefined {
-  if (raw === undefined || raw === null || raw === '') return undefined;
+  if (raw === undefined || raw === null || raw === "") return undefined;
   const text = String(raw).trim();
   let candidate: unknown = text;
-  if (definition.type === 'integer') candidate = Number(text);
-  if (definition.type === 'boolean') {
-    candidate = ['true', '1', 'yes'].includes(text.toLowerCase())
+  if (definition.type === "integer") candidate = Number(text);
+  if (definition.type === "boolean") {
+    candidate = ["true", "1", "yes"].includes(text.toLowerCase())
       ? true
-      : ['false', '0', 'no'].includes(text.toLowerCase())
+      : ["false", "0", "no"].includes(text.toLowerCase())
         ? false
         : text;
   }

@@ -142,7 +142,8 @@ export class WebhookProcessor extends WorkerHost {
           attempts: result.attempts,
           responseCode: result.responseCode ?? null,
           errorMessage: result.errorMessage,
-          status: result.status as import('@prisma/client').WebhookDeliveryStatus,
+          status:
+            result.status as import("@prisma/client").WebhookDeliveryStatus,
         },
       });
     } catch (error) {

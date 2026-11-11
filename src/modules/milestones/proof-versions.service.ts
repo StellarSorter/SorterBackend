@@ -4,11 +4,16 @@ import {
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
-} from '@nestjs/common';
-import { MilestoneStatus, NotificationType, Prisma, ProofVersionStatus } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { PartyUser, requirePartyRole } from './engagement-party';
+} from "@nestjs/common";
+import {
+  MilestoneStatus,
+  NotificationType,
+  Prisma,
+  ProofVersionStatus,
+} from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { PartyUser, requirePartyRole } from "./engagement-party";
 
 export interface ProofInput {
   proofUrl?: string | null;
@@ -34,14 +39,14 @@ export class ProofVersionsService {
   latest(milestoneId: string) {
     return this.prisma.milestoneProofVersion.findFirst({
       where: { milestoneId },
-      orderBy: { versionNumber: 'desc' },
+      orderBy: { versionNumber: "desc" },
     });
   }
 
   history(milestoneId: string) {
     return this.prisma.milestoneProofVersion.findMany({
       where: { milestoneId },
-      orderBy: { versionNumber: 'desc' },
+      orderBy: { versionNumber: "desc" },
     });
   }
 
@@ -75,7 +80,11 @@ export class ProofVersionsService {
       });
     } catch (error) {
       // Two submissions raced for the same version number — re-read and try once more.
-      if (retry && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (
+        retry &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
         return this.recordVersion(milestoneId, input, false);
       }
       throw error;
@@ -83,26 +92,51 @@ export class ProofVersionsService {
   }
 
   /** POST /engagements/:id/milestones/:index/proof — recruiter submits or resubmits proof. */
-  async submitProof(engagementId: string, milestoneIndex: number, user: PartyUser, input: ProofInput) {
-    const { milestone, engagement } = await this.load(engagementId, milestoneIndex);
-    requirePartyRole(engagement, user, ['RECRUITER'], 'Only the recruiter can submit proof');
+  async submitProof(
+    engagementId: string,
+    milestoneIndex: number,
+    user: PartyUser,
+    input: ProofInput,
+  ) {
+    const { milestone, engagement } = await this.load(
+      engagementId,
+      milestoneIndex,
+    );
+    requirePartyRole(
+      engagement,
+      user,
+      ["RECRUITER"],
+      "Only the recruiter can submit proof",
+    );
     if (!input.proofUrl && !input.content && !input.proofHash) {
-      throw new BadRequestException('Provide at least one of proofUrl, content or proofHash.');
+      throw new BadRequestException(
+        "Provide at least one of proofUrl, content or proofHash.",
+      );
     }
 
     if (milestone.status !== MilestoneStatus.PENDING) {
       throw new UnprocessableEntityException(
-        'Proof can only be submitted on a PENDING milestone (new, or after the previous proof was rejected).',
+        "Proof can only be submitted on a PENDING milestone (new, or after the previous proof was rejected).",
       );
     }
 
     // A version left pending on a PENDING milestone (e.g. after an admin status
     // reset) is superseded rather than silently reused.
     await this.prisma.milestoneProofVersion.updateMany({
-      where: { milestoneId: milestone.id, status: ProofVersionStatus.SUBMITTED },
-      data: { status: ProofVersionStatus.REJECTED, reviewedAt: new Date(), rejectionReason: 'Superseded by a new submission' },
+      where: {
+        milestoneId: milestone.id,
+        status: ProofVersionStatus.SUBMITTED,
+      },
+      data: {
+        status: ProofVersionStatus.REJECTED,
+        reviewedAt: new Date(),
+        rejectionReason: "Superseded by a new submission",
+      },
     });
-    const version = await this.recordVersion(milestone.id, { ...input, submittedById: user.id });
+    const version = await this.recordVersion(milestone.id, {
+      ...input,
+      submittedById: user.id,
+    });
     const updated = await this.prisma.milestone.update({
       where: { id: milestone.id },
       data: {
@@ -114,7 +148,9 @@ export class ProofVersionsService {
     await this.notifications.notifyUser(
       engagement.companyAddress,
       NotificationType.PROOF_SUBMITTED,
-      version.versionNumber > 1 ? 'Proof resubmitted — action required' : 'Proof submitted — action required',
+      version.versionNumber > 1
+        ? "Proof resubmitted — action required"
+        : "Proof submitted — action required",
       `Version ${version.versionNumber} of the proof for milestone ${milestoneIndex} on engagement ` +
         `${engagementId} is ready for review.`,
       { engagementId, milestoneIndex, versionNumber: version.versionNumber },
@@ -131,39 +167,74 @@ export class ProofVersionsService {
     reason: string,
     versionNumber?: number,
   ) {
-    const { milestone, engagement } = await this.load(engagementId, milestoneIndex);
-    requirePartyRole(engagement, user, ['COMPANY'], 'Only the company can reject proof');
+    const { milestone, engagement } = await this.load(
+      engagementId,
+      milestoneIndex,
+    );
+    requirePartyRole(
+      engagement,
+      user,
+      ["COMPANY"],
+      "Only the company can reject proof",
+    );
 
     if (milestone.status !== MilestoneStatus.PROOF_SUBMITTED) {
-      throw new UnprocessableEntityException('Only submitted proof can be rejected.');
+      throw new UnprocessableEntityException(
+        "Only submitted proof can be rejected.",
+      );
     }
     const latest = await this.assertReviewable(milestone.id, versionNumber);
-    if (!latest) throw new UnprocessableEntityException('This milestone has no versioned proof to reject.');
+    if (!latest)
+      throw new UnprocessableEntityException(
+        "This milestone has no versioned proof to reject.",
+      );
 
     const now = new Date();
     const { count } = await this.prisma.milestoneProofVersion.updateMany({
       where: { id: latest.id, status: ProofVersionStatus.SUBMITTED },
-      data: { status: ProofVersionStatus.REJECTED, reviewedById: user.id ?? null, reviewedAt: now, rejectionReason: reason },
+      data: {
+        status: ProofVersionStatus.REJECTED,
+        reviewedById: user.id ?? null,
+        reviewedAt: now,
+        rejectionReason: reason,
+      },
     });
-    if (!count) throw new ConflictException('This proof version has already been reviewed.');
+    if (!count)
+      throw new ConflictException(
+        "This proof version has already been reviewed.",
+      );
 
     const updated = await this.prisma.milestone.update({
       where: { id: milestone.id },
       data: { status: MilestoneStatus.PENDING },
     });
     // Approvals were given for the rejected proof; the next version starts fresh.
-    await this.prisma.milestoneApproval.deleteMany({ where: { milestoneId: milestone.id } });
+    await this.prisma.milestoneApproval.deleteMany({
+      where: { milestoneId: milestone.id },
+    });
 
     await this.notifications.notifyUser(
       engagement.recruiterAddress,
       NotificationType.PROOF_REJECTED,
-      'Proof rejected',
+      "Proof rejected",
       `Version ${latest.versionNumber} of the proof for milestone ${milestoneIndex} on engagement ` +
         `${engagementId} was rejected: ${reason}. You can submit a new version.`,
-      { engagementId, milestoneIndex, versionNumber: latest.versionNumber, reason },
+      {
+        engagementId,
+        milestoneIndex,
+        versionNumber: latest.versionNumber,
+        reason,
+      },
     );
 
-    return { ...updated, proofVersion: { ...latest, status: ProofVersionStatus.REJECTED, rejectionReason: reason } };
+    return {
+      ...updated,
+      proofVersion: {
+        ...latest,
+        status: ProofVersionStatus.REJECTED,
+        rejectionReason: reason,
+      },
+    };
   }
 
   /**
@@ -174,7 +245,8 @@ export class ProofVersionsService {
   async assertReviewable(milestoneId: string, versionNumber?: number) {
     const latest = await this.latest(milestoneId);
     if (!latest) {
-      if (versionNumber !== undefined) throw new ConflictException('This milestone has no proof versions.');
+      if (versionNumber !== undefined)
+        throw new ConflictException("This milestone has no proof versions.");
       return null;
     }
     if (versionNumber !== undefined && versionNumber !== latest.versionNumber) {
@@ -183,7 +255,9 @@ export class ProofVersionsService {
       );
     }
     if (latest.status !== ProofVersionStatus.SUBMITTED) {
-      throw new ConflictException(`Proof version ${latest.versionNumber} has already been ${latest.status.toLowerCase()}.`);
+      throw new ConflictException(
+        `Proof version ${latest.versionNumber} has already been ${latest.status.toLowerCase()}.`,
+      );
     }
     return latest;
   }
@@ -194,7 +268,11 @@ export class ProofVersionsService {
     if (!latest || latest.status !== ProofVersionStatus.SUBMITTED) return null;
     return this.prisma.milestoneProofVersion.update({
       where: { id: latest.id },
-      data: { status: ProofVersionStatus.APPROVED, reviewedById, reviewedAt: new Date() },
+      data: {
+        status: ProofVersionStatus.APPROVED,
+        reviewedById,
+        reviewedAt: new Date(),
+      },
     });
   }
 
@@ -203,7 +281,10 @@ export class ProofVersionsService {
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
       include: { engagement: true },
     });
-    if (!milestone) throw new NotFoundException(`Milestone ${milestoneIndex} not found on engagement ${engagementId}`);
+    if (!milestone)
+      throw new NotFoundException(
+        `Milestone ${milestoneIndex} not found on engagement ${engagementId}`,
+      );
     const { engagement, ...rest } = milestone;
     return { milestone: rest, engagement };
   }

@@ -1,5 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
 /**
  * EngagementNotesService — manages internal notes (comments) on engagements (#443).
@@ -23,7 +27,8 @@ export class EngagementNotesService {
     const engagement = await this.prisma.engagement.findUnique({
       where: { id: engagementId },
     });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
 
     this.checkParticipant(engagement, user);
 
@@ -43,13 +48,14 @@ export class EngagementNotesService {
     const engagement = await this.prisma.engagement.findUnique({
       where: { id: engagementId },
     });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
 
     this.checkParticipant(engagement, user);
 
     return this.prisma.engagementNote.findMany({
       where: { engagementId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
   }
 
@@ -58,17 +64,23 @@ export class EngagementNotesService {
    * Throws ForbiddenException if the check fails.
    */
   checkParticipant(
-    engagement: { companyAddress: string; recruiterAddress: string; arbiterAddress: string },
+    engagement: {
+      companyAddress: string;
+      recruiterAddress: string;
+      arbiterAddress: string;
+    },
     user: { stellarAddress?: string; role: string },
   ): void {
-    if (user.role === 'ADMIN') return;
+    if (user.role === "ADMIN") return;
     const parties = [
       engagement.companyAddress,
       engagement.recruiterAddress,
       engagement.arbiterAddress,
     ];
     if (!user.stellarAddress || !parties.includes(user.stellarAddress)) {
-      throw new ForbiddenException('You are not a participant of this engagement');
+      throw new ForbiddenException(
+        "You are not a participant of this engagement",
+      );
     }
   }
 }

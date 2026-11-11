@@ -1,11 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 
 export class CreateDisputeMessageDto {
   @ApiProperty({
-    description: 'Message body visible to all dispute participants',
+    description: "Message body visible to all dispute participants",
     maxLength: 10_000,
-    example: 'I have attached the signed placement agreement as evidence.',
+    example: "I have attached the signed placement agreement as evidence.",
   })
   @IsString()
   @IsNotEmpty()

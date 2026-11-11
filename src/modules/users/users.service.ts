@@ -5,7 +5,11 @@ import {
   ConflictException,
   ForbiddenException,
 } from "@nestjs/common";
-import { EngagementStatus, NotificationType, SecurityEventAction } from "@prisma/client";
+import {
+  EngagementStatus,
+  NotificationType,
+  SecurityEventAction,
+} from "@prisma/client";
 import { createHmac, randomBytes } from "crypto";
 import * as nodemailer from "nodemailer";
 import { ConfigService } from "@nestjs/config";
@@ -35,12 +39,12 @@ export class UsersService {
     private readonly stellar: StellarService,
   ) {
     this.transporter = nodemailer.createTransport({
-      host: this.config.get('SMTP_HOST'),
-      port: this.config.get<number>('SMTP_PORT', 587),
+      host: this.config.get("SMTP_HOST"),
+      port: this.config.get<number>("SMTP_PORT", 587),
       secure: false,
       auth: {
-        user: this.config.get('SMTP_USER'),
-        pass: this.config.get('SMTP_PASS'),
+        user: this.config.get("SMTP_USER"),
+        pass: this.config.get("SMTP_PASS"),
       },
     });
   }
@@ -64,7 +68,13 @@ export class UsersService {
 
     const user = await this.prisma.user.findUnique({
       where: { stellarAddress },
-      select: { id: true, name: true, company: true, role: true, verifiedAt: true },
+      select: {
+        id: true,
+        name: true,
+        company: true,
+        role: true,
+        verifiedAt: true,
+      },
     });
     if (!user) throw new NotFoundException("User not found");
 
@@ -169,20 +179,26 @@ export class UsersService {
    * Step 1: Validate the new email, generate an HMAC token, store it against
    * the user and send a confirmation link to the *new* address.
    */
-  async requestEmailChange(userId: string, newEmail: string, meta?: { ip?: string; userAgent?: string }) {
+  async requestEmailChange(
+    userId: string,
+    newEmail: string,
+    meta?: { ip?: string; userAgent?: string },
+  ) {
     const email = newEmail.toLowerCase().trim();
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     if (user.email?.toLowerCase() === email) {
-      throw new BadRequestException('New email must be different from the current email');
+      throw new BadRequestException(
+        "New email must be different from the current email",
+      );
     }
 
     // Check the new address isn't already taken
     const taken = await this.prisma.user.findUnique({ where: { email } });
     if (taken) {
-      throw new ConflictException('This email address is already registered');
+      throw new ConflictException("This email address is already registered");
     }
 
     const token = this.generateEmailChangeToken(userId);
@@ -199,14 +215,21 @@ export class UsersService {
       },
     });
 
-    await this.sendEmailChangeConfirmation(email, token, user.locale ?? 'en');
+    await this.sendEmailChangeConfirmation(email, token, user.locale ?? "en");
 
     // Notify the *old* address so the user is aware
     if (user.email) {
-      await this.sendEmailChangeNotification(user.email, email, user.locale ?? 'en');
+      await this.sendEmailChangeNotification(
+        user.email,
+        email,
+        user.locale ?? "en",
+      );
     }
 
-    return { message: 'A confirmation link has been sent to your new email address. It expires in 24 hours.' };
+    return {
+      message:
+        "A confirmation link has been sent to your new email address. It expires in 24 hours.",
+    };
   }
 
   /**
@@ -219,15 +242,22 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new BadRequestException('Invalid or expired email confirmation token');
+      throw new BadRequestException(
+        "Invalid or expired email confirmation token",
+      );
     }
 
-    if (!user.emailChangeTokenExpiresAt || user.emailChangeTokenExpiresAt < new Date()) {
-      throw new BadRequestException('Email confirmation token has expired. Please request a new one.');
+    if (
+      !user.emailChangeTokenExpiresAt ||
+      user.emailChangeTokenExpiresAt < new Date()
+    ) {
+      throw new BadRequestException(
+        "Email confirmation token has expired. Please request a new one.",
+      );
     }
 
     if (!user.pendingEmail) {
-      throw new BadRequestException('No pending email change found');
+      throw new BadRequestException("No pending email change found");
     }
 
     const newEmail = user.pendingEmail;
@@ -240,10 +270,14 @@ export class UsersService {
       // Wipe the pending state so a fresh request must be made
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { pendingEmail: null, emailChangeToken: null, emailChangeTokenExpiresAt: null },
+        data: {
+          pendingEmail: null,
+          emailChangeToken: null,
+          emailChangeTokenExpiresAt: null,
+        },
       });
       throw new ConflictException(
-        'The email address is no longer available. Please request a new email change.',
+        "The email address is no longer available. Please request a new email change.",
       );
     }
 
@@ -262,22 +296,29 @@ export class UsersService {
       action: SecurityEventAction.EMAIL_VERIFICATION,
     });
 
-    return { message: 'Email address updated successfully.', email: newEmail };
+    return { message: "Email address updated successfully.", email: newEmail };
   }
 
   // ── Private email helpers ─────────────────────────────────────────────────
 
   private generateEmailChangeToken(userId: string): string {
-    const secret = this.config.get<string>('JWT_SECRET') ?? 'fallback-secret';
-    const nonce = randomBytes(24).toString('hex');
-    const hmac = createHmac('sha256', secret)
+    const secret = this.config.get<string>("JWT_SECRET") ?? "fallback-secret";
+    const nonce = randomBytes(24).toString("hex");
+    const hmac = createHmac("sha256", secret)
       .update(`${userId}:${nonce}`)
-      .digest('hex');
+      .digest("hex");
     return `${nonce}.${hmac}`;
   }
 
-  private async sendEmailChangeConfirmation(to: string, token: string, locale: string) {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:3001');
+  private async sendEmailChangeConfirmation(
+    to: string,
+    token: string,
+    locale: string,
+  ) {
+    const frontendUrl = this.config.get<string>(
+      "FRONTEND_URL",
+      "http://localhost:3001",
+    );
     // API-level confirm link — clients can redirect from here
     const confirmUrl = `${frontendUrl}/settings/email/confirm?token=${encodeURIComponent(token)}`;
 
@@ -306,14 +347,18 @@ export class UsersService {
 </html>`;
 
     await this.transporter.sendMail({
-      from: this.config.get('SMTP_FROM', 'noreply@stellarsorter.com'),
+      from: this.config.get("SMTP_FROM", "noreply@stellarsorter.com"),
       to,
-      subject: '✉️ Confirm your new email – StellarSorter',
+      subject: "✉️ Confirm your new email – StellarSorter",
       html,
     });
   }
 
-  private async sendEmailChangeNotification(oldEmail: string, newEmail: string, locale: string) {
+  private async sendEmailChangeNotification(
+    oldEmail: string,
+    newEmail: string,
+    locale: string,
+  ) {
     const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Email change notice – StellarSorter</title></head>
@@ -332,9 +377,9 @@ export class UsersService {
 </html>`;
 
     await this.transporter.sendMail({
-      from: this.config.get('SMTP_FROM', 'noreply@stellarsorter.com'),
+      from: this.config.get("SMTP_FROM", "noreply@stellarsorter.com"),
       to: oldEmail,
-      subject: '⚠️ Email change requested – StellarSorter',
+      subject: "⚠️ Email change requested – StellarSorter",
       html,
     });
   }
@@ -361,22 +406,28 @@ export class UsersService {
   ) {
     // 1. Validate new address format
     if (!this.stellar.isValidStellarAddress(newAddress)) {
-      throw new BadRequestException('Invalid Stellar address format');
+      throw new BadRequestException("Invalid Stellar address format");
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     // 2. Reject if new address is the same as the current one
     if (user.stellarAddress === newAddress) {
-      throw new BadRequestException('New Stellar address must be different from the current one');
+      throw new BadRequestException(
+        "New Stellar address must be different from the current one",
+      );
     }
 
     // 3. Verify new address signature
-    const newSigValid = this.stellar.verifySignature(newAddress, nonce, newSignature);
+    const newSigValid = this.stellar.verifySignature(
+      newAddress,
+      nonce,
+      newSignature,
+    );
     if (!newSigValid) {
       throw new BadRequestException(
-        'Invalid signature from new Stellar address. Sign the nonce with your new keypair.',
+        "Invalid signature from new Stellar address. Sign the nonce with your new keypair.",
       );
     }
 
@@ -384,13 +435,17 @@ export class UsersService {
     if (user.stellarAddress) {
       if (!oldSignature) {
         throw new BadRequestException(
-          'oldSignature is required when the account already has a linked Stellar address.',
+          "oldSignature is required when the account already has a linked Stellar address.",
         );
       }
-      const oldSigValid = this.stellar.verifySignature(user.stellarAddress, nonce, oldSignature);
+      const oldSigValid = this.stellar.verifySignature(
+        user.stellarAddress,
+        nonce,
+        oldSignature,
+      );
       if (!oldSigValid) {
         throw new BadRequestException(
-          'Invalid signature from old Stellar address. Sign the nonce with your current keypair.',
+          "Invalid signature from old Stellar address. Sign the nonce with your current keypair.",
         );
       }
     }
@@ -416,8 +471,8 @@ export class UsersService {
 
       if (activeCount > 0) {
         throw new ForbiddenException(
-          'Cannot rebind Stellar address while you have active funded engagements. ' +
-            'Complete or cancel all active engagements first.',
+          "Cannot rebind Stellar address while you have active funded engagements. " +
+            "Complete or cancel all active engagements first.",
         );
       }
     }
@@ -427,7 +482,9 @@ export class UsersService {
       where: { stellarAddress: newAddress, id: { not: userId } },
     });
     if (taken) {
-      throw new ConflictException('This Stellar address is already linked to another account');
+      throw new ConflictException(
+        "This Stellar address is already linked to another account",
+      );
     }
 
     // 7. Persist the new address
@@ -445,7 +502,7 @@ export class UsersService {
     });
 
     return {
-      message: 'Stellar address updated successfully.',
+      message: "Stellar address updated successfully.",
       stellarAddress: newAddress,
     };
   }

@@ -23,7 +23,9 @@ export function extractConnectionToken(
     connectionParams.token;
   if (typeof raw !== "string" || !raw.trim()) return null;
   const value = raw.trim();
-  return value.toLowerCase().startsWith("bearer ") ? value.slice(7).trim() : value;
+  return value.toLowerCase().startsWith("bearer ")
+    ? value.slice(7).trim()
+    : value;
 }
 
 /**

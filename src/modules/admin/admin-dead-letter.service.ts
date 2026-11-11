@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
 @Injectable()
 export class AdminDeadLetterService {
@@ -8,7 +8,7 @@ export class AdminDeadLetterService {
   async list(page = 1, limit = 20) {
     const [events, total] = await this.prisma.$transaction([
       this.prisma.deadLetterEvent.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -18,7 +18,9 @@ export class AdminDeadLetterService {
   }
 
   async requeue(id: string): Promise<{ message: string }> {
-    const dead = await this.prisma.deadLetterEvent.findUnique({ where: { id } });
+    const dead = await this.prisma.deadLetterEvent.findUnique({
+      where: { id },
+    });
     if (!dead) throw new NotFoundException(`Dead-letter event ${id} not found`);
 
     await this.prisma.$transaction(async (tx) => {

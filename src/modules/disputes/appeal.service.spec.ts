@@ -7,6 +7,7 @@ import { DisputeSlaService } from './dispute-sla.service';
 import { DisputesService } from './disputes.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DistributedLockService } from '../../common/lock/distributed-lock.service';
 
 const HOUR = 60 * 60 * 1000;
 const NOW = new Date('2026-09-27T12:00:00.000Z');
@@ -75,6 +76,7 @@ describe('AppealService', () => {
         { provide: DisputesService, useValue: disputes },
         { provide: ArbiterAssignmentService, useValue: arbiters },
         { provide: DisputeSlaService, useValue: sla },
+        { provide: DistributedLockService, useValue: { tryAcquireLock: jest.fn().mockResolvedValue('token'), releaseLock: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
     service = module.get(AppealService);

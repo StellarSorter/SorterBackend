@@ -3,6 +3,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserRole } from '@prisma/client';
 import { RecruitersService } from './recruiters.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { RecruiterReviewsService } from './recruiter-reviews.service';
 import { buildUser } from '../../../../test/factories';
 
 const makeRecruiter = (overrides: Partial<{ id: string; name: string }> = {}) => {
@@ -13,6 +14,7 @@ const makeRecruiter = (overrides: Partial<{ id: string; name: string }> = {}) =>
     stellarAddress: u.stellarAddress ?? 'GABC123',
     avatarUrl: u.avatarUrl,
     createdAt: u.createdAt,
+    averageRating: null,
   };
 };
 
@@ -36,6 +38,7 @@ describe('RecruitersService', () => {
         RecruitersService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: CACHE_MANAGER, useValue: mockCacheManager },
+        { provide: RecruiterReviewsService, useValue: { getAverageRating: jest.fn().mockResolvedValue(null), getAverageRatings: jest.fn().mockResolvedValue(new Map()) } },
       ],
     }).compile();
 

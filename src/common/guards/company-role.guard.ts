@@ -1,8 +1,13 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { CompanyRole, UserRole } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { COMPANY_ROLES_KEY } from '../decorators/company-roles.decorator';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { CompanyRole, UserRole } from "@prisma/client";
+import { PrismaService } from "../prisma/prisma.service";
+import { COMPANY_ROLES_KEY } from "../decorators/company-roles.decorator";
 
 /**
  * Guards company write endpoints by checking the user's CompanyRole.
@@ -17,10 +22,10 @@ export class CompanyRoleGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<CompanyRole[]>(COMPANY_ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const required = this.reflector.getAllAndOverride<CompanyRole[]>(
+      COMPANY_ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!required || required.length === 0) return true;
 
@@ -30,7 +35,7 @@ export class CompanyRoleGuard implements CanActivate {
     if (!user) return false;
     // Only COMPANY role users participate in company-role checks
     if (user.role !== UserRole.COMPANY) {
-      throw new ForbiddenException('Company role required');
+      throw new ForbiddenException("Company role required");
     }
 
     // Look up the user's explicit company role membership
@@ -40,11 +45,12 @@ export class CompanyRoleGuard implements CanActivate {
     });
 
     // No CompanyMember row → original single-user company → treat as OWNER
-    const companyRole: CompanyRole = membership?.companyRole ?? CompanyRole.OWNER;
+    const companyRole: CompanyRole =
+      membership?.companyRole ?? CompanyRole.OWNER;
 
     if (!required.includes(companyRole)) {
       throw new ForbiddenException(
-        `This action requires company role: ${required.join(' or ')}. Your role: ${companyRole}`,
+        `This action requires company role: ${required.join(" or ")}. Your role: ${companyRole}`,
       );
     }
 

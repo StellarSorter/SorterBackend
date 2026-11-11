@@ -1,15 +1,15 @@
-import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as Handlebars from 'handlebars';
+import { Injectable, Logger, Optional, Inject } from "@nestjs/common";
+import * as fs from "fs";
+import * as path from "path";
+import * as Handlebars from "handlebars";
 
 export type EmailTemplateDelegate = Handlebars.TemplateDelegate;
 
-const DEFAULT_LOCALE = 'en';
+const DEFAULT_LOCALE = "en";
 
 // Renders `{{#> base}}...{{/base}}` blocks inside the locale's base layout,
 // which exposes the block via `{{> @partial-block}}` (plain Handlebars).
-const BASE_FALLBACK_SOURCE = '{{#> base}}<p>{{message}}</p>{{/base}}';
+const BASE_FALLBACK_SOURCE = "{{#> base}}<p>{{message}}</p>{{/base}}";
 
 /**
  * EmailTemplateService
@@ -31,9 +31,12 @@ export class EmailTemplateService {
   private readonly templatesDir: string;
   private readonly compiledCache = new Map<string, EmailTemplateDelegate>();
   private readonly baseCache = new Map<string, EmailTemplateDelegate>();
-  private readonly baseFallback: EmailTemplateDelegate = Handlebars.compile(BASE_FALLBACK_SOURCE);
+  private readonly baseFallback: EmailTemplateDelegate =
+    Handlebars.compile(BASE_FALLBACK_SOURCE);
 
-  constructor(@Optional() @Inject('EMAIL_TEMPLATES_DIR') templatesDir?: string) {
+  constructor(
+    @Optional() @Inject("EMAIL_TEMPLATES_DIR") templatesDir?: string,
+  ) {
     this.templatesDir = templatesDir ?? this.resolveTemplatesDir();
     this.logger.log(`Email templates directory: ${this.templatesDir}`);
   }
@@ -66,11 +69,15 @@ export class EmailTemplateService {
    * The locale directory that has a variant of `templateName` (preferred
    * locale first, then English), or null when neither exists.
    */
-  private resolveLocaleDir(templateName: string, locale?: string | null): string | null {
+  private resolveLocaleDir(
+    templateName: string,
+    locale?: string | null,
+  ): string | null {
     const normalized = this.normalizeLocale(locale);
-    const candidates = normalized && normalized !== DEFAULT_LOCALE
-      ? [normalized, DEFAULT_LOCALE]
-      : [DEFAULT_LOCALE];
+    const candidates =
+      normalized && normalized !== DEFAULT_LOCALE
+        ? [normalized, DEFAULT_LOCALE]
+        : [DEFAULT_LOCALE];
 
     for (const candidate of candidates) {
       if (fs.existsSync(this.templatePath(templateName, candidate))) {
@@ -80,12 +87,18 @@ export class EmailTemplateService {
     return null;
   }
 
-  private getCompiled(templateName: string, localeDir: string): EmailTemplateDelegate {
+  private getCompiled(
+    templateName: string,
+    localeDir: string,
+  ): EmailTemplateDelegate {
     const cacheKey = `${localeDir}/${templateName}`;
     const cached = this.compiledCache.get(cacheKey);
     if (cached) return cached;
 
-    const source = fs.readFileSync(this.templatePath(templateName, localeDir), 'utf-8');
+    const source = fs.readFileSync(
+      this.templatePath(templateName, localeDir),
+      "utf-8",
+    );
     const compiled = Handlebars.compile(source);
     this.compiledCache.set(cacheKey, compiled);
     return compiled;
@@ -96,10 +109,13 @@ export class EmailTemplateService {
     if (cached) return cached;
 
     // The base layout itself falls back to English when the locale has none.
-    const baseLocale = fs.existsSync(this.templatePath('base', localeDir))
+    const baseLocale = fs.existsSync(this.templatePath("base", localeDir))
       ? localeDir
       : DEFAULT_LOCALE;
-    const source = fs.readFileSync(this.templatePath('base', baseLocale), 'utf-8');
+    const source = fs.readFileSync(
+      this.templatePath("base", baseLocale),
+      "utf-8",
+    );
     const compiled = Handlebars.compile(source);
     this.baseCache.set(localeDir, compiled);
     return compiled;
@@ -116,8 +132,8 @@ export class EmailTemplateService {
 
   private resolveTemplatesDir(): string {
     const candidates = [
-      path.join(process.cwd(), 'src', 'common', 'email', 'templates'),
-      path.join(process.cwd(), 'dist', 'common', 'email', 'templates'),
+      path.join(process.cwd(), "src", "common", "email", "templates"),
+      path.join(process.cwd(), "dist", "common", "email", "templates"),
     ];
     return candidates.find((dir) => fs.existsSync(dir)) ?? candidates[0];
   }

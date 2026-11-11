@@ -1,13 +1,28 @@
-import { Injectable, NotFoundException, Logger, UnprocessableEntityException, ForbiddenException, BadRequestException, ConflictException, Optional } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { S3Service } from '../../common/s3/s3.service';
-import { DisputeOutcome, FileScanStatus, MilestoneKind, MilestoneStatus, NotificationType } from '@prisma/client';
-import { NotificationsService } from '../notifications/notifications.service';
-import { DisputeActor, DisputesService } from '../disputes/disputes.service';
-import { BulkMilestoneItemDto } from './dto/bulk-create-milestones.dto';
-import { ProofVersionsService } from './proof-versions.service';
-import { FileScanService } from '../../common/file-scan/file-scan.service';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  UnprocessableEntityException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+  Optional,
+} from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { S3Service } from "../../common/s3/s3.service";
+import {
+  DisputeOutcome,
+  FileScanStatus,
+  MilestoneKind,
+  MilestoneStatus,
+  NotificationType,
+} from "@prisma/client";
+import { NotificationsService } from "../notifications/notifications.service";
+import { DisputeActor, DisputesService } from "../disputes/disputes.service";
+import { BulkMilestoneItemDto } from "./dto/bulk-create-milestones.dto";
+import { ProofVersionsService } from "./proof-versions.service";
+import { FileScanService } from "../../common/file-scan/file-scan.service";
 
 @Injectable()
 export class MilestonesService {
@@ -26,17 +41,20 @@ export class MilestonesService {
   async findByEngagement(engagementId: string) {
     return this.prisma.milestone.findMany({
       where: { engagementId },
-      orderBy: { milestoneIndex: 'asc' },
+      orderBy: { milestoneIndex: "asc" },
     });
   }
 
   async findByEngagementForUser(engagementId: string, user: any) {
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
     this.checkPartyAccess(engagement, user);
     return this.prisma.milestone.findMany({
       where: { engagementId },
-      orderBy: { milestoneIndex: 'asc' },
+      orderBy: { milestoneIndex: "asc" },
     });
   }
 
@@ -44,46 +62,53 @@ export class MilestonesService {
     const m = await this.prisma.milestone.findUnique({
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
     });
-    if (!m) throw new NotFoundException(
-      `Milestone ${milestoneIndex} not found on engagement ${engagementId}`,
-    );
+    if (!m)
+      throw new NotFoundException(
+        `Milestone ${milestoneIndex} not found on engagement ${engagementId}`,
+      );
     return m;
   }
 
-  async findOneForUser(engagementId: string, milestoneIndex: number, user: any) {
+  async findOneForUser(
+    engagementId: string,
+    milestoneIndex: number,
+    user: any,
+  ) {
     const m = await this.prisma.milestone.findUnique({
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
-      include: { engagement: true },
     });
-    if (!m) throw new NotFoundException(
-      `Milestone ${milestoneIndex} not found on engagement ${engagementId}`,
-    );
-    this.checkPartyAccess((m as any).engagement, user);
-    const { engagement: _, ...milestone } = m as any;
-    const approvals = await this.getApprovalCount(milestone.id);
-    const proofVersions = await this.proofVersions.history(milestone.id);
-    return { ...milestone, approvals, proofVersions };
+    if (!m)
+      throw new NotFoundException(
+        `Milestone ${milestoneIndex} not found on engagement ${engagementId}`,
+      );
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    this.checkPartyAccess(engagement, user);
+    const approvals = await this.getApprovalCount(m.id);
+    const proofVersions = await this.proofVersions.history(m.id);
+    return { ...m, approvals, proofVersions };
   }
 
   async findById(id: string, user: any) {
-    const m = await this.prisma.milestone.findUnique({
-      where: { id },
-      include: { engagement: true },
-    });
+    const m = await this.prisma.milestone.findUnique({ where: { id } });
     if (!m) throw new NotFoundException(`Milestone ${id} not found`);
-    this.checkPartyAccess((m as any).engagement, user);
-    const { engagement: _, ...milestone } = m as any;
-    const approvals = await this.getApprovalCount(milestone.id);
-    const proofVersions = await this.proofVersions.history(milestone.id);
-    return { ...milestone, approvals, proofVersions };
+    const engagement = await this.prisma.engagement.findUnique({ where: { id: m.engagementId } });
+    this.checkPartyAccess(engagement, user);
+    const approvals = await this.getApprovalCount(m.id);
+    const proofVersions = await this.proofVersions.history(m.id);
+    return { ...m, approvals, proofVersions };
   }
 
   private checkPartyAccess(engagement: any, user: any): void {
-    if (user?.role === 'ADMIN') return;
+    if (user?.role === "ADMIN") return;
     const addr = user?.stellarAddress;
-    if (!addr) throw new ForbiddenException('Not a party to this engagement');
-    const parties = [engagement.companyAddress, engagement.recruiterAddress, engagement.arbiterAddress];
-    if (!parties.includes(addr)) throw new ForbiddenException('Not a party to this engagement');
+    if (!addr) throw new ForbiddenException("Not a party to this engagement");
+    const parties = [
+      engagement.companyAddress,
+      engagement.recruiterAddress,
+      engagement.arbiterAddress,
+    ];
+    if (!parties.includes(addr))
+      throw new ForbiddenException("Not a party to this engagement");
   }
 
   /**
@@ -92,13 +117,19 @@ export class MilestonesService {
    */
   async getRetentionTimer(engagementId: string, milestoneIndex: number) {
     const milestone = await this.findOne(engagementId, milestoneIndex);
-    const unlockable = await this.stellar.isMilestoneUnlockable(engagementId, milestoneIndex);
+    const unlockable = await this.stellar.isMilestoneUnlockable(
+      engagementId,
+      milestoneIndex,
+    );
 
     if (unlockable) {
       return { daysRemaining: 0, ledgersRemaining: 0, unlockable: true };
     }
 
-    const ledgersRemaining = await this.stellar.ledgersUntilUnlock(engagementId, milestoneIndex);
+    const ledgersRemaining = await this.stellar.ledgersUntilUnlock(
+      engagementId,
+      milestoneIndex,
+    );
     const daysRemaining = this.stellar.ledgersToDays(ledgersRemaining);
 
     return {
@@ -119,27 +150,40 @@ export class MilestonesService {
    * (enforced by @MilestonesSum100() on BulkCreateMilestonesDto — the same
    * validator used for single-call engagement creation).
    */
-  async bulkCreate(engagementId: string, items: BulkMilestoneItemDto[], user: any) {
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
-    if (!engagement) throw new NotFoundException(`Engagement ${engagementId} not found`);
+  async bulkCreate(
+    engagementId: string,
+    items: BulkMilestoneItemDto[],
+    user: any,
+  ) {
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
+    if (!engagement)
+      throw new NotFoundException(`Engagement ${engagementId} not found`);
 
-    if (user?.role !== 'ADMIN' && engagement.companyAddress !== user?.stellarAddress) {
-      throw new ForbiddenException('Only the company party may add milestones to this engagement');
+    if (
+      user?.role !== "ADMIN" &&
+      engagement.companyAddress !== user?.stellarAddress
+    ) {
+      throw new ForbiddenException(
+        "Only the company party may add milestones to this engagement",
+      );
     }
 
     const lastMilestone = await this.prisma.milestone.findFirst({
       where: { engagementId },
-      orderBy: { milestoneIndex: 'desc' },
+      orderBy: { milestoneIndex: "desc" },
     });
     const startIndex = lastMilestone ? lastMilestone.milestoneIndex + 1 : 0;
 
     const currentLedger = await this.stellar.getLatestLedger();
 
     const milestoneData = items.map((item, offset) => {
-      const isRetention = item.kind === 'RETENTION';
-      const validAfterLedger = isRetention && item.retentionDays
-        ? currentLedger + item.retentionDays * 17_280
-        : null;
+      const isRetention = item.kind === "RETENTION";
+      const validAfterLedger =
+        isRetention && item.retentionDays
+          ? currentLedger + item.retentionDays * 17_280
+          : null;
       const unlockEstimatedAt = validAfterLedger
         ? this.stellar.ledgerToDateTime(validAfterLedger, currentLedger)
         : null;
@@ -164,14 +208,20 @@ export class MilestonesService {
       }
 
       for (const m of created) {
-        if (m.kind === MilestoneKind.RETENTION && m.unlockEstimatedAt && m.validAfterLedger) {
+        if (
+          m.kind === MilestoneKind.RETENTION &&
+          m.unlockEstimatedAt &&
+          m.validAfterLedger
+        ) {
           await tx.retentionSchedule.create({
             data: {
               engagementId,
               milestoneIndex: m.milestoneIndex,
               validAfterLedger: m.validAfterLedger,
               unlockAt: m.unlockEstimatedAt,
-              notifyAt: new Date(m.unlockEstimatedAt.getTime() - 3 * 24 * 60 * 60 * 1000),
+              notifyAt: new Date(
+                m.unlockEstimatedAt.getTime() - 3 * 24 * 60 * 60 * 1000,
+              ),
             },
           });
         }
@@ -192,14 +242,16 @@ export class MilestonesService {
   async findActiveRetentionMilestones() {
     return this.prisma.milestone.findMany({
       where: {
-        kind: 'RETENTION',
+        kind: "RETENTION",
         status: MilestoneStatus.LOCKED,
       },
     });
   }
 
   async unlockRetentionOnChain(milestoneId: string): Promise<void> {
-    const milestone = await this.prisma.milestone.findUnique({ where: { id: milestoneId } });
+    const milestone = await this.prisma.milestone.findUnique({
+      where: { id: milestoneId },
+    });
     if (!milestone) return;
 
     try {
@@ -221,16 +273,23 @@ export class MilestonesService {
         data: { unlocked: true },
       });
     } catch (error) {
-      this.logger.error(`Failed executing on-chain unlock contract validation for milestone ${milestoneId}:`, error);
+      this.logger.error(
+        `Failed executing on-chain unlock contract validation for milestone ${milestoneId}:`,
+        error,
+      );
       throw error;
     }
   }
 
   async sendRetentionWarningNotification(milestoneId: string): Promise<void> {
-    const milestone = await this.prisma.milestone.findUnique({ where: { id: milestoneId } });
+    const milestone = await this.prisma.milestone.findUnique({
+      where: { id: milestoneId },
+    });
     if (!milestone) return;
 
-    this.logger.log(`[Notification Sent] RETENTION_WINDOW_APPROACHING for milestone ${milestoneId}`);
+    this.logger.log(
+      `[Notification Sent] RETENTION_WINDOW_APPROACHING for milestone ${milestoneId}`,
+    );
 
     await this.prisma.milestone.update({
       where: { id: milestoneId },
@@ -252,24 +311,37 @@ export class MilestonesService {
     return this.markConfirmed(engagementId, milestoneIndex, paymentReleased);
   }
 
-  async approveMilestone(engagementId: string, milestoneIndex: number, user: any, proofVersion?: number) {
+  async approveMilestone(
+    engagementId: string,
+    milestoneIndex: number,
+    user: any,
+    proofVersion?: number,
+  ) {
     const milestone = await this.findOne(engagementId, milestoneIndex);
     if (milestone.status !== MilestoneStatus.PROOF_SUBMITTED) {
-      throw new UnprocessableEntityException('Milestone must have proof submitted before approval.');
+      throw new UnprocessableEntityException(
+        "Milestone must have proof submitted before approval.",
+      );
     }
     // Only the latest proof version can be approved (#376)
     await this.proofVersions.assertReviewable(milestone.id, proofVersion);
 
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
-    if (!engagement) throw new NotFoundException('Engagement not found');
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
+    if (!engagement) throw new NotFoundException("Engagement not found");
 
     const requiredApprovals = engagement.requiredApprovals || 1;
 
     const existingApproval = await this.prisma.milestoneApproval.findUnique({
-      where: { milestoneId_userId: { milestoneId: milestone.id, userId: user.id } },
+      where: {
+        milestoneId_userId: { milestoneId: milestone.id, userId: user.id },
+      },
     });
     if (existingApproval) {
-      throw new BadRequestException('You have already approved this milestone.');
+      throw new BadRequestException(
+        "You have already approved this milestone.",
+      );
     }
 
     await this.prisma.milestoneApproval.create({
@@ -283,22 +355,31 @@ export class MilestonesService {
     if (approvalCount >= requiredApprovals) {
       await this.stellar.releaseMilestonePayment(engagementId, milestoneIndex);
       const paymentReleased = BigInt(milestone.amount || 0);
-      const updated = await this.markConfirmed(engagementId, milestoneIndex, paymentReleased);
+      const updated = await this.markConfirmed(
+        engagementId,
+        milestoneIndex,
+        paymentReleased,
+      );
       await this.proofVersions.markApproved(milestone.id, user.id);
 
-      const recruiterId = engagement.recruiterId || '';
+      const recruiterId = engagement.recruiterId || "";
       if (recruiterId) {
         await this.prisma.notification.create({
           data: {
             userId: recruiterId,
-            type: 'PAYMENT_RELEASED',
-            title: 'Payment Released',
+            type: "PAYMENT_RELEASED",
+            title: "Payment Released",
             message: `Payment released for milestone ${milestoneIndex} on engagement ${engagementId}.`,
           } as any,
         });
       }
 
-      return { ...updated, approvals: approvalCount, requiredApprovals, confirmed: true };
+      return {
+        ...updated,
+        approvals: approvalCount,
+        requiredApprovals,
+        confirmed: true,
+      };
     }
 
     return { approvals: approvalCount, requiredApprovals, confirmed: false };
@@ -312,23 +393,35 @@ export class MilestonesService {
   // MILESTONE STATE MACHINE TRANSITIONS (Issue #44)
   // ----------------------------------------------------------
 
-  async submitProofFlow(engagementId: string, milestoneIndex: number, proofHash: string) {
+  async submitProofFlow(
+    engagementId: string,
+    milestoneIndex: number,
+    proofHash: string,
+  ) {
     const milestone = await this.findOne(engagementId, milestoneIndex);
     if (milestone.status !== MilestoneStatus.PENDING) {
-      throw new UnprocessableEntityException('Milestone must be PENDING to submit proof.');
+      throw new UnprocessableEntityException(
+        "Milestone must be PENDING to submit proof.",
+      );
     }
 
-    const updated = await this.markProofSubmitted(engagementId, milestoneIndex, proofHash);
+    const updated = await this.markProofSubmitted(
+      engagementId,
+      milestoneIndex,
+      proofHash,
+    );
 
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
     if (engagement) {
       await this.prisma.notification.create({
         data: {
-          userId: engagement.companyId || '', 
-          type: 'PROOF_SUBMITTED',
-          title: 'Proof Submitted',
+          userId: engagement.companyId || "",
+          type: "PROOF_SUBMITTED",
+          title: "Proof Submitted",
           message: `Proof documentation has been submitted for milestone ${milestoneIndex}. Please confirm or dispute.`,
-        } as any
+        } as any,
       });
     }
 
@@ -338,18 +431,24 @@ export class MilestonesService {
   async confirmFlow(engagementId: string, milestoneIndex: number, user?: any) {
     const milestone = await this.findOne(engagementId, milestoneIndex);
     if (milestone.status !== MilestoneStatus.PROOF_SUBMITTED) {
-      throw new UnprocessableEntityException('Milestone proof must be submitted before confirmation.');
+      throw new UnprocessableEntityException(
+        "Milestone proof must be submitted before confirmation.",
+      );
     }
     await this.proofVersions.assertReviewable(milestone.id);
 
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
-    if (!engagement) throw new NotFoundException('Engagement not found');
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
+    if (!engagement) throw new NotFoundException("Engagement not found");
 
     const requiredApprovals = engagement.requiredApprovals || 1;
 
     if (user && user.id) {
       const existingApproval = await this.prisma.milestoneApproval.findUnique({
-        where: { milestoneId_userId: { milestoneId: milestone.id, userId: user.id } },
+        where: {
+          milestoneId_userId: { milestoneId: milestone.id, userId: user.id },
+        },
       });
       if (!existingApproval) {
         await this.prisma.milestoneApproval.create({
@@ -369,15 +468,19 @@ export class MilestonesService {
     await this.stellar.releaseMilestonePayment(engagementId, milestoneIndex);
 
     const paymentReleased = BigInt(milestone.amount || 0);
-    const updated = await this.markConfirmed(engagementId, milestoneIndex, paymentReleased);
+    const updated = await this.markConfirmed(
+      engagementId,
+      milestoneIndex,
+      paymentReleased,
+    );
     await this.proofVersions.markApproved(milestone.id, user?.id ?? null);
 
     if (engagement) {
       await this.prisma.notification.create({
         data: {
-          userId: engagement.recruiterId || '',
-          type: 'PAYMENT_RELEASED',
-          title: 'Payment Released',
+          userId: engagement.recruiterId || "",
+          type: "PAYMENT_RELEASED",
+          title: "Payment Released",
           message: `Payment released for milestone ${milestoneIndex} on engagement ${engagementId}.`,
         } as any,
       });
@@ -386,15 +489,21 @@ export class MilestonesService {
     return updated;
   }
 
-  async disputeFlow(engagementId: string, milestoneIndex: number, reason: string) {
+  async disputeFlow(
+    engagementId: string,
+    milestoneIndex: number,
+    reason: string,
+  ) {
     const milestone = await this.findOne(engagementId, milestoneIndex);
     if (milestone.status !== MilestoneStatus.PROOF_SUBMITTED) {
-      throw new UnprocessableEntityException('Can only dispute milestones that have proof submitted.');
+      throw new UnprocessableEntityException(
+        "Can only dispute milestones that have proof submitted.",
+      );
     }
 
     const updated = await this.prisma.milestone.update({
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
-      data: { 
+      data: {
         status: MilestoneStatus.DISPUTED,
         disputeReason: reason,
       } as any,
@@ -403,17 +512,23 @@ export class MilestonesService {
     // Opens the Dispute record, starts its SLA clock and auto-assigns an arbiter (#381, #383)
     await this.disputes.openForMilestone(milestone.id, { reason });
 
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
     if (engagement) {
-      const targets = [engagement.companyId, engagement.recruiterId, engagement.arbiterId].filter(Boolean);
+      const targets = [
+        engagement.companyId,
+        engagement.recruiterId,
+        engagement.arbiterId,
+      ].filter(Boolean);
       for (const target of targets) {
         await this.prisma.notification.create({
           data: {
             userId: target,
-            type: 'DISPUTE_RAISED',
-            title: 'Dispute Raised',
+            type: "DISPUTE_RAISED",
+            title: "Dispute Raised",
             message: `A dispute has been raised on milestone ${milestoneIndex}.`,
-          } as any
+          } as any,
         });
       }
     }
@@ -421,49 +536,75 @@ export class MilestonesService {
     return updated;
   }
 
-  async resolveDisputeFlow(engagementId: string, milestoneIndex: number, resolution: string, actor?: DisputeActor) {
+  async resolveDisputeFlow(
+    engagementId: string,
+    milestoneIndex: number,
+    resolution: string,
+    actor?: DisputeActor,
+  ) {
     const milestone = await this.findOne(engagementId, milestoneIndex);
     if (milestone.status !== MilestoneStatus.DISPUTED) {
-      throw new UnprocessableEntityException('Milestone is not under an active dispute phase.');
+      throw new UnprocessableEntityException(
+        "Milestone is not under an active dispute phase.",
+      );
     }
 
     // Tracked disputes go through the appeal window before funds move (#382);
     // only legacy disputes without a Dispute record settle immediately.
-    const dispute = await this.disputes.recordDecision(milestone.id, resolution as DisputeOutcome, actor);
+    const dispute = await this.disputes.recordDecision(
+      milestone.id,
+      resolution as DisputeOutcome,
+      actor,
+    );
     if (dispute) {
       return { ...(await this.findOne(engagementId, milestoneIndex)), dispute };
     }
 
-    const approved = resolution === 'RELEASE';
+    const approved = resolution === "RELEASE";
 
     if (!approved) {
       await this.prisma.refund.upsert({
         where: { milestoneId: milestone.id },
-        update: { amount: BigInt(milestone.amount ?? 0), status: 'PENDING', reason: 'Resolved dispute in favor of the company' },
-        create: { milestoneId: milestone.id, amount: BigInt(milestone.amount ?? 0), status: 'PENDING', reason: 'Resolved dispute in favor of the company' },
+        update: {
+          amount: BigInt(milestone.amount ?? 0),
+          status: "PENDING",
+          reason: "Resolved dispute in favor of the company",
+        },
+        create: {
+          milestoneId: milestone.id,
+          amount: BigInt(milestone.amount ?? 0),
+          status: "PENDING",
+          reason: "Resolved dispute in favor of the company",
+        },
       });
     }
 
-    await this.stellar.resolveMilestoneDispute(engagementId, milestoneIndex, approved);
-
-    const updated = await this.markResolved(
-      engagementId, 
-      milestoneIndex, 
-      approved, 
-      approved ? BigInt(milestone.amount || 0) : undefined
+    await this.stellar.resolveMilestoneDispute(
+      engagementId,
+      milestoneIndex,
+      approved,
     );
 
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    const updated = await this.markResolved(
+      engagementId,
+      milestoneIndex,
+      approved,
+      approved ? BigInt(milestone.amount || 0) : undefined,
+    );
+
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
     if (engagement) {
       const targets = [engagement.companyId, engagement.recruiterId];
       for (const target of targets) {
         await this.prisma.notification.create({
           data: {
             userId: target,
-            type: 'DISPUTE_RESOLVED',
-            title: 'Dispute Resolved',
+            type: "DISPUTE_RESOLVED",
+            title: "Dispute Resolved",
             message: `The milestone ${milestoneIndex} dispute has been resolved: ${resolution}.`,
-          } as any
+          } as any,
         });
       }
     }
@@ -472,7 +613,12 @@ export class MilestonesService {
   }
 
   async bulkResolveDisputes(disputeIds: string[], resolution: string) {
-    const results: Array<{ disputeId: string; success: boolean; data?: any; error?: string }> = [];
+    const results: Array<{
+      disputeId: string;
+      success: boolean;
+      data?: any;
+      error?: string;
+    }> = [];
 
     for (const disputeId of disputeIds) {
       try {
@@ -494,7 +640,10 @@ export class MilestonesService {
         results.push({
           disputeId,
           success: false,
-          error: error instanceof Error ? error.message : 'Unable to resolve dispute',
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unable to resolve dispute",
         });
       }
     }
@@ -503,10 +652,16 @@ export class MilestonesService {
   }
 
   // Issue #262 — Bulk milestone status update
-  private static readonly VALID_STATUS_TRANSITIONS: Record<MilestoneStatus, MilestoneStatus[]> = {
+  private static readonly VALID_STATUS_TRANSITIONS: Record<
+    MilestoneStatus,
+    MilestoneStatus[]
+  > = {
     [MilestoneStatus.LOCKED]: [MilestoneStatus.PENDING],
     [MilestoneStatus.PENDING]: [MilestoneStatus.PROOF_SUBMITTED],
-    [MilestoneStatus.PROOF_SUBMITTED]: [MilestoneStatus.CONFIRMED, MilestoneStatus.DISPUTED],
+    [MilestoneStatus.PROOF_SUBMITTED]: [
+      MilestoneStatus.CONFIRMED,
+      MilestoneStatus.DISPUTED,
+    ],
     [MilestoneStatus.DISPUTED]: [MilestoneStatus.RESOLVED],
     [MilestoneStatus.CONFIRMED]: [],
     [MilestoneStatus.RESOLVED]: [],
@@ -518,7 +673,12 @@ export class MilestonesService {
     reason: string,
     adminId: string,
   ) {
-    const results: Array<{ milestoneId: string; success: boolean; data?: any; error?: string }> = [];
+    const results: Array<{
+      milestoneId: string;
+      success: boolean;
+      data?: any;
+      error?: string;
+    }> = [];
 
     for (const milestoneId of milestoneIds) {
       try {
@@ -530,7 +690,8 @@ export class MilestonesService {
           throw new NotFoundException(`Milestone ${milestoneId} not found`);
         }
 
-        const allowedTargets = MilestonesService.VALID_STATUS_TRANSITIONS[milestone.status] ?? [];
+        const allowedTargets =
+          MilestonesService.VALID_STATUS_TRANSITIONS[milestone.status] ?? [];
         if (!allowedTargets.includes(status)) {
           throw new UnprocessableEntityException(
             `Invalid transition from ${milestone.status} to ${status}`,
@@ -549,7 +710,10 @@ export class MilestonesService {
         results.push({
           milestoneId,
           success: false,
-          error: error instanceof Error ? error.message : 'Unable to update milestone status',
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unable to update milestone status",
         });
       }
     }
@@ -568,7 +732,11 @@ export class MilestonesService {
     });
   }
 
-  async markProofSubmitted(engagementId: string, milestoneIndex: number, proofHash: string) {
+  async markProofSubmitted(
+    engagementId: string,
+    milestoneIndex: number,
+    proofHash: string,
+  ) {
     const updated = await this.prisma.milestone.update({
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
       data: { proofHash, status: MilestoneStatus.PROOF_SUBMITTED },
@@ -578,7 +746,11 @@ export class MilestonesService {
     return updated;
   }
 
-  async markConfirmed(engagementId: string, milestoneIndex: number, paymentReleased: bigint) {
+  async markConfirmed(
+    engagementId: string,
+    milestoneIndex: number,
+    paymentReleased: bigint,
+  ) {
     return this.prisma.milestone.update({
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
       data: {
@@ -608,14 +780,20 @@ export class MilestonesService {
       where: { engagementId_milestoneIndex: { engagementId, milestoneIndex } },
       data: {
         status: approved ? MilestoneStatus.RESOLVED : MilestoneStatus.PENDING,
-        ...(approved && paymentReleased ? { paymentReleased, confirmedAt: new Date() } : {}),
+        ...(approved && paymentReleased
+          ? { paymentReleased, confirmedAt: new Date() }
+          : {}),
       },
     });
     await this.disputes.markSettledOnChain(updated.id);
     return updated;
   }
 
-  async resolveDispute(engagementId: string, milestoneIndex: number, approved: boolean) {
+  async resolveDispute(
+    engagementId: string,
+    milestoneIndex: number,
+    approved: boolean,
+  ) {
     return this.markResolved(engagementId, milestoneIndex, approved);
   }
 
@@ -628,7 +806,7 @@ export class MilestonesService {
     const milestones = await this.findByEngagement(engagementId);
 
     for (const m of milestones) {
-      if (m.kind === 'PLACEMENT') {
+      if (m.kind === "PLACEMENT") {
         await this.prisma.milestone.update({
           where: { id: m.id },
           data: {
@@ -643,7 +821,7 @@ export class MilestonesService {
           where: { milestoneId: m.id },
         });
       } else if (
-        m.kind === 'RETENTION' &&
+        m.kind === "RETENTION" &&
         m.status !== MilestoneStatus.CONFIRMED &&
         m.status !== MilestoneStatus.RESOLVED
       ) {
@@ -670,18 +848,27 @@ export class MilestonesService {
         });
 
         await this.prisma.retentionSchedule.upsert({
-          where: { engagementId_milestoneIndex: { engagementId, milestoneIndex: m.milestoneIndex } },
+          where: {
+            engagementId_milestoneIndex: {
+              engagementId,
+              milestoneIndex: m.milestoneIndex,
+            },
+          },
           create: {
             engagementId,
             milestoneIndex: m.milestoneIndex,
             validAfterLedger: newValidAfterLedger!,
             unlockAt: newUnlockAt!,
-            notifyAt: new Date(newUnlockAt!.getTime() - 3 * 24 * 60 * 60 * 1000),
+            notifyAt: new Date(
+              newUnlockAt!.getTime() - 3 * 24 * 60 * 60 * 1000,
+            ),
           },
           update: {
             validAfterLedger: newValidAfterLedger!,
             unlockAt: newUnlockAt!,
-            notifyAt: new Date(newUnlockAt!.getTime() - 3 * 24 * 60 * 60 * 1000),
+            notifyAt: new Date(
+              newUnlockAt!.getTime() - 3 * 24 * 60 * 60 * 1000,
+            ),
             unlocked: false,
             notified: false,
           },
@@ -700,36 +887,57 @@ export class MilestonesService {
     reason: string,
     userId: string,
   ) {
-    const milestones = await this.prisma.milestone.findMany({ where: { engagementId } });
-    if (!milestones.length) throw new NotFoundException(`No milestones found for engagement ${engagementId}`);
+    const milestones = await this.prisma.milestone.findMany({
+      where: { engagementId },
+    });
+    if (!milestones.length)
+      throw new NotFoundException(
+        `No milestones found for engagement ${engagementId}`,
+      );
 
     // Validate none are confirmed
     for (const adj of adjustments) {
       const m = milestones.find((m) => m.milestoneIndex === adj.milestoneIndex);
-      if (!m) throw new NotFoundException(`Milestone index ${adj.milestoneIndex} not found`);
-      if (m.status === MilestoneStatus.CONFIRMED || m.status === MilestoneStatus.RESOLVED) {
-        throw new BadRequestException(`Milestone ${adj.milestoneIndex} is already confirmed and cannot be adjusted`);
+      if (!m)
+        throw new NotFoundException(
+          `Milestone index ${adj.milestoneIndex} not found`,
+        );
+      if (
+        m.status === MilestoneStatus.CONFIRMED ||
+        m.status === MilestoneStatus.RESOLVED
+      ) {
+        throw new BadRequestException(
+          `Milestone ${adj.milestoneIndex} is already confirmed and cannot be adjusted`,
+        );
       }
     }
 
     // Build the full new percent map (unchanged milestones keep their current value)
-    const percentMap = new Map(milestones.map((m) => [m.milestoneIndex, m.paymentPercent]));
-    for (const adj of adjustments) percentMap.set(adj.milestoneIndex, adj.paymentPercent);
+    const percentMap = new Map(
+      milestones.map((m) => [m.milestoneIndex, m.paymentPercent]),
+    );
+    for (const adj of adjustments)
+      percentMap.set(adj.milestoneIndex, adj.paymentPercent);
     const total = Array.from(percentMap.values()).reduce((s, v) => s + v, 0);
-    if (total !== 100) throw new BadRequestException(`Adjusted percentages sum to ${total}, must equal 100`);
+    if (total !== 100)
+      throw new BadRequestException(
+        `Adjusted percentages sum to ${total}, must equal 100`,
+      );
 
     return this.prisma.$transaction(async (tx) => {
       for (const adj of adjustments) {
-        const m = milestones.find((m) => m.milestoneIndex === adj.milestoneIndex)!;
+        const m = milestones.find(
+          (m) => m.milestoneIndex === adj.milestoneIndex,
+        )!;
         await tx.milestone.update({
           where: { id: m.id },
           data: { paymentPercent: adj.paymentPercent },
         });
         await tx.auditLog.create({
           data: {
-            entityType: 'Milestone',
+            entityType: "Milestone",
             entityId: m.id,
-            action: 'PERCENT_ADJUSTMENT',
+            action: "PERCENT_ADJUSTMENT",
             oldValue: String(m.paymentPercent),
             newValue: String(adj.paymentPercent),
             reason,
@@ -737,7 +945,10 @@ export class MilestonesService {
           },
         });
       }
-      return tx.milestone.findMany({ where: { engagementId }, orderBy: { milestoneIndex: 'asc' } });
+      return tx.milestone.findMany({
+        where: { engagementId },
+        orderBy: { milestoneIndex: "asc" },
+      });
     });
   }
 
@@ -768,7 +979,7 @@ export class MilestonesService {
     });
 
     this.logger.log(
-      `placementDueAt set to ${placementDueAt ?? 'null'} for milestone ${milestone.id}`,
+      `placementDueAt set to ${placementDueAt ?? "null"} for milestone ${milestone.id}`,
     );
     return updated;
   }
@@ -784,7 +995,9 @@ export class MilestonesService {
       include: { engagement: true },
     });
     if (!milestone) {
-      throw new NotFoundException(`Milestone ${milestoneIndex} not found on engagement ${engagementId}`);
+      throw new NotFoundException(
+        `Milestone ${milestoneIndex} not found on engagement ${engagementId}`,
+      );
     }
     this.checkPartyAccess((milestone as any).engagement, user);
 
@@ -796,7 +1009,7 @@ export class MilestonesService {
       );
     }
 
-    const key = `evidence/${engagementId}/${milestoneIndex}/${user.id}/${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const key = `evidence/${engagementId}/${milestoneIndex}/${user.id}/${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     await this.s3.uploadFile(key, file.buffer, file.mimetype);
 
     // No download URL until the malware scan marks the file CLEAN (#471).
@@ -811,9 +1024,14 @@ export class MilestonesService {
         scanStatus: FileScanStatus.PENDING,
       },
     });
-    await this.fileScan?.enqueue('evidence', evidence.id);
+    await this.fileScan?.enqueue("evidence", evidence.id);
 
-    return { id: evidence.id, fileName: evidence.fileName, scanStatus: evidence.scanStatus, s3Url: null };
+    return {
+      id: evidence.id,
+      fileName: evidence.fileName,
+      scanStatus: evidence.scanStatus,
+      s3Url: null,
+    };
   }
 
   /**
@@ -835,15 +1053,17 @@ export class MilestonesService {
       evidence.milestone.engagementId !== engagementId ||
       evidence.milestone.milestoneIndex !== milestoneIndex
     ) {
-      throw new NotFoundException(`Evidence ${evidenceId} not found on milestone ${milestoneIndex}`);
+      throw new NotFoundException(
+        `Evidence ${evidenceId} not found on milestone ${milestoneIndex}`,
+      );
     }
     this.checkPartyAccess(evidence.milestone.engagement, user);
 
     if (evidence.scanStatus !== FileScanStatus.CLEAN) {
       throw new ConflictException(
         evidence.scanStatus === FileScanStatus.INFECTED
-          ? 'This file failed malware scanning and has been quarantined'
-          : 'This file is still being scanned for malware; try again shortly',
+          ? "This file failed malware scanning and has been quarantined"
+          : "This file is still being scanned for malware; try again shortly",
       );
     }
 
@@ -883,9 +1103,9 @@ export class MilestonesService {
 
       await tx.auditLog.create({
         data: {
-          entityType: 'Milestone',
+          entityType: "Milestone",
           entityId: milestone.id,
-          action: 'STATUS_OVERRIDE',
+          action: "STATUS_OVERRIDE",
           oldValue: oldStatus,
           newValue: newStatus,
           reason,

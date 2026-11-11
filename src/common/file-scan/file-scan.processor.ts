@@ -1,8 +1,8 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { QUEUE_FILE_SCAN, FileScanJobData } from './file-scan.constants';
-import { FileScanService } from './file-scan.service';
+import { Processor, WorkerHost, OnWorkerEvent } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import { QUEUE_FILE_SCAN, FileScanJobData } from "./file-scan.constants";
+import { FileScanService } from "./file-scan.service";
 
 @Processor(QUEUE_FILE_SCAN)
 export class FileScanProcessor extends WorkerHost {
@@ -16,7 +16,7 @@ export class FileScanProcessor extends WorkerHost {
     await this.fileScan.scan(job.data);
   }
 
-  @OnWorkerEvent('failed')
+  @OnWorkerEvent("failed")
   onFailed(job: Job<FileScanJobData>, error: Error) {
     this.logger.error(
       `Malware scan of ${job.data.kind} ${job.data.id} failed (attempt ${job.attemptsMade}): ${error.message}`,

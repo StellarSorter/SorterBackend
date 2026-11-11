@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
-const MAINTENANCE_MODE_KEY = 'maintenance_mode';
+const MAINTENANCE_MODE_KEY = "maintenance_mode";
 
 @Injectable()
 export class MaintenanceModeService {
@@ -12,7 +12,7 @@ export class MaintenanceModeService {
       where: { key: MAINTENANCE_MODE_KEY },
     });
 
-    return config?.value === 'true';
+    return config?.value === "true";
   }
 
   async setEnabled(enabled: boolean) {

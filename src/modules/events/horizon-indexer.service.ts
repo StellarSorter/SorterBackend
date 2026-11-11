@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
-const CURSOR_KEY = 'horizon_last_ledger';
+const CURSOR_KEY = "horizon_last_ledger";
 const MAX_BACKOFF_ATTEMPTS = 3;
 const BASE_BACKOFF_MS = 2_000;
 
@@ -23,11 +23,14 @@ export class HorizonIndexerService {
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async indexEvents(): Promise<void> {
-    const token = await this.lock.tryAcquireLock('cron:horizon-indexer', 60_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:horizon-indexer",
+      60_000,
+    );
     if (!token) return;
     try {
       if (this.isRunning) {
-        this.logger.debug('Horizon indexer already running — skipping tick');
+        this.logger.debug("Horizon indexer already running — skipping tick");
         return;
       }
       this.isRunning = true;
@@ -37,22 +40,34 @@ export class HorizonIndexerService {
         this.isRunning = false;
       }
     } finally {
-      await this.lock.releaseLock('cron:horizon-indexer', token);
+      await this.lock.releaseLock("cron:horizon-indexer", token);
     }
   }
 
   async backfillEvents(fromLedger: number, toLedger: number): Promise<number> {
-    if (!Number.isInteger(fromLedger) || !Number.isInteger(toLedger) || fromLedger < 1 || toLedger < 1) {
-      throw new BadRequestException('Ledger values must be positive integers.');
+    if (
+      !Number.isInteger(fromLedger) ||
+      !Number.isInteger(toLedger) ||
+      fromLedger < 1 ||
+      toLedger < 1
+    ) {
+      throw new BadRequestException("Ledger values must be positive integers.");
     }
     if (fromLedger > toLedger) {
-      throw new BadRequestException('"fromLedger" must be before or equal to "toLedger".');
+      throw new BadRequestException(
+        '"fromLedger" must be before or equal to "toLedger".',
+      );
     }
     if (toLedger - fromLedger > 10000) {
-      throw new BadRequestException('Ledger range cannot exceed 10000 ledgers.');
+      throw new BadRequestException(
+        "Ledger range cannot exceed 10000 ledgers.",
+      );
     }
 
-    const events = await this.stellar.fetchContractEventsRange(fromLedger, toLedger);
+    const events = await this.stellar.fetchContractEventsRange(
+      fromLedger,
+      toLedger,
+    );
     let backfilled = 0;
     for (const event of events) {
       if (await this.persistEvent(event)) backfilled++;
@@ -73,20 +88,26 @@ export class HorizonIndexerService {
       }
 
       await this.writeCursor(maxLedger);
-      this.logger.log(`Indexed ${events.length} event(s); cursor advanced to ledger ${maxLedger}`);
+      this.logger.log(
+        `Indexed ${events.length} event(s); cursor advanced to ledger ${maxLedger}`,
+      );
     } catch (error) {
       if (this.isRateLimitError(error) && attempt < MAX_BACKOFF_ATTEMPTS) {
         const waitMs = BASE_BACKOFF_MS * Math.pow(2, attempt);
-        this.logger.warn(`Horizon rate limit hit (attempt ${attempt + 1}) — backing off ${waitMs}ms`);
+        this.logger.warn(
+          `Horizon rate limit hit (attempt ${attempt + 1}) — backing off ${waitMs}ms`,
+        );
         await this.sleep(waitMs);
         return this.runWithBackoff(attempt + 1);
       }
-      this.logger.error('Horizon indexing failed', error?.message ?? error);
+      this.logger.error("Horizon indexing failed", error?.message ?? error);
     }
   }
 
   private async readCursor(): Promise<number> {
-    const row = await this.prisma.systemConfig.findUnique({ where: { key: CURSOR_KEY } });
+    const row = await this.prisma.systemConfig.findUnique({
+      where: { key: CURSOR_KEY },
+    });
     if (row) return Number(row.value);
 
     // First run: start 10 ledgers behind the current tip
@@ -106,12 +127,14 @@ export class HorizonIndexerService {
   }
 
   private async persistEvent(event: any): Promise<boolean> {
-    const txHash = event.txHash ?? '';
+    const txHash = event.txHash ?? "";
     const eventName = this.extractEventName(event);
     const payload = event.value ? JSON.parse(JSON.stringify(event.value)) : {};
 
     // Idempotency: skip if already stored
-    const exists = await this.prisma.chainEvent.findFirst({ where: { txHash, eventName } });
+    const exists = await this.prisma.chainEvent.findFirst({
+      where: { txHash, eventName },
+    });
     if (exists) return false;
 
     const engagementId = this.extractEngagementId(payload);
@@ -132,23 +155,26 @@ export class HorizonIndexerService {
   private extractEventName(event: any): string {
     try {
       const topics: any[] = event.topic ?? [];
-      return topics[0]?.toString() ?? 'unknown';
+      return topics[0]?.toString() ?? "unknown";
     } catch {
-      return 'unknown';
+      return "unknown";
     }
   }
 
   private extractEngagementId(payload: any): string | null {
-    if (Array.isArray(payload)) return typeof payload[0] === 'string' ? payload[0] : null;
-    return typeof payload === 'string' ? payload : null;
+    if (Array.isArray(payload))
+      return typeof payload[0] === "string" ? payload[0] : null;
+    return typeof payload === "string" ? payload : null;
   }
 
   private isRateLimitError(error: any): boolean {
     return (
       error?.status === 429 ||
       error?.response?.status === 429 ||
-      String(error?.message ?? '').includes('429') ||
-      String(error?.message ?? '').toLowerCase().includes('rate limit')
+      String(error?.message ?? "").includes("429") ||
+      String(error?.message ?? "")
+        .toLowerCase()
+        .includes("rate limit")
     );
   }
 

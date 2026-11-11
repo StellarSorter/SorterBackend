@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { xdr } from '@stellar/stellar-sdk';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { CacheService } from '../../common/cache/cache.service';
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { xdr } from "@stellar/stellar-sdk";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { CacheService } from "../../common/cache/cache.service";
 
-export type TxStatus = 'pending' | 'success' | 'failed';
+export type TxStatus = "pending" | "success" | "failed";
 
 export interface TxStatusResponse {
   hash: string;
@@ -36,10 +36,14 @@ export class StellarTxStatusService {
   }
 
   async getStatus(hash: string): Promise<TxStatusResponse> {
-    const cached = await this.cache.get<TxStatusResponse>(StellarTxStatusService.cacheKey(hash));
+    const cached = await this.cache.get<TxStatusResponse>(
+      StellarTxStatusService.cacheKey(hash),
+    );
     if (cached) return { ...cached, cached: true };
 
-    const res = await fetch(`${this.stellar.getHorizonUrl()}/transactions/${hash}`);
+    const res = await fetch(
+      `${this.stellar.getHorizonUrl()}/transactions/${hash}`,
+    );
     if (res.status === 404) {
       throw new NotFoundException(`Transaction ${hash} not found on Horizon`);
     }
@@ -48,7 +52,11 @@ export class StellarTxStatusService {
     }
     const body: any = await res.json();
 
-    const status: TxStatus = !body.ledger ? 'pending' : body.successful ? 'success' : 'failed';
+    const status: TxStatus = !body.ledger
+      ? "pending"
+      : body.successful
+        ? "success"
+        : "failed";
     const decoded = StellarTxStatusService.decodeResult(body.result_xdr);
 
     const result: TxStatusResponse = {
@@ -62,22 +70,32 @@ export class StellarTxStatusService {
       cached: false,
     };
 
-    if (status !== 'pending') {
-      await this.cache.set(StellarTxStatusService.cacheKey(hash), result, FINAL_CACHE_TTL_SECONDS);
+    if (status !== "pending") {
+      await this.cache.set(
+        StellarTxStatusService.cacheKey(hash),
+        result,
+        FINAL_CACHE_TTL_SECONDS,
+      );
     }
     return result;
   }
 
   /** Decodes a base64 TransactionResult XDR into human-readable result codes. */
-  static decodeResult(resultXdr?: string): { resultCode: string | null; operationResultCodes: string[] } {
+  static decodeResult(resultXdr?: string): {
+    resultCode: string | null;
+    operationResultCodes: string[];
+  } {
     if (!resultXdr) return { resultCode: null, operationResultCodes: [] };
     try {
-      const txResult = xdr.TransactionResult.fromXDR(resultXdr, 'base64');
+      const txResult = xdr.TransactionResult.fromXDR(resultXdr, "base64");
       let inner: any = txResult.result();
       const resultCode = inner.switch().name as string;
 
       // Fee-bump wrappers nest the inner transaction result.
-      if (resultCode === 'txFeeBumpInnerSuccess' || resultCode === 'txFeeBumpInnerFailed') {
+      if (
+        resultCode === "txFeeBumpInnerSuccess" ||
+        resultCode === "txFeeBumpInnerFailed"
+      ) {
         inner = inner.innerResultPair().result().result();
       }
 

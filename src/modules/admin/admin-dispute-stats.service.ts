@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { MilestoneStatus } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { MilestoneStatus } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
-export type DisputeOutcome = 'refunded' | 'released_to_worker' | 'split';
+export type DisputeOutcome = "refunded" | "released_to_worker" | "split";
 
 interface DisputeRecord {
   milestoneId: string;
@@ -13,17 +13,25 @@ interface DisputeRecord {
 }
 
 /** Formats a duration in ms as hours (< 48h) or days. */
-export function formatDuration(ms: number | null): { ms: number | null; formatted: string | null } {
+export function formatDuration(ms: number | null): {
+  ms: number | null;
+  formatted: string | null;
+} {
   if (ms === null) return { ms: null, formatted: null };
   const hours = ms / 3_600_000;
   return {
     ms: Math.round(ms),
-    formatted: hours < 48 ? `${hours.toFixed(1)} hours` : `${(hours / 24).toFixed(1)} days`,
+    formatted:
+      hours < 48
+        ? `${hours.toFixed(1)} hours`
+        : `${(hours / 24).toFixed(1)} days`,
   };
 }
 
 function average(values: number[]): number | null {
-  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  return values.length
+    ? values.reduce((a, b) => a + b, 0) / values.length
+    : null;
 }
 
 /**
@@ -48,7 +56,7 @@ export class AdminDisputeStatsService {
         toStatus: MilestoneStatus.DISPUTED,
         ...(Object.keys(createdAt).length ? { createdAt } : {}),
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
       include: {
         milestone: {
           include: {
@@ -62,14 +70,18 @@ export class AdminDisputeStatsService {
     const milestoneIds = [...new Set(openLogs.map((l) => l.milestoneId))];
     const closeLogs = milestoneIds.length
       ? await this.prisma.milestoneAuditLog.findMany({
-          where: { milestoneId: { in: milestoneIds }, fromStatus: MilestoneStatus.DISPUTED },
-          orderBy: { createdAt: 'asc' },
+          where: {
+            milestoneId: { in: milestoneIds },
+            fromStatus: MilestoneStatus.DISPUTED,
+          },
+          orderBy: { createdAt: "asc" },
         })
       : [];
 
     const disputes: DisputeRecord[] = openLogs.map((open) => {
       const close = closeLogs.find(
-        (c) => c.milestoneId === open.milestoneId && c.createdAt >= open.createdAt,
+        (c) =>
+          c.milestoneId === open.milestoneId && c.createdAt >= open.createdAt,
       );
       const m: any = open.milestone;
       let outcome: DisputeOutcome | null = null;
@@ -77,10 +89,11 @@ export class AdminDisputeStatsService {
         const refund = Array.isArray(m?.refunds) ? m.refunds[0] : m?.refunds;
         const released = m?.paymentReleased ? BigInt(m.paymentReleased) : 0n;
         const amount = m?.amount ? BigInt(m.amount) : 0n;
-        if (refund && released > 0n) outcome = 'split';
-        else if (refund) outcome = 'refunded';
-        else if (amount > 0n && released > 0n && released < amount) outcome = 'split';
-        else outcome = 'released_to_worker';
+        if (refund && released > 0n) outcome = "split";
+        else if (refund) outcome = "refunded";
+        else if (amount > 0n && released > 0n && released < amount)
+          outcome = "split";
+        else outcome = "released_to_worker";
       }
       return {
         milestoneId: open.milestoneId,
@@ -92,15 +105,28 @@ export class AdminDisputeStatsService {
     });
 
     const resolved = disputes.filter((d) => d.resolvedAt);
-    const durations = resolved.map((d) => d.resolvedAt!.getTime() - d.openedAt.getTime());
+    const durations = resolved.map(
+      (d) => d.resolvedAt!.getTime() - d.openedAt.getTime(),
+    );
 
-    const outcomes: Record<DisputeOutcome, number> = { refunded: 0, released_to_worker: 0, split: 0 };
+    const outcomes: Record<DisputeOutcome, number> = {
+      refunded: 0,
+      released_to_worker: 0,
+      split: 0,
+    };
     for (const d of resolved) outcomes[d.outcome!]++;
 
-    const arbiterMap = new Map<string, { assigned: number; resolved: number; durations: number[] }>();
+    const arbiterMap = new Map<
+      string,
+      { assigned: number; resolved: number; durations: number[] }
+    >();
     for (const d of disputes) {
-      const key = d.arbiterId ?? 'unassigned';
-      const entry = arbiterMap.get(key) ?? { assigned: 0, resolved: 0, durations: [] };
+      const key = d.arbiterId ?? "unassigned";
+      const entry = arbiterMap.get(key) ?? {
+        assigned: 0,
+        resolved: 0,
+        durations: [],
+      };
       entry.assigned++;
       if (d.resolvedAt) {
         entry.resolved++;
@@ -119,7 +145,7 @@ export class AdminDisputeStatsService {
       averageTimeToResolution: formatDuration(average(durations)),
       outcomes,
       arbiters: [...arbiterMap.entries()].map(([arbiterId, e]) => ({
-        arbiterId: arbiterId === 'unassigned' ? null : arbiterId,
+        arbiterId: arbiterId === "unassigned" ? null : arbiterId,
         assigned: e.assigned,
         resolved: e.resolved,
         averageResolutionTime: formatDuration(average(e.durations)),

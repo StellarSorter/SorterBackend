@@ -1,4 +1,4 @@
-import { InvoiceTaxResult, formatRate } from './invoice-tax.calculator';
+import { InvoiceTaxResult, formatRate } from "./invoice-tax.calculator";
 
 export interface InvoicePdfInput {
   invoiceNumber: string;
@@ -6,7 +6,12 @@ export interface InvoicePdfInput {
   periodFrom: Date;
   periodTo: Date;
   seller: { name: string; country: string | null; taxId: string | null };
-  customer: { name: string; email: string | null; country: string | null; taxId: string | null };
+  customer: {
+    name: string;
+    email: string | null;
+    country: string | null;
+    taxId: string | null;
+  };
   lines: { description: string; amount: bigint }[];
   tax: InvoiceTaxResult;
   /** Unit label for amounts, e.g. "stroops". */
@@ -22,10 +27,10 @@ const BOTTOM = 72;
 /** Escape text for a PDF literal string and drop non-Latin-1 characters. */
 export function escapePdfText(text: string): string {
   return text
-    .replace(/[^\x20-\x7E\xA0-\xFF]/g, '?')
-    .replace(/\\/g, '\\\\')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)');
+    .replace(/[^\x20-\x7E\xA0-\xFF]/g, "?")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
 }
 
 function formatDate(date: Date): string {
@@ -46,7 +51,9 @@ export function buildInvoiceContent(input: InvoicePdfInput): string[][] {
   let y = PAGE_HEIGHT - 72;
 
   const text = (value: string, size: number, x = LEFT) =>
-    pages[pages.length - 1].push(`BT /F1 ${size} Tf ${x} ${y} Td (${escapePdfText(value)}) Tj ET`);
+    pages[pages.length - 1].push(
+      `BT /F1 ${size} Tf ${x} ${y} Td (${escapePdfText(value)}) Tj ET`,
+    );
   const right = (value: string, size: number) =>
     text(value, size, Math.round(AMOUNT_RIGHT - approxWidth(value, size)));
   const advance = (dy: number) => {
@@ -68,10 +75,13 @@ export function buildInvoiceContent(input: InvoicePdfInput): string[][] {
   advance(15);
   text(`Issued: ${formatDate(input.issuedAt)}`, 11);
   advance(15);
-  text(`Period: ${formatDate(input.periodFrom)} to ${formatDate(input.periodTo)}`, 11);
+  text(
+    `Period: ${formatDate(input.periodFrom)} to ${formatDate(input.periodTo)}`,
+    11,
+  );
   advance(24);
 
-  text('From', 11);
+  text("From", 11);
   advance(15);
   text(input.seller.name, 10);
   advance(14);
@@ -85,11 +95,11 @@ export function buildInvoiceContent(input: InvoicePdfInput): string[][] {
   }
   advance(8);
 
-  text('Bill to', 11);
+  text("Bill to", 11);
   advance(15);
   text(input.customer.name, 10);
   advance(14);
-  text(`Contact: ${input.customer.email ?? 'N/A'}`, 10);
+  text(`Contact: ${input.customer.email ?? "N/A"}`, 10);
   advance(14);
   if (input.customer.country) {
     text(`Country: ${input.customer.country}`, 10);
@@ -101,23 +111,31 @@ export function buildInvoiceContent(input: InvoicePdfInput): string[][] {
   }
   advance(10);
 
-  row('Description', `Amount (${input.unit})`, 11);
+  row("Description", `Amount (${input.unit})`, 11);
   if (input.lines.length === 0) {
-    row('No billable engagements in this period', '0');
+    row("No billable engagements in this period", "0");
   }
   for (const line of input.lines) {
     row(line.description, line.amount.toString());
   }
   advance(6);
 
-  row('Subtotal (net)', input.tax.subtotal.toString(), 11);
+  row("Subtotal (net)", input.tax.subtotal.toString(), 11);
   for (const taxLine of input.tax.taxLines) {
-    row(`${taxLine.label} on ${taxLine.base.toString()}`, taxLine.amount.toString(), 11);
+    row(
+      `${taxLine.label} on ${taxLine.base.toString()}`,
+      taxLine.amount.toString(),
+      11,
+    );
   }
   if (input.tax.taxLines.length === 0) {
-    row('VAT', 'not applicable', 11);
+    row("VAT", "not applicable", 11);
   }
-  row(`Total due (${formatRate(input.tax.rateBps)} VAT)`, input.tax.total.toString(), 12);
+  row(
+    `Total due (${formatRate(input.tax.rateBps)} VAT)`,
+    input.tax.total.toString(),
+    12,
+  );
   advance(10);
 
   for (const notice of input.tax.notices) {
@@ -134,34 +152,35 @@ export function renderPdf(pages: string[][]): Buffer {
   const objects: string[] = [];
   const pageIds = pages.map((_, i) => 4 + i * 2);
 
-  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
-  objects[2] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pages.length} >>`;
-  objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[2] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+  objects[3] =
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
   pages.forEach((commands, i) => {
     const pageId = pageIds[i];
-    const stream = commands.join('\n');
+    const stream = commands.join("\n");
     objects[pageId] =
       `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] ` +
       `/Contents ${pageId + 1} 0 R /Resources << /Font << /F1 3 0 R >> >> >>`;
     objects[pageId + 1] =
-      `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream`;
+      `<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`;
   });
 
-  let pdf = '%PDF-1.4\n';
+  let pdf = "%PDF-1.4\n";
   const offsets: number[] = [];
   for (let id = 1; id < objects.length; id++) {
-    offsets[id] = Buffer.byteLength(pdf, 'latin1');
+    offsets[id] = Buffer.byteLength(pdf, "latin1");
     pdf += `${id} 0 obj\n${objects[id]}\nendobj\n`;
   }
 
-  const xrefOffset = Buffer.byteLength(pdf, 'latin1');
+  const xrefOffset = Buffer.byteLength(pdf, "latin1");
   pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
   for (let id = 1; id < objects.length; id++) {
-    pdf += `${String(offsets[id]).padStart(10, '0')} 00000 n \n`;
+    pdf += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
   }
   pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
 
-  return Buffer.from(pdf, 'latin1');
+  return Buffer.from(pdf, "latin1");
 }
 
 export function renderInvoicePdf(input: InvoicePdfInput): Buffer {

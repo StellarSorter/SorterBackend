@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength, IsObject } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsString, IsNotEmpty, MaxLength, IsObject } from "class-validator";
 
 export class CreateSavedFilterDto {
   @ApiProperty({
-    example: 'Active Engineering Roles',
-    description: 'Human-readable preset name (unique per user)',
+    example: "Active Engineering Roles",
+    description: "Human-readable preset name (unique per user)",
   })
   @IsString()
   @IsNotEmpty()
@@ -12,8 +12,9 @@ export class CreateSavedFilterDto {
   name: string;
 
   @ApiProperty({
-    example: { status: 'ACTIVE', tags: 'engineering', search: 'senior' },
-    description: 'Filter parameters to persist — same query-string shape as GET /engagements',
+    example: { status: "ACTIVE", tags: "engineering", search: "senior" },
+    description:
+      "Filter parameters to persist — same query-string shape as GET /engagements",
   })
   @IsObject()
   filters: Record<string, any>;

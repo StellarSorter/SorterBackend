@@ -17,7 +17,9 @@ interface SubscriptionContext {
   user?: GraphqlSubscriptionUser;
 }
 
-function isActive(user?: GraphqlSubscriptionUser): user is GraphqlSubscriptionUser {
+function isActive(
+  user?: GraphqlSubscriptionUser,
+): user is GraphqlSubscriptionUser {
   return !!user && (!user.exp || user.exp * 1000 > Date.now());
 }
 
@@ -32,8 +34,13 @@ export class NotificationsResolver {
    * access token used to connect has expired.
    */
   @Subscription(() => GraphqlNotification, {
-    filter: (payload: NotificationAddedPayload, _variables, context: SubscriptionContext) =>
-      isActive(context.user) && payload[NOTIFICATION_ADDED].userId === context.user.id,
+    filter: (
+      payload: NotificationAddedPayload,
+      _variables,
+      context: SubscriptionContext,
+    ) =>
+      isActive(context.user) &&
+      payload[NOTIFICATION_ADDED].userId === context.user.id,
     resolve: (payload: NotificationAddedPayload): GraphqlNotification => {
       const notification = payload[NOTIFICATION_ADDED];
       return {
@@ -41,7 +48,8 @@ export class NotificationsResolver {
         type: notification.type,
         title: notification.title,
         message: notification.message,
-        data: notification.data == null ? null : JSON.stringify(notification.data),
+        data:
+          notification.data == null ? null : JSON.stringify(notification.data),
         read: notification.read,
         createdAt: new Date(notification.createdAt),
       };

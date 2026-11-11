@@ -18,8 +18,8 @@ import {
   Injectable,
   Logger,
   UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   Keypair,
   Networks,
@@ -29,9 +29,9 @@ import {
   Operation,
   Account,
   Memo,
-} from '@stellar/stellar-sdk';
-import { randomBytes } from 'crypto';
-import { PrismaService } from '../../common/prisma/prisma.service';
+} from "@stellar/stellar-sdk";
+import { randomBytes } from "crypto";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
 const CHALLENGE_TTL_SECONDS = 300; // 5 minutes
 
@@ -47,17 +47,20 @@ export class Sep10Service {
     private readonly config: ConfigService,
   ) {
     this.networkPassphrase =
-      this.config.get<string>('STELLAR_NETWORK') === 'mainnet'
+      this.config.get<string>("STELLAR_NETWORK") === "mainnet"
         ? Networks.PUBLIC
         : Networks.TESTNET;
 
-    this.homeDomain = this.config.get<string>('APP_DOMAIN', 'stellarsorter.com');
+    this.homeDomain = this.config.get<string>(
+      "APP_DOMAIN",
+      "stellarsorter.com",
+    );
   }
 
   private get serverKeypair(): Keypair {
     if (!this._serverKeypair) {
-      const secret = this.config.get<string>('STELLAR_SECRET_KEY');
-      if (!secret) throw new Error('STELLAR_SECRET_KEY is required for SEP-10');
+      const secret = this.config.get<string>("STELLAR_SECRET_KEY");
+      if (!secret) throw new Error("STELLAR_SECRET_KEY is required for SEP-10");
       this._serverKeypair = Keypair.fromSecret(secret);
     }
     return this._serverKeypair;
@@ -69,13 +72,15 @@ export class Sep10Service {
    * The transaction is never submitted to the network; it is only signed
    * by the client as proof of key ownership.
    */
-  async createChallenge(account: string): Promise<{ transaction: string; network_passphrase: string }> {
+  async createChallenge(
+    account: string,
+  ): Promise<{ transaction: string; network_passphrase: string }> {
     this.validateAccountId(account);
 
-    const nonce = randomBytes(32).toString('base64');
+    const nonce = randomBytes(32).toString("base64");
 
     // Build a challenge transaction: sequence 0, expires in CHALLENGE_TTL_SECONDS.
-    const serverAccount = new Account(this.serverKeypair.publicKey(), '-1');
+    const serverAccount = new Account(this.serverKeypair.publicKey(), "-1");
     const now = Math.floor(Date.now() / 1000);
 
     const tx = new TransactionBuilder(serverAccount, {
@@ -90,7 +95,7 @@ export class Sep10Service {
           source: account,
         }),
       )
-      .addMemo(Memo.text('SEP-10 challenge'))
+      .addMemo(Memo.text("SEP-10 challenge"))
       .build();
 
     // Server signs first.
@@ -116,31 +121,38 @@ export class Sep10Service {
     try {
       tx = new Transaction(signedXdr, this.networkPassphrase);
     } catch {
-      throw new BadRequestException('Invalid transaction XDR');
+      throw new BadRequestException("Invalid transaction XDR");
     }
 
     // Extract the nonce from the first manageData operation.
-    const manageDataOp = tx.operations.find((op) => op.type === 'manageData') as
-      | { type: 'manageData'; value: Buffer; source?: string }
-      | undefined;
+    const manageDataOp = tx.operations.find(
+      (op) => op.type === "manageData",
+    ) as { type: "manageData"; value: Buffer; source?: string } | undefined;
 
     if (!manageDataOp?.value) {
-      throw new BadRequestException('Challenge transaction is missing manageData operation');
+      throw new BadRequestException(
+        "Challenge transaction is missing manageData operation",
+      );
     }
 
-    const nonce = manageDataOp.value.toString('base64');
+    const nonce = manageDataOp.value.toString("base64");
 
     // Look up the pending challenge.
-    const challenge = await this.prisma.sep10Challenge.findUnique({ where: { nonce } });
-    if (!challenge) throw new UnauthorizedException('Challenge not found');
-    if (challenge.usedAt) throw new UnauthorizedException('Challenge already used');
-    if (challenge.expiresAt < new Date()) throw new UnauthorizedException('Challenge expired');
+    const challenge = await this.prisma.sep10Challenge.findUnique({
+      where: { nonce },
+    });
+    if (!challenge) throw new UnauthorizedException("Challenge not found");
+    if (challenge.usedAt)
+      throw new UnauthorizedException("Challenge already used");
+    if (challenge.expiresAt < new Date())
+      throw new UnauthorizedException("Challenge expired");
 
     // Verify the server signature is still present.
     const serverSignature = tx.signatures.find((sig) =>
       this.serverKeypair.verify(tx.hash(), sig.signature()),
     );
-    if (!serverSignature) throw new UnauthorizedException('Server signature missing');
+    if (!serverSignature)
+      throw new UnauthorizedException("Server signature missing");
 
     // Verify the client account signed the transaction.
     const clientKeypair = Keypair.fromPublicKey(challenge.account);
@@ -151,7 +163,8 @@ export class Sep10Service {
         return false;
       }
     });
-    if (!clientSigned) throw new UnauthorizedException('Client signature invalid or missing');
+    if (!clientSigned)
+      throw new UnauthorizedException("Client signature invalid or missing");
 
     // Mark challenge as consumed.
     await this.prisma.sep10Challenge.update({
@@ -159,7 +172,9 @@ export class Sep10Service {
       data: { usedAt: new Date() },
     });
 
-    this.logger.log(`SEP-10 challenge verified for account=${challenge.account}`);
+    this.logger.log(
+      `SEP-10 challenge verified for account=${challenge.account}`,
+    );
     return challenge.account;
   }
 

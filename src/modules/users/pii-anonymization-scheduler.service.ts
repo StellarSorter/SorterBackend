@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { S3Service } from '../../common/s3/s3.service';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { S3Service } from "../../common/s3/s3.service";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 /**
  * How many accounts are processed per scheduler run.
@@ -61,29 +61,39 @@ export class PiiAnonymizationSchedulerService {
   // Scheduled entry point — 04:00 UTC daily
   // -------------------------------------------------------------------------
 
-  @Cron('0 4 * * *', { timeZone: 'UTC', name: 'pii-anonymization' })
+  @Cron("0 4 * * *", { timeZone: "UTC", name: "pii-anonymization" })
   async handleScheduledAnonymization(): Promise<void> {
-    const token = await this.lock.tryAcquireLock('cron:pii-anonymization', 3_600_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:pii-anonymization",
+      3_600_000,
+    );
     if (!token) return;
     try {
       if (this.isRunning) {
-        this.logger.warn('PII anonymization job already running — skipping this tick');
+        this.logger.warn(
+          "PII anonymization job already running — skipping this tick",
+        );
         return;
       }
       this.isRunning = true;
 
-      this.logger.log('PII anonymization job started');
+      this.logger.log("PII anonymization job started");
 
       try {
         const processed = await this.anonymizeDueAccounts();
-        this.logger.log(`PII anonymization job completed — ${processed} account(s) anonymized`);
+        this.logger.log(
+          `PII anonymization job completed — ${processed} account(s) anonymized`,
+        );
       } catch (err) {
-        this.logger.error('PII anonymization job failed with an unhandled error', err);
+        this.logger.error(
+          "PII anonymization job failed with an unhandled error",
+          err,
+        );
       } finally {
         this.isRunning = false;
       }
     } finally {
-      await this.lock.releaseLock('cron:pii-anonymization', token);
+      await this.lock.releaseLock("cron:pii-anonymization", token);
     }
   }
 
@@ -96,7 +106,10 @@ export class PiiAnonymizationSchedulerService {
    * Returns the number of accounts successfully anonymized.
    */
   async anonymizeDueAccounts(): Promise<number> {
-    const windowDays = this.config.get<number>('PII_ANONYMIZATION_WINDOW_DAYS', 30);
+    const windowDays = this.config.get<number>(
+      "PII_ANONYMIZATION_WINDOW_DAYS",
+      30,
+    );
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - windowDays);
 
@@ -114,7 +127,7 @@ export class PiiAnonymizationSchedulerService {
         take: BATCH_SIZE,
         // Stable ordering so a mid-run crash doesn't re-process already-handled
         // accounts when the job restarts (they will have anonymizedAt set).
-        orderBy: { deletedAt: 'asc' },
+        orderBy: { deletedAt: "asc" },
       });
 
       for (const user of batch) {
@@ -270,20 +283,20 @@ export class PiiAnonymizationSchedulerService {
     try {
       const parsed = new URL(url);
       // pathname starts with '/'; strip it
-      const pathname = parsed.pathname.replace(/^\//, '');
+      const pathname = parsed.pathname.replace(/^\//, "");
 
       // If the host contains the bucket name (virtual-hosted style) the entire
       // pathname is the key.  Otherwise the first path segment is the bucket
       // and the rest is the key.
-      const bucket = this.config.get<string>('S3_BUCKET', '');
+      const bucket = this.config.get<string>("S3_BUCKET", "");
       if (parsed.hostname.startsWith(`${bucket}.`)) {
         return pathname || null;
       }
 
       // Path-style: /<bucket>/<key...>
-      const parts = pathname.split('/');
+      const parts = pathname.split("/");
       if (parts[0] === bucket && parts.length > 1) {
-        return parts.slice(1).join('/') || null;
+        return parts.slice(1).join("/") || null;
       }
 
       // Unable to determine key safely

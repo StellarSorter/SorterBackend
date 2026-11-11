@@ -1,12 +1,12 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { HorizonFailoverService } from '../../common/stellar/horizon-failover.service';
-import { MetricsService } from '../../metrics/metrics.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType } from '@prisma/client';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { HorizonFailoverService } from "../../common/stellar/horizon-failover.service";
+import { MetricsService } from "../../metrics/metrics.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { NotificationType } from "@prisma/client";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 /** Horizon payment record (simplified — only what we need) */
 interface HorizonPayment {
@@ -20,16 +20,16 @@ interface HorizonPayment {
   };
   from: string;
   to: string;
-  asset_type: string;     // 'native' | 'credit_alphanum4' | 'credit_alphanum12'
+  asset_type: string; // 'native' | 'credit_alphanum4' | 'credit_alphanum12'
   asset_code?: string;
   asset_issuer?: string;
   amount: string;
-  ledger_attr?: number;   // some Horizon versions surface this on the payment record directly
+  ledger_attr?: number; // some Horizon versions surface this on the payment record directly
   paging_token: string;
 }
 
 /** SystemConfig key for persisting the Horizon payments cursor */
-const CURSOR_KEY = 'horizon_payments_cursor';
+const CURSOR_KEY = "horizon_payments_cursor";
 
 /** Alert threshold — notify admins when pending unmatched payments exceed this */
 const DEFAULT_ALERT_THRESHOLD = 5;
@@ -64,18 +64,18 @@ export class IncomingPaymentPollerService implements OnModuleInit {
     private readonly lock: DistributedLockService,
   ) {
     this.alertThreshold = this.config.get<number>(
-      'UNMATCHED_PAYMENT_ALERT_THRESHOLD',
+      "UNMATCHED_PAYMENT_ALERT_THRESHOLD",
       DEFAULT_ALERT_THRESHOLD,
     );
   }
 
   async onModuleInit() {
     // Resolve the contract address from stellar config
-    const stellarConfig = this.config.get<any>('stellar') ?? {};
+    const stellarConfig = this.config.get<any>("stellar") ?? {};
     this.contractAddress = stellarConfig.contractAddress ?? null;
     if (!this.contractAddress) {
       this.logger.warn(
-        'No SOROBAN_CONTRACT_ADDRESS configured — incoming payment polling disabled',
+        "No SOROBAN_CONTRACT_ADDRESS configured — incoming payment polling disabled",
       );
     } else {
       this.logger.log(
@@ -91,18 +91,21 @@ export class IncomingPaymentPollerService implements OnModuleInit {
   // CRON: every 30 seconds
   // ----------------------------------------------------------
 
-  @Cron('*/30 * * * * *', { name: 'incoming-payment-poller' })
+  @Cron("*/30 * * * * *", { name: "incoming-payment-poller" })
   async pollIncomingPayments(): Promise<void> {
     if (!this.contractAddress) return;
 
-    const token = await this.lock.tryAcquireLock('cron:incoming-payment-poller', 60_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:incoming-payment-poller",
+      60_000,
+    );
     if (!token) return;
     try {
       await this.poll();
     } catch (err) {
-      this.logger.error('Incoming payment poll failed', err?.message);
+      this.logger.error("Incoming payment poll failed", err?.message);
     } finally {
-      await this.lock.releaseLock('cron:incoming-payment-poller', token);
+      await this.lock.releaseLock("cron:incoming-payment-poller", token);
     }
   }
 
@@ -129,7 +132,7 @@ export class IncomingPaymentPollerService implements OnModuleInit {
       // Only process incoming payments to our contract address
       if (payment.to !== this.contractAddress) continue;
       // Only handle actual payment operations
-      if (!['payment', 'create_account'].includes(payment.type)) continue;
+      if (!["payment", "create_account"].includes(payment.type)) continue;
 
       const memo = payment.transaction?.memo ?? null;
       const memoType = payment.transaction?.memo_type ?? null;
@@ -152,13 +155,16 @@ export class IncomingPaymentPollerService implements OnModuleInit {
         data: {
           txHash: payment.transaction_hash,
           sender: payment.from,
-          assetCode: payment.asset_type === 'native' ? 'XLM' : (payment.asset_code ?? 'UNKNOWN'),
+          assetCode:
+            payment.asset_type === "native"
+              ? "XLM"
+              : (payment.asset_code ?? "UNKNOWN"),
           assetIssuer: payment.asset_issuer ?? null,
           amount: payment.amount,
           memo,
           memoType,
           ledger: payment.ledger_attr ?? 0,
-          status: 'PENDING',
+          status: "PENDING",
         },
       });
 
@@ -189,7 +195,9 @@ export class IncomingPaymentPollerService implements OnModuleInit {
    * Returns the engagement ID if the memo resolves to an active engagement,
    * otherwise null.
    */
-  private async matchMemoToEngagement(memo: string | null): Promise<string | null> {
+  private async matchMemoToEngagement(
+    memo: string | null,
+  ): Promise<string | null> {
     if (!memo) return null;
 
     const engagement = await this.prisma.engagement.findUnique({
@@ -200,7 +208,9 @@ export class IncomingPaymentPollerService implements OnModuleInit {
     // We only consider active/pending statuses as "matched"
     if (
       engagement &&
-      ['ACTIVE', 'PENDING_ACCEPTANCE', 'REPLACEMENT_REQUESTED'].includes(engagement.status)
+      ["ACTIVE", "PENDING_ACCEPTANCE", "REPLACEMENT_REQUESTED"].includes(
+        engagement.status,
+      )
     ) {
       return engagement.id;
     }
@@ -216,7 +226,7 @@ export class IncomingPaymentPollerService implements OnModuleInit {
     const path =
       `/accounts/${encodeURIComponent(this.contractAddress!)}/payments` +
       `?order=asc&limit=50&include_failed=false` +
-      (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '');
+      (cursor ? `&cursor=${encodeURIComponent(cursor)}` : "");
 
     try {
       const res = await this.horizon.fetch(path);
@@ -227,10 +237,10 @@ export class IncomingPaymentPollerService implements OnModuleInit {
         return [];
       }
 
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       return (body?._embedded?.records ?? []) as HorizonPayment[];
     } catch (err) {
-      this.logger.error('Failed to fetch Horizon payments', err?.message);
+      this.logger.error("Failed to fetch Horizon payments", err?.message);
       return [];
     }
   }
@@ -243,7 +253,7 @@ export class IncomingPaymentPollerService implements OnModuleInit {
     const row = await this.prisma.systemConfig.findUnique({
       where: { key: CURSOR_KEY },
     });
-    return row?.value ?? '';
+    return row?.value ?? "";
   }
 
   private async saveCursor(cursor: string): Promise<void> {
@@ -261,18 +271,21 @@ export class IncomingPaymentPollerService implements OnModuleInit {
 
   async syncPendingGauge(): Promise<void> {
     const count = await this.prisma.unmatchedPayment.count({
-      where: { status: 'PENDING' },
+      where: { status: "PENDING" },
     });
     this.metrics.unmatchedPaymentsPending.set(count);
   }
 
   private async maybeAlertAdmins(): Promise<void> {
     const count = await this.prisma.unmatchedPayment.count({
-      where: { status: 'PENDING' },
+      where: { status: "PENDING" },
     });
 
     // Fire alert only when crossing the threshold, not on every poll
-    if (count >= this.alertThreshold && this.lastAlertedCount < this.alertThreshold) {
+    if (
+      count >= this.alertThreshold &&
+      this.lastAlertedCount < this.alertThreshold
+    ) {
       this.lastAlertedCount = count;
       await this.notifyAdmins(count);
     } else if (count < this.alertThreshold) {
@@ -283,7 +296,7 @@ export class IncomingPaymentPollerService implements OnModuleInit {
 
   private async notifyAdmins(pendingCount: number): Promise<void> {
     const admins = await this.prisma.user.findMany({
-      where: { role: 'ADMIN', deactivatedAt: null },
+      where: { role: "ADMIN", deactivatedAt: null },
       select: { id: true },
     });
 
@@ -296,7 +309,7 @@ export class IncomingPaymentPollerService implements OnModuleInit {
         this.notifications.notifyUserById(
           admin.id,
           NotificationType.UNMATCHED_PAYMENT_ALERT,
-          'Unmatched Payments Require Review',
+          "Unmatched Payments Require Review",
           message,
           { pendingCount, threshold: this.alertThreshold },
         ),

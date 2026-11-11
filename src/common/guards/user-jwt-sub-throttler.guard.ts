@@ -1,5 +1,5 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { Injectable, ExecutionContext } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import {
   ThrottlerGuard,
   InjectThrottlerOptions,
@@ -9,8 +9,8 @@ import {
   ThrottlerOptions,
   ThrottlerGetTrackerFunction,
   ThrottlerGenerateKeyFunction,
-} from '@nestjs/throttler';
-import { PrismaService } from '../prisma/prisma.service';
+} from "@nestjs/throttler";
+import { PrismaService } from "../prisma/prisma.service";
 
 /**
  * Throttle key: JWT sub (user id) instead of IP.
@@ -30,7 +30,7 @@ export class UserJwtSubThrottlerGuard extends ThrottlerGuard {
   protected async getTracker(req: Record<string, any>): Promise<string> {
     const user = req.user;
     const sub = user?.id;
-    return sub ? `sub:${sub}` : 'anonymous';
+    return sub ? `sub:${sub}` : "anonymous";
   }
 
   protected async handleRequest(
@@ -43,11 +43,23 @@ export class UserJwtSubThrottlerGuard extends ThrottlerGuard {
   ): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const userId = req.user?.id;
-    const effectiveLimit = userId ? await this.resolveLimit(userId, limit) : limit;
-    return super.handleRequest(context, effectiveLimit, ttl, throttler, getTracker, generateKey);
+    const effectiveLimit = userId
+      ? await this.resolveLimit(userId, limit)
+      : limit;
+    return super.handleRequest(
+      context,
+      effectiveLimit,
+      ttl,
+      throttler,
+      getTracker,
+      generateKey,
+    );
   }
 
-  private async resolveLimit(userId: string, defaultLimit: number): Promise<number> {
+  private async resolveLimit(
+    userId: string,
+    defaultLimit: number,
+  ): Promise<number> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { rateLimitOverride: true },

@@ -1,8 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { NotificationType } from '@prisma/client';
-import { IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { NotificationType } from "@prisma/client";
+import { IsArray, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
+import { IsBoolean, IsEnum } from "class-validator";
 
 export class PreferenceItemDto {
   @ApiProperty({ enum: NotificationType })

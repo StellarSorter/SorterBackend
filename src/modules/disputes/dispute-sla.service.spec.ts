@@ -4,6 +4,7 @@ import { DisputeSlaStatus, DisputeStage } from '@prisma/client';
 import { DisputeSlaService } from './dispute-sla.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DistributedLockService } from '../../common/lock/distributed-lock.service';
 
 const HOUR = 60 * 60 * 1000;
 const NOW = new Date('2026-09-27T12:00:00.000Z');
@@ -26,6 +27,7 @@ describe('DisputeSlaService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationsService, useValue: notifications },
         { provide: ConfigService, useValue: config },
+        { provide: DistributedLockService, useValue: { tryAcquireLock: jest.fn().mockResolvedValue('token'), releaseLock: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
     service = module.get(DisputeSlaService);
@@ -48,6 +50,7 @@ describe('DisputeSlaService', () => {
           { provide: PrismaService, useValue: prisma },
           { provide: NotificationsService, useValue: notifications },
           { provide: ConfigService, useValue: custom },
+          { provide: DistributedLockService, useValue: { tryAcquireLock: jest.fn().mockResolvedValue('token'), releaseLock: jest.fn().mockResolvedValue(undefined) } },
         ],
       }).compile();
       const svc = module.get(DisputeSlaService);

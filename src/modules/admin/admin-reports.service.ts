@@ -1,22 +1,22 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { Response } from 'express';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { Response } from "express";
 
 const MAX_RANGE_DAYS = 90;
 
-type RevenueGranularity = 'daily' | 'monthly';
+type RevenueGranularity = "daily" | "monthly";
 
 function escapeCsv(val: unknown): string {
-  if (val === null || val === undefined) return '';
+  if (val === null || val === undefined) return "";
   const str = String(val);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
 }
 
 function rowToCsv(values: unknown[]): string {
-  return values.map(escapeCsv).join(',');
+  return values.map(escapeCsv).join(",");
 }
 
 function parseAndValidateDateRange(
@@ -28,7 +28,7 @@ function parseAndValidateDateRange(
 
   if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
     throw new BadRequestException(
-      'Invalid date format. Use ISO 8601 (e.g. 2026-01-01).',
+      "Invalid date format. Use ISO 8601 (e.g. 2026-01-01).",
     );
   }
   if (fromDate > toDate) {
@@ -51,19 +51,19 @@ export class AdminReportsService {
   async getRevenueDashboard(
     from: string,
     to: string,
-    granularity: RevenueGranularity = 'daily',
+    granularity: RevenueGranularity = "daily",
   ) {
     const fromDate = new Date(from);
     const toDate = new Date(to);
     if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
       throw new BadRequestException(
-        'Invalid date format. Use ISO 8601 (e.g. 2026-01-01).',
+        "Invalid date format. Use ISO 8601 (e.g. 2026-01-01).",
       );
     }
     if (fromDate > toDate) {
       throw new BadRequestException('"from" must be before "to".');
     }
-    if (!['daily', 'monthly'].includes(granularity)) {
+    if (!["daily", "monthly"].includes(granularity)) {
       throw new BadRequestException('"granularity" must be daily or monthly.');
     }
 
@@ -72,31 +72,32 @@ export class AdminReportsService {
       toDate.setUTCHours(23, 59, 59, 999);
     }
 
-    const milestones = await this.prisma.replica.milestone.findMany({
+    const milestones = await (this.prisma.replica ?? this.prisma).milestone.findMany({
       where: {
-        status: 'CONFIRMED',
+        status: "CONFIRMED",
         confirmedAt: { gte: fromDate, lte: toDate },
         paymentReleased: { not: null },
       },
       select: { confirmedAt: true, paymentReleased: true },
-      orderBy: { confirmedAt: 'asc' },
+      orderBy: { confirmedAt: "asc" },
     });
 
     const buckets = new Map<string, bigint>();
     const cursor = new Date(fromDate);
-    if (granularity === 'daily') cursor.setUTCHours(0, 0, 0, 0);
-    else cursor.setUTCDate(1), cursor.setUTCHours(0, 0, 0, 0);
+    if (granularity === "daily") cursor.setUTCHours(0, 0, 0, 0);
+    else (cursor.setUTCDate(1), cursor.setUTCHours(0, 0, 0, 0));
 
     while (cursor <= toDate) {
       const period = this.revenuePeriod(cursor, granularity);
       buckets.set(period, 0n);
-      if (granularity === 'daily') cursor.setUTCDate(cursor.getUTCDate() + 1);
+      if (granularity === "daily") cursor.setUTCDate(cursor.getUTCDate() + 1);
       else cursor.setUTCMonth(cursor.getUTCMonth() + 1);
     }
 
     let total = 0n;
     for (const milestone of milestones) {
-      if (!milestone.confirmedAt || milestone.paymentReleased === null) continue;
+      if (!milestone.confirmedAt || milestone.paymentReleased === null)
+        continue;
       const period = this.revenuePeriod(milestone.confirmedAt, granularity);
       const amount = milestone.paymentReleased;
       buckets.set(period, (buckets.get(period) ?? 0n) + amount);
@@ -117,9 +118,9 @@ export class AdminReportsService {
 
   private revenuePeriod(date: Date, granularity: RevenueGranularity): string {
     const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    if (granularity === 'monthly') return `${year}-${month}`;
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    if (granularity === "monthly") return `${year}-${month}`;
+    const day = String(date.getUTCDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -132,7 +133,7 @@ export class AdminReportsService {
 
     const engagements = await this.prisma.replica.engagement.findMany({
       where: { createdAt: { gte: fromDate, lte: toDate } },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
       include: {
         company: { select: { email: true } },
         recruiter: { select: { email: true } },
@@ -140,31 +141,31 @@ export class AdminReportsService {
     });
 
     const headers = [
-      'id',
-      'status',
-      'jobTitle',
-      'companyAddress',
-      'companyEmail',
-      'recruiterAddress',
-      'recruiterEmail',
-      'arbiterAddress',
-      'tokenAddress',
-      'totalAmount',
-      'releasedAmount',
-      'fundingRateUsd',
-      'fundingRateAt',
-      'txHash',
-      'createdLedger',
-      'createdAt',
-      'updatedAt',
+      "id",
+      "status",
+      "jobTitle",
+      "companyAddress",
+      "companyEmail",
+      "recruiterAddress",
+      "recruiterEmail",
+      "arbiterAddress",
+      "tokenAddress",
+      "totalAmount",
+      "releasedAmount",
+      "fundingRateUsd",
+      "fundingRateAt",
+      "txHash",
+      "createdLedger",
+      "createdAt",
+      "updatedAt",
     ];
 
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
-      'Content-Disposition',
+      "Content-Disposition",
       'attachment; filename="engagements.csv"',
     );
-    res.write(headers.join(',') + '\n');
+    res.write(headers.join(",") + "\n");
 
     for (const e of engagements) {
       res.write(
@@ -186,7 +187,7 @@ export class AdminReportsService {
           e.createdLedger,
           e.createdAt.toISOString(),
           e.updatedAt.toISOString(),
-        ]) + '\n',
+        ]) + "\n",
       );
     }
 
@@ -200,13 +201,13 @@ export class AdminReportsService {
   ): Promise<void> {
     const { fromDate, toDate } = parseAndValidateDateRange(from, to);
 
-    const milestones = await this.prisma.replica.milestone.findMany({
+    const milestones = await (this.prisma.replica ?? this.prisma).milestone.findMany({
       where: {
-        status: 'CONFIRMED',
+        status: "CONFIRMED",
         confirmedAt: { gte: fromDate, lte: toDate },
         paymentReleased: { not: null },
       },
-      orderBy: { confirmedAt: 'asc' },
+      orderBy: { confirmedAt: "asc" },
       include: {
         engagement: {
           select: {
@@ -220,22 +221,22 @@ export class AdminReportsService {
     });
 
     const headers = [
-      'milestoneId',
-      'engagementId',
-      'milestoneIndex',
-      'name',
-      'kind',
-      'paymentPercent',
-      'paymentReleased',
-      'companyAddress',
-      'recruiterAddress',
-      'engagementTxHash',
-      'confirmedAt',
+      "milestoneId",
+      "engagementId",
+      "milestoneIndex",
+      "name",
+      "kind",
+      "paymentPercent",
+      "paymentReleased",
+      "companyAddress",
+      "recruiterAddress",
+      "engagementTxHash",
+      "confirmedAt",
     ];
 
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="payments.csv"');
-    res.write(headers.join(',') + '\n');
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="payments.csv"');
+    res.write(headers.join(",") + "\n");
 
     for (const m of milestones) {
       res.write(
@@ -251,7 +252,7 @@ export class AdminReportsService {
           m.engagement.recruiterAddress,
           m.engagement.txHash,
           m.confirmedAt?.toISOString(),
-        ]) + '\n',
+        ]) + "\n",
       );
     }
 
@@ -265,12 +266,12 @@ export class AdminReportsService {
   ): Promise<void> {
     const { fromDate, toDate } = parseAndValidateDateRange(from, to);
 
-    const milestones = await this.prisma.replica.milestone.findMany({
+    const milestones = await (this.prisma.replica ?? this.prisma).milestone.findMany({
       where: {
-        status: { in: ['DISPUTED', 'RESOLVED'] },
+        status: { in: ["DISPUTED", "RESOLVED"] },
         updatedAt: { gte: fromDate, lte: toDate },
       },
-      orderBy: { updatedAt: 'asc' },
+      orderBy: { updatedAt: "asc" },
       include: {
         engagement: {
           select: {
@@ -284,21 +285,21 @@ export class AdminReportsService {
     });
 
     const headers = [
-      'milestoneId',
-      'engagementId',
-      'milestoneIndex',
-      'name',
-      'status',
-      'companyAddress',
-      'recruiterAddress',
-      'arbiterAddress',
-      'proofHash',
-      'updatedAt',
+      "milestoneId",
+      "engagementId",
+      "milestoneIndex",
+      "name",
+      "status",
+      "companyAddress",
+      "recruiterAddress",
+      "arbiterAddress",
+      "proofHash",
+      "updatedAt",
     ];
 
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="disputes.csv"');
-    res.write(headers.join(',') + '\n');
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="disputes.csv"');
+    res.write(headers.join(",") + "\n");
 
     for (const m of milestones) {
       res.write(
@@ -313,7 +314,7 @@ export class AdminReportsService {
           m.engagement.arbiterAddress,
           m.proofHash,
           m.updatedAt.toISOString(),
-        ]) + '\n',
+        ]) + "\n",
       );
     }
 

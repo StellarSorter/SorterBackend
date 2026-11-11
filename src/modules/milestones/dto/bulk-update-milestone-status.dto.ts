@@ -1,11 +1,16 @@
 import {
-  ArrayMinSize, ArrayUnique, IsArray, IsEnum, IsNotEmpty, IsString,
-} from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { MilestoneStatus } from '@prisma/client';
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { MilestoneStatus } from "@prisma/client";
 
 export class BulkUpdateMilestoneStatusDto {
-  @ApiProperty({ type: [String], description: 'Milestone IDs to update' })
+  @ApiProperty({ type: [String], description: "Milestone IDs to update" })
   @IsArray()
   @ArrayMinSize(1)
   @ArrayUnique()
@@ -17,7 +22,7 @@ export class BulkUpdateMilestoneStatusDto {
   @IsNotEmpty()
   status: MilestoneStatus;
 
-  @ApiProperty({ example: 'Batch resolution after review.' })
+  @ApiProperty({ example: "Batch resolution after review." })
   @IsString()
   @IsNotEmpty()
   reason: string;

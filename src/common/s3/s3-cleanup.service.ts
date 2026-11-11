@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { S3Service } from './s3.service';
-import { DistributedLockService } from '../lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../prisma/prisma.service";
+import { S3Service } from "./s3.service";
+import { DistributedLockService } from "../lock/distributed-lock.service";
 
 /**
  * S3CleanupService
@@ -31,15 +31,18 @@ export class S3CleanupService {
     private readonly config: ConfigService,
     private readonly lock: DistributedLockService,
   ) {
-    this.gracePeriodHours = this.config.get<number>('S3_CLEANUP_GRACE_PERIOD_HOURS', 24);
+    this.gracePeriodHours = this.config.get<number>(
+      "S3_CLEANUP_GRACE_PERIOD_HOURS",
+      24,
+    );
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_3AM, { timeZone: 'UTC' })
+  @Cron(CronExpression.EVERY_DAY_AT_3AM, { timeZone: "UTC" })
   async cleanupOrphanedUploads() {
-    const token = await this.lock.tryAcquireLock('cron:s3-cleanup', 3_600_000);
+    const token = await this.lock.tryAcquireLock("cron:s3-cleanup", 3_600_000);
     if (!token) return;
     try {
-      this.logger.log('Starting orphaned S3 uploads cleanup job...');
+      this.logger.log("Starting orphaned S3 uploads cleanup job...");
 
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - this.gracePeriodHours);
@@ -63,10 +66,13 @@ export class S3CleanupService {
           `Cleanup completed. Deleted ${totalDeleted} orphaned objects (grace period: ${this.gracePeriodHours}h)`,
         );
       } catch (error) {
-        this.logger.error('Failed to cleanup orphaned S3 uploads:', error.message);
+        this.logger.error(
+          "Failed to cleanup orphaned S3 uploads:",
+          error.message,
+        );
       }
     } finally {
-      await this.lock.releaseLock('cron:s3-cleanup', token);
+      await this.lock.releaseLock("cron:s3-cleanup", token);
     }
   }
 
@@ -74,7 +80,7 @@ export class S3CleanupService {
    * Cleanup orphaned avatar uploads in the avatars/ prefix.
    */
   private async cleanupOrphanedAvatars(cutoffDate: Date): Promise<number> {
-    const avatarObjects = await this.s3.listObjects('avatars/');
+    const avatarObjects = await this.s3.listObjects("avatars/");
     const referencedAvatars = await this.getReferencedAvatarPaths();
 
     let deleted = 0;
@@ -104,7 +110,7 @@ export class S3CleanupService {
    * Cleanup orphaned evidence uploads in the evidence/ prefix.
    */
   private async cleanupOrphanedEvidence(cutoffDate: Date): Promise<number> {
-    const evidenceObjects = await this.s3.listObjects('evidence/');
+    const evidenceObjects = await this.s3.listObjects("evidence/");
     const referencedPaths = await this.getReferencedEvidencePaths();
 
     let deleted = 0;
@@ -132,7 +138,7 @@ export class S3CleanupService {
    * Cleanup orphaned KYC uploads in the kyc/ prefix.
    */
   private async cleanupOrphanedKyc(cutoffDate: Date): Promise<number> {
-    const kycObjects = await this.s3.listObjects('kyc/');
+    const kycObjects = await this.s3.listObjects("kyc/");
     const referencedPaths = await this.getReferencedKycPaths();
 
     let deleted = 0;

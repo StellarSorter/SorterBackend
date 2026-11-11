@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { DataRetentionService } from './data-retention.service';
+import { Module } from "@nestjs/common";
+import { DataRetentionService } from "./data-retention.service";
 
 /**
  * DataRetentionModule

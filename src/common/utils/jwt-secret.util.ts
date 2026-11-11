@@ -6,14 +6,14 @@ const MIN_JWT_SECRET_LENGTH = 32;
 const MIN_UNIQUE_CHARS = 8;
 
 const KNOWN_WEAK_SECRETS = new Set([
-  'your-super-secret-jwt-key-change-in-production',
-  'changeme',
-  'change-me',
-  'secret',
-  'supersecret',
-  'jwtsecret',
-  'jwt_secret',
-  'password',
+  "your-super-secret-jwt-key-change-in-production",
+  "changeme",
+  "change-me",
+  "secret",
+  "supersecret",
+  "jwtsecret",
+  "jwt_secret",
+  "password",
 ]);
 
 // Throws if JWT_SECRET is missing or too weak to plausibly carry 256 bits of
@@ -22,28 +22,28 @@ const KNOWN_WEAK_SECRETS = new Set([
 export function assertSecureJwtSecret(secret: string | undefined | null): void {
   if (!secret) {
     throw new Error(
-      'JWT_SECRET is not set. Generate one with: openssl rand -base64 32',
+      "JWT_SECRET is not set. Generate one with: openssl rand -base64 32",
     );
   }
 
   if (secret.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
       `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters (256 bits of entropy). ` +
-        'Generate one with: openssl rand -base64 32',
+        "Generate one with: openssl rand -base64 32",
     );
   }
 
   if (KNOWN_WEAK_SECRETS.has(secret.toLowerCase())) {
     throw new Error(
-      'JWT_SECRET is a known placeholder/default value and must not be used. ' +
-        'Generate a unique secret with: openssl rand -base64 32',
+      "JWT_SECRET is a known placeholder/default value and must not be used. " +
+        "Generate a unique secret with: openssl rand -base64 32",
     );
   }
 
   if (new Set(secret).size < MIN_UNIQUE_CHARS) {
     throw new Error(
-      'JWT_SECRET has too little character variety to be a securely random 256-bit value. ' +
-        'Generate one with: openssl rand -base64 32',
+      "JWT_SECRET has too little character variety to be a securely random 256-bit value. " +
+        "Generate one with: openssl rand -base64 32",
     );
   }
 }

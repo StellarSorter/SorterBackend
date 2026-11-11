@@ -19,11 +19,11 @@ import {
   Logger,
   NotFoundException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { SsoProtocol } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { randomBytes } from 'crypto';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { SsoProtocol } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { randomBytes } from "crypto";
 
 export interface UpsertSsoConfigDto {
   protocol?: SsoProtocol;
@@ -58,7 +58,10 @@ export class SsoService {
     const cfg = await this.prisma.companySsoConfig.findUnique({
       where: { companyId },
     });
-    if (!cfg) throw new NotFoundException('No SSO configuration found for this company');
+    if (!cfg)
+      throw new NotFoundException(
+        "No SSO configuration found for this company",
+      );
     return cfg;
   }
 
@@ -67,24 +70,30 @@ export class SsoService {
    * The `state` parameter embeds the companyId so the callback can
    * look up the correct IdP configuration.
    */
-  async buildAuthorizationUrl(companyId: string, redirectUri: string): Promise<string> {
+  async buildAuthorizationUrl(
+    companyId: string,
+    redirectUri: string,
+  ): Promise<string> {
     const cfg = await this.getConfig(companyId);
-    if (!cfg.isEnabled) throw new BadRequestException('SSO is not enabled for this company');
+    if (!cfg.isEnabled)
+      throw new BadRequestException("SSO is not enabled for this company");
     if (cfg.protocol !== SsoProtocol.OIDC) {
-      throw new BadRequestException('Only OIDC is supported in this release');
+      throw new BadRequestException("Only OIDC is supported in this release");
     }
     if (!cfg.clientId || !cfg.metadataUrl) {
-      throw new BadRequestException('Incomplete OIDC configuration');
+      throw new BadRequestException("Incomplete OIDC configuration");
     }
 
     const discoveryDoc = await this.fetchOidcDiscovery(cfg.metadataUrl);
-    const state = Buffer.from(JSON.stringify({ companyId, nonce: randomBytes(8).toString('hex') })).toString('base64url');
+    const state = Buffer.from(
+      JSON.stringify({ companyId, nonce: randomBytes(8).toString("hex") }),
+    ).toString("base64url");
 
     const params = new URLSearchParams({
-      response_type: 'code',
+      response_type: "code",
       client_id: cfg.clientId,
       redirect_uri: redirectUri,
-      scope: 'openid email profile',
+      scope: "openid email profile",
       state,
     });
 
@@ -103,19 +112,20 @@ export class SsoService {
     redirectUri: string,
   ) {
     const cfg = await this.getConfig(companyId);
-    if (!cfg.isEnabled) throw new BadRequestException('SSO is not enabled for this company');
+    if (!cfg.isEnabled)
+      throw new BadRequestException("SSO is not enabled for this company");
     if (!cfg.clientId || !cfg.clientSecret || !cfg.metadataUrl) {
-      throw new BadRequestException('Incomplete OIDC configuration');
+      throw new BadRequestException("Incomplete OIDC configuration");
     }
 
     const discoveryDoc = await this.fetchOidcDiscovery(cfg.metadataUrl);
 
     // Exchange authorization code for tokens.
     const tokenRes = await fetch(discoveryDoc.token_endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        grant_type: 'authorization_code',
+        grant_type: "authorization_code",
         code,
         redirect_uri: redirectUri,
         client_id: cfg.clientId,
@@ -123,30 +133,33 @@ export class SsoService {
       }).toString(),
     });
     if (!tokenRes.ok) {
-      throw new UnauthorizedException('Token exchange failed');
+      throw new UnauthorizedException("Token exchange failed");
     }
     const tokens = (await tokenRes.json()) as { id_token?: string };
-    if (!tokens.id_token) throw new UnauthorizedException('No id_token in response');
+    if (!tokens.id_token)
+      throw new UnauthorizedException("No id_token in response");
 
     // Decode the JWT payload (signature verification should use JWKS in production).
     const payload = this.decodeIdTokenPayload(tokens.id_token);
     const email: string = payload.email;
-    if (!email) throw new UnauthorizedException('id_token missing email claim');
+    if (!email) throw new UnauthorizedException("id_token missing email claim");
 
     // Just-in-time provisioning: find or create the user.
     const user = await this.prisma.user.upsert({
       where: { email },
       update: {
-        name: payload.given_name && payload.family_name
-          ? `${payload.given_name} ${payload.family_name}`
-          : (payload.given_name ?? undefined),
+        name:
+          payload.given_name && payload.family_name
+            ? `${payload.given_name} ${payload.family_name}`
+            : (payload.given_name ?? undefined),
       },
       create: {
         email,
-        name: payload.given_name && payload.family_name
-          ? `${payload.given_name} ${payload.family_name}`
-          : (payload.given_name ?? email),
-        passwordHash: '', // SSO users have no password
+        name:
+          payload.given_name && payload.family_name
+            ? `${payload.given_name} ${payload.family_name}`
+            : (payload.given_name ?? email),
+        passwordHash: "", // SSO users have no password
         role: cfg.defaultRole as any,
       },
     });
@@ -164,17 +177,21 @@ export class SsoService {
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
-  private async fetchOidcDiscovery(metadataUrl: string): Promise<Record<string, string>> {
+  private async fetchOidcDiscovery(
+    metadataUrl: string,
+  ): Promise<Record<string, string>> {
     const res = await fetch(metadataUrl);
-    if (!res.ok) throw new BadRequestException('Failed to fetch OIDC discovery document');
+    if (!res.ok)
+      throw new BadRequestException("Failed to fetch OIDC discovery document");
     return res.json() as Promise<Record<string, string>>;
   }
 
   /** Base64url-decode and JSON-parse an ID token's payload (no sig verification). */
   private decodeIdTokenPayload(idToken: string): Record<string, any> {
-    const parts = idToken.split('.');
-    if (parts.length !== 3) throw new UnauthorizedException('Malformed id_token');
-    const payload = Buffer.from(parts[1], 'base64url').toString('utf8');
+    const parts = idToken.split(".");
+    if (parts.length !== 3)
+      throw new UnauthorizedException("Malformed id_token");
+    const payload = Buffer.from(parts[1], "base64url").toString("utf8");
     return JSON.parse(payload) as Record<string, any>;
   }
 }

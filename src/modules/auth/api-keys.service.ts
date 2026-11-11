@@ -1,9 +1,15 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { createHash, randomBytes, timingSafeEqual } from 'crypto';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateApiKeyDto } from './dto/create-api-key.dto';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { CreateApiKeyDto } from "./dto/create-api-key.dto";
 
-const KEY_PREFIX = 'hs_';
+const KEY_PREFIX = "hs_";
 
 export type ApiKeyAuthUser = {
   id: string;
@@ -13,7 +19,7 @@ export type ApiKeyAuthUser = {
   companyId: string | null;
   apiKeyId: string;
   scopes: string[];
-  authType: 'api_key';
+  authType: "api_key";
 };
 
 @Injectable()
@@ -24,18 +30,20 @@ export class ApiKeysService {
 
   /** Create a key. Raw key is returned once; only the hash is persisted. */
   async create(dto: CreateApiKeyDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+    });
     if (!user || user.deletedAt || user.deactivatedAt) {
-      throw new NotFoundException('User not found or unavailable');
+      throw new NotFoundException("User not found or unavailable");
     }
 
-    const rawKey = `${KEY_PREFIX}${randomBytes(32).toString('hex')}`;
+    const rawKey = `${KEY_PREFIX}${randomBytes(32).toString("hex")}`;
     const keyHash = this.hashKey(rawKey);
     const keyPrefix = rawKey.slice(0, 11); // hs_ + 8 hex chars
 
     const expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
     if (expiresAt && expiresAt.getTime() <= Date.now()) {
-      throw new BadRequestException('expiresAt must be in the future');
+      throw new BadRequestException("expiresAt must be in the future");
     }
 
     const scopes = dto.scopes ?? [];
@@ -52,7 +60,9 @@ export class ApiKeysService {
       },
     });
 
-    this.logger.log(`API key created for user ${user.id}: ${record.id} scopes=[${scopes.join(',')}]`);
+    this.logger.log(
+      `API key created for user ${user.id}: ${record.id} scopes=[${scopes.join(",")}]`,
+    );
 
     return {
       id: record.id,
@@ -71,7 +81,7 @@ export class ApiKeysService {
   async list(userId?: string) {
     return this.prisma.apiKey.findMany({
       where: userId ? { userId } : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,
@@ -89,8 +99,8 @@ export class ApiKeysService {
 
   async revoke(id: string) {
     const key = await this.prisma.apiKey.findUnique({ where: { id } });
-    if (!key) throw new NotFoundException('API key not found');
-    if (key.revokedAt) throw new BadRequestException('API key already revoked');
+    if (!key) throw new NotFoundException("API key not found");
+    if (key.revokedAt) throw new BadRequestException("API key already revoked");
 
     return this.prisma.apiKey.update({
       where: { id },
@@ -113,8 +123,8 @@ export class ApiKeysService {
    * scope requirements without an extra DB query.
    */
   async authenticate(rawKey: string): Promise<ApiKeyAuthUser> {
-    if (!rawKey || typeof rawKey !== 'string') {
-      throw new UnauthorizedException('Missing API key');
+    if (!rawKey || typeof rawKey !== "string") {
+      throw new UnauthorizedException("Missing API key");
     }
 
     const keyHash = this.hashKey(rawKey);
@@ -135,19 +145,19 @@ export class ApiKeysService {
     });
 
     if (!record || !this.hashesEqual(record.keyHash, keyHash)) {
-      throw new UnauthorizedException('Invalid API key');
+      throw new UnauthorizedException("Invalid API key");
     }
 
     if (record.revokedAt) {
-      throw new UnauthorizedException('API key has been revoked');
+      throw new UnauthorizedException("API key has been revoked");
     }
 
     if (record.expiresAt && record.expiresAt.getTime() <= Date.now()) {
-      throw new UnauthorizedException('API key has expired');
+      throw new UnauthorizedException("API key has expired");
     }
 
     if (record.user.deactivatedAt || record.user.deletedAt) {
-      throw new UnauthorizedException('API key owner is unavailable');
+      throw new UnauthorizedException("API key owner is unavailable");
     }
 
     this.prisma.apiKey
@@ -162,12 +172,12 @@ export class ApiKeysService {
       companyId: record.companyId,
       apiKeyId: record.id,
       scopes: record.scopes,
-      authType: 'api_key',
+      authType: "api_key",
     };
   }
 
   hashKey(rawKey: string): string {
-    return createHash('sha256').update(rawKey).digest('hex');
+    return createHash("sha256").update(rawKey).digest("hex");
   }
 
   private hashesEqual(a: string, b: string): boolean {

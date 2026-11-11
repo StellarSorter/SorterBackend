@@ -1,18 +1,23 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { DisputeSlaStatus, DisputeStage, NotificationType, UserRole } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { SystemConfigService } from '../../common/system-config/system-config.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { ACTIVE_DISPUTE_STATUSES } from './dispute.constants';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger, Optional } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import {
+  DisputeSlaStatus,
+  DisputeStage,
+  NotificationType,
+  UserRole,
+} from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { SystemConfigService } from "../../common/system-config/system-config.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { ACTIVE_DISPUTE_STATUSES } from "./dispute.constants";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 /** Runtime-tunable SLA settings per stage (#503). */
 const STAGE_SYSTEM_CONFIG_KEYS: Record<DisputeStage, string> = {
-  [DisputeStage.ASSIGNMENT]: 'disputes.slaAssignmentHours',
-  [DisputeStage.ARBITER_REVIEW]: 'disputes.slaReviewHours',
-  [DisputeStage.APPEAL_REVIEW]: 'disputes.slaAppealHours',
+  [DisputeStage.ASSIGNMENT]: "disputes.slaAssignmentHours",
+  [DisputeStage.ARBITER_REVIEW]: "disputes.slaReviewHours",
+  [DisputeStage.APPEAL_REVIEW]: "disputes.slaAppealHours",
 };
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -42,12 +47,20 @@ export class DisputeSlaService {
     @Optional() private readonly systemConfig?: SystemConfigService,
   ) {
     this.stageHours = {
-      [DisputeStage.ASSIGNMENT]: Number(this.config.get('DISPUTE_SLA_ASSIGNMENT_HOURS', 24)),
-      [DisputeStage.ARBITER_REVIEW]: Number(this.config.get('DISPUTE_SLA_REVIEW_HOURS', 72)),
-      [DisputeStage.APPEAL_REVIEW]: Number(this.config.get('DISPUTE_SLA_APPEAL_HOURS', 72)),
+      [DisputeStage.ASSIGNMENT]: Number(
+        this.config.get("DISPUTE_SLA_ASSIGNMENT_HOURS", 24),
+      ),
+      [DisputeStage.ARBITER_REVIEW]: Number(
+        this.config.get("DISPUTE_SLA_REVIEW_HOURS", 72),
+      ),
+      [DisputeStage.APPEAL_REVIEW]: Number(
+        this.config.get("DISPUTE_SLA_APPEAL_HOURS", 72),
+      ),
     };
     // How long before the evidence deadline (#499) both parties are warned.
-    this.evidenceWarningHours = Number(this.config.get('DISPUTE_EVIDENCE_WARNING_HOURS', 12));
+    this.evidenceWarningHours = Number(
+      this.config.get("DISPUTE_EVIDENCE_WARNING_HOURS", 12),
+    );
   }
 
   /** SLA hours for a stage; admin overrides apply without a restart (#503). */
@@ -77,14 +90,19 @@ export class DisputeSlaService {
     dispute: { responseDeadline: Date | null; slaStatus: DisputeSlaStatus },
     at: Date = new Date(),
   ): DisputeSlaStatus {
-    if (dispute.slaStatus === DisputeSlaStatus.OVERDUE) return DisputeSlaStatus.OVERDUE;
-    if (dispute.responseDeadline && at > dispute.responseDeadline) return DisputeSlaStatus.OVERDUE;
+    if (dispute.slaStatus === DisputeSlaStatus.OVERDUE)
+      return DisputeSlaStatus.OVERDUE;
+    if (dispute.responseDeadline && at > dispute.responseDeadline)
+      return DisputeSlaStatus.OVERDUE;
     return DisputeSlaStatus.MET;
   }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async flagOverdueDisputes(now: Date = new Date()): Promise<number> {
-    const token = await this.lock.tryAcquireLock('cron:dispute-sla-overdue', 600_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:dispute-sla-overdue",
+      600_000,
+    );
     if (!token) return 0;
     try {
       const overdue = await this.prisma.dispute.findMany({
@@ -93,7 +111,13 @@ export class DisputeSlaService {
           slaStatus: DisputeSlaStatus.ON_TRACK,
           responseDeadline: { lte: now },
         },
-        select: { id: true, engagementId: true, stage: true, arbiterId: true, responseDeadline: true },
+        select: {
+          id: true,
+          engagementId: true,
+          stage: true,
+          arbiterId: true,
+          responseDeadline: true,
+        },
       });
       if (!overdue.length) return 0;
 
@@ -106,7 +130,11 @@ export class DisputeSlaService {
       for (const dispute of overdue) {
         // Conditional update so concurrent job runs escalate each dispute only once.
         const { count } = await this.prisma.dispute.updateMany({
-          where: { id: dispute.id, slaStatus: DisputeSlaStatus.ON_TRACK, status: { in: ACTIVE_DISPUTE_STATUSES } },
+          where: {
+            id: dispute.id,
+            slaStatus: DisputeSlaStatus.ON_TRACK,
+            status: { in: ACTIVE_DISPUTE_STATUSES },
+          },
           data: { slaStatus: DisputeSlaStatus.OVERDUE, slaEscalatedAt: now },
         });
         if (!count) continue;
@@ -116,7 +144,7 @@ export class DisputeSlaService {
           await this.notifications.notifyUserById(
             admin.id,
             NotificationType.DISPUTE_SLA_OVERDUE,
-            'Dispute SLA breached',
+            "Dispute SLA breached",
             `Dispute ${dispute.id} on engagement ${dispute.engagementId} missed its ${dispute.stage} ` +
               `deadline (${dispute.responseDeadline!.toISOString()}).`,
             {
@@ -133,7 +161,7 @@ export class DisputeSlaService {
       this.logger.warn(`Flagged ${flagged} overdue dispute(s)`);
       return flagged;
     } finally {
-      await this.lock.releaseLock('cron:dispute-sla-overdue', token);
+      await this.lock.releaseLock("cron:dispute-sla-overdue", token);
     }
   }
 
@@ -144,11 +172,18 @@ export class DisputeSlaService {
    * fires once per dispute (tracked via evidenceDeadlineWarnedAt).
    */
   @Cron(CronExpression.EVERY_10_MINUTES)
-  async notifyEvidenceDeadlinesClosing(now: Date = new Date()): Promise<number> {
-    const token = await this.lock.tryAcquireLock('cron:dispute-sla-evidence', 600_000);
+  async notifyEvidenceDeadlinesClosing(
+    now: Date = new Date(),
+  ): Promise<number> {
+    const token = await this.lock.tryAcquireLock(
+      "cron:dispute-sla-evidence",
+      600_000,
+    );
     if (!token) return 0;
     try {
-      const warnFrom = new Date(now.getTime() + this.evidenceWarningHours * HOUR_MS);
+      const warnFrom = new Date(
+        now.getTime() + this.evidenceWarningHours * HOUR_MS,
+      );
 
       const closingSoon = await this.prisma.dispute.findMany({
         where: {
@@ -170,7 +205,9 @@ export class DisputeSlaService {
         if (!count) continue;
         warned++;
 
-        const engagement = await this.prisma.engagement.findUnique({ where: { id: dispute.engagementId } });
+        const engagement = await this.prisma.engagement.findUnique({
+          where: { id: dispute.engagementId },
+        });
         if (!engagement) continue;
 
         for (const userId of [engagement.companyId, engagement.recruiterId]) {
@@ -178,18 +215,24 @@ export class DisputeSlaService {
           await this.notifications.notifyUserById(
             userId,
             NotificationType.DISPUTE_EVIDENCE_WINDOW_CLOSING,
-            'Dispute evidence window closing soon',
+            "Dispute evidence window closing soon",
             `The evidence submission window for dispute ${dispute.id} closes at ` +
               `${dispute.evidenceDeadline!.toISOString()}. Submit any remaining evidence before then.`,
-            { disputeId: dispute.id, engagementId: dispute.engagementId, evidenceDeadline: dispute.evidenceDeadline },
+            {
+              disputeId: dispute.id,
+              engagementId: dispute.engagementId,
+              evidenceDeadline: dispute.evidenceDeadline,
+            },
           );
         }
       }
 
-      this.logger.log(`Warned ${warned} dispute(s) of a closing evidence window`);
+      this.logger.log(
+        `Warned ${warned} dispute(s) of a closing evidence window`,
+      );
       return warned;
     } finally {
-      await this.lock.releaseLock('cron:dispute-sla-evidence', token);
+      await this.lock.releaseLock("cron:dispute-sla-evidence", token);
     }
   }
 }

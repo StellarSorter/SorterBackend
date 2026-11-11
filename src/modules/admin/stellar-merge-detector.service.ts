@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
-const MERGE_CURSOR_KEY = 'stellar_merge_last_paging_token';
+const MERGE_CURSOR_KEY = "stellar_merge_last_paging_token";
 
 @Injectable()
 export class StellarMergeDetectorService {
@@ -21,33 +21,36 @@ export class StellarMergeDetectorService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async detectMergedAccounts(): Promise<void> {
-    const token = await this.lock.tryAcquireLock('cron:stellar-merge-detector', 300_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:stellar-merge-detector",
+      300_000,
+    );
     if (!token) return;
     try {
       if (this.isRunning) {
-        this.logger.debug('Merge detector already running — skipping tick');
+        this.logger.debug("Merge detector already running — skipping tick");
         return;
       }
       this.isRunning = true;
       try {
         await this.run();
       } catch (err) {
-        this.logger.error('Merge detection failed', err?.message ?? err);
+        this.logger.error("Merge detection failed", err?.message ?? err);
       } finally {
         this.isRunning = false;
       }
     } finally {
-      await this.lock.releaseLock('cron:stellar-merge-detector', token);
+      await this.lock.releaseLock("cron:stellar-merge-detector", token);
     }
   }
 
   private async run(): Promise<void> {
-    const horizonUrl = this.config.get<string>('STELLAR_HORIZON_URL');
+    const horizonUrl = this.config.get<string>("STELLAR_HORIZON_URL");
     if (!horizonUrl) return;
 
     // Collect all unique stellar addresses from active engagements
     const engagements = await this.prisma.engagement.findMany({
-      where: { status: { in: ['ACTIVE', 'REPLACEMENT_REQUESTED'] } },
+      where: { status: { in: ["ACTIVE", "REPLACEMENT_REQUESTED"] } },
       select: {
         id: true,
         companyAddress: true,
@@ -69,13 +72,13 @@ export class StellarMergeDetectorService {
     const cursorRow = await this.prisma.systemConfig.findUnique({
       where: { key: MERGE_CURSOR_KEY },
     });
-    const pagingToken = cursorRow?.value ?? 'now';
+    const pagingToken = cursorRow?.value ?? "now";
 
     let newMaxToken = pagingToken;
 
     for (const address of addressSet) {
       try {
-        const url = `${horizonUrl}/accounts/${encodeURIComponent(address)}/operations?order=asc&limit=200&include_failed=false${pagingToken !== 'now' ? `&cursor=${pagingToken}` : ''}`;
+        const url = `${horizonUrl}/accounts/${encodeURIComponent(address)}/operations?order=asc&limit=200&include_failed=false${pagingToken !== "now" ? `&cursor=${pagingToken}` : ""}`;
         const response = await fetch(url);
         if (!response.ok) continue;
 
@@ -83,7 +86,7 @@ export class StellarMergeDetectorService {
         const records: any[] = data?._embedded?.records ?? [];
 
         for (const op of records) {
-          if (op.type === 'account_merge') {
+          if (op.type === "account_merge") {
             this.logger.warn(
               `Account merge detected for address ${address}, op id: ${op.id}`,
             );
@@ -130,26 +133,26 @@ export class StellarMergeDetectorService {
         where: { id: engagement.id },
         select: { status: true },
       });
-      if (!current || current.status === 'ACCOUNT_MERGED') continue;
+      if (!current || current.status === "ACCOUNT_MERGED") continue;
 
       await this.prisma.engagement.update({
         where: { id: engagement.id },
-        data: { status: 'ACCOUNT_MERGED' },
+        data: { status: "ACCOUNT_MERGED" },
       });
 
       this.logger.warn(`Flagged engagement ${engagement.id} as ACCOUNT_MERGED`);
 
       // Notify all admins
       const admins = await this.prisma.user.findMany({
-        where: { role: 'ADMIN', deactivatedAt: null },
+        where: { role: "ADMIN", deactivatedAt: null },
         select: { id: true },
       });
 
       for (const admin of admins) {
         await this.notifications.notifyUserById(
           admin.id,
-          'ACCOUNT_MERGE_DETECTED',
-          'Stellar Account Merge Detected',
+          "ACCOUNT_MERGE_DETECTED",
+          "Stellar Account Merge Detected",
           `Address ${mergedAddress} was merged. Engagement ${engagement.id} has been flagged as ACCOUNT_MERGED and requires review.`,
           { engagementId: engagement.id, mergedAddress },
         );
@@ -159,8 +162,8 @@ export class StellarMergeDetectorService {
 
   async listMergedEngagements() {
     const engagements = await this.prisma.engagement.findMany({
-      where: { status: 'ACCOUNT_MERGED' },
-      orderBy: { updatedAt: 'desc' },
+      where: { status: "ACCOUNT_MERGED" },
+      orderBy: { updatedAt: "desc" },
       include: {
         company: { select: { email: true, name: true } },
         recruiter: { select: { email: true, name: true } },

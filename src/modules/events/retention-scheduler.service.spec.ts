@@ -28,6 +28,9 @@ describe('RetentionSchedulerService', () => {
             milestone: {
               updateMany: jest.fn(),
             },
+            user: {
+              findMany: jest.fn(),
+            },
           },
         },
         {
@@ -76,6 +79,10 @@ describe('RetentionSchedulerService', () => {
 
       (prisma.retentionSchedule.findMany as jest.Mock).mockResolvedValue([mockSchedule]);
       (prisma.engagement.findUnique as jest.Mock).mockResolvedValue(mockEngagement);
+      (prisma.user.findMany as jest.Mock).mockResolvedValue([
+        { stellarAddress: mockEngagement.companyAddress, timezone: null },
+        { stellarAddress: mockEngagement.recruiterAddress, timezone: null },
+      ]);
 
       await service.sendApproachingNotifications();
 

@@ -1,14 +1,14 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   FeeBumpTransaction,
   Horizon,
   Keypair,
   Transaction,
   TransactionBuilder,
-} from '@stellar/stellar-sdk';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+} from "@stellar/stellar-sdk";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
 const STROOPS_PER_XLM = 10_000_000;
 
@@ -39,34 +39,52 @@ export class FeeSponsorshipService {
   ) {}
 
   isEnabled(): boolean {
-    return String(this.config.get('ENABLE_FEE_SPONSORSHIP') ?? 'false').toLowerCase() === 'true';
+    return (
+      String(
+        this.config.get("ENABLE_FEE_SPONSORSHIP") ?? "false",
+      ).toLowerCase() === "true"
+    );
   }
 
   get dailyCapStroops(): number {
-    return Number(this.config.get('FEE_SPONSORSHIP_DAILY_CAP_XLM') ?? 100) * STROOPS_PER_XLM;
+    return (
+      Number(this.config.get("FEE_SPONSORSHIP_DAILY_CAP_XLM") ?? 100) *
+      STROOPS_PER_XLM
+    );
   }
 
   get maxFeeStroops(): number {
-    return Number(this.config.get('FEE_SPONSORSHIP_MAX_FEE_STROOPS') ?? 100_000);
+    return Number(
+      this.config.get("FEE_SPONSORSHIP_MAX_FEE_STROOPS") ?? 100_000,
+    );
   }
 
   private get warnRatio(): number {
-    return Number(this.config.get('FEE_SPONSORSHIP_WARN_RATIO') ?? 0.8);
+    return Number(this.config.get("FEE_SPONSORSHIP_WARN_RATIO") ?? 0.8);
   }
 
   private sponsorKeypair(): Keypair {
     const secret =
-      this.config.get<string>('STELLAR_FEE_SPONSOR_SECRET') ?? this.config.get<string>('STELLAR_SECRET_KEY');
-    if (!secret) throw new BadRequestException('Fee sponsor keypair is not configured');
+      this.config.get<string>("STELLAR_FEE_SPONSOR_SECRET") ??
+      this.config.get<string>("STELLAR_SECRET_KEY");
+    if (!secret)
+      throw new BadRequestException("Fee sponsor keypair is not configured");
     return Keypair.fromSecret(secret);
   }
 
   /** Wraps a user-signed transaction in a fee-bump signed by the platform fee keypair. */
-  wrap(inner: Transaction, feeStroops = this.maxFeeStroops): FeeBumpTransaction {
+  wrap(
+    inner: Transaction,
+    feeStroops = this.maxFeeStroops,
+  ): FeeBumpTransaction {
     const sponsor = this.sponsorKeypair();
     const ops = Math.max(inner.operations.length, 1);
     // buildFeeBumpTransaction takes a per-operation base fee.
-    const baseFee = Math.max(Math.floor(feeStroops / (ops + 1)), Number(inner.fee) / ops, 100);
+    const baseFee = Math.max(
+      Math.floor(feeStroops / (ops + 1)),
+      Number(inner.fee) / ops,
+      100,
+    );
     const feeBump = TransactionBuilder.buildFeeBumpTransaction(
       sponsor,
       String(Math.ceil(baseFee)),
@@ -79,7 +97,9 @@ export class FeeSponsorshipService {
 
   /** Total stroops spent on sponsored fees since UTC midnight. */
   async spentTodayStroops(now = new Date()): Promise<number> {
-    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const start = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
     const agg = await (this.prisma as any).sponsoredFee.aggregate({
       where: { createdAt: { gte: start } },
       _sum: { feeStroops: true },
@@ -96,7 +116,7 @@ export class FeeSponsorshipService {
       this.logger.error(
         `[ALERT] Fee sponsorship daily cap exceeded: ${spent / STROOPS_PER_XLM} XLM spent, cap ${cap / STROOPS_PER_XLM} XLM`,
       );
-      throw new BadRequestException('Daily fee sponsorship budget exhausted');
+      throw new BadRequestException("Daily fee sponsorship budget exhausted");
     }
     if (projected >= cap * this.warnRatio) {
       this.logger.warn(
@@ -110,13 +130,20 @@ export class FeeSponsorshipService {
    * a fee-bump (platform pays) and the fee is recorded against `companyId`; otherwise
    * the inner transaction is submitted as-is.
    */
-  async submit(signedXdr: string, companyId: string): Promise<SponsoredSubmitResult> {
+  async submit(
+    signedXdr: string,
+    companyId: string,
+  ): Promise<SponsoredSubmitResult> {
     const passphrase = this.stellar.getNetworkPassphrase();
     const parsed = TransactionBuilder.fromXDR(signedXdr, passphrase);
     if (parsed instanceof FeeBumpTransaction) {
-      throw new BadRequestException('Transaction is already a fee-bump transaction');
+      throw new BadRequestException(
+        "Transaction is already a fee-bump transaction",
+      );
     }
-    const server = new Horizon.Server(this.stellar.getHorizonUrl(), { allowHttp: true });
+    const server = new Horizon.Server(this.stellar.getHorizonUrl(), {
+      allowHttp: true,
+    });
 
     if (!this.isEnabled()) {
       const res: any = await server.submitTransaction(parsed);
@@ -132,7 +159,7 @@ export class FeeSponsorshipService {
       data: {
         companyId,
         txHash: res.hash,
-        innerTxHash: parsed.hash().toString('hex'),
+        innerTxHash: parsed.hash().toString("hex"),
         feeStroops: BigInt(feeCharged),
         feeSource: feeBump.feeSource,
       },

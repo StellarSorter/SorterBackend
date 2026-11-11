@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { MilestonesService } from './milestones.service';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { MilestonesService } from "./milestones.service";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 @Injectable()
 export class RetentionSchedulerService {
@@ -15,40 +15,60 @@ export class RetentionSchedulerService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async handleRetentionMilestones() {
-    const token = await this.lock.tryAcquireLock('cron:milestone-retention', 600_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:milestone-retention",
+      600_000,
+    );
     if (!token) return;
     try {
       if (this.isRunning) return;
       this.isRunning = true;
 
-      this.logger.log('Executing hourly retention milestones validation check...');
+      this.logger.log(
+        "Executing hourly retention milestones validation check...",
+      );
 
       try {
-        const currentLedger = await this.milestonesService.getCurrentLedgerSequence();
+        const currentLedger =
+          await this.milestonesService.getCurrentLedgerSequence();
         const THREE_DAYS_IN_LEDGERS = 51840; // 1 ledger approx 5 seconds
 
-        const milestones = await this.milestonesService.findActiveRetentionMilestones();
+        const milestones =
+          await this.milestonesService.findActiveRetentionMilestones();
 
         for (const milestone of milestones) {
-          if (milestone.validAfterLedger !== null && currentLedger >= milestone.validAfterLedger) {
+          if (
+            milestone.validAfterLedger !== null &&
+            currentLedger >= milestone.validAfterLedger
+          ) {
             await this.milestonesService.unlockRetentionOnChain(milestone.id);
-            this.logger.log(`Automatically unlocked mature milestone ID: ${milestone.id}`);
+            this.logger.log(
+              `Automatically unlocked mature milestone ID: ${milestone.id}`,
+            );
           } else if (
             milestone.validAfterLedger !== null &&
-            milestone.validAfterLedger - currentLedger <= THREE_DAYS_IN_LEDGERS &&
+            milestone.validAfterLedger - currentLedger <=
+              THREE_DAYS_IN_LEDGERS &&
             !milestone.approachingNotificationSent
           ) {
-            await this.milestonesService.sendRetentionWarningNotification(milestone.id);
-            this.logger.log(`Sent 3-day milestone approach warning notification for ID: ${milestone.id}`);
+            await this.milestonesService.sendRetentionWarningNotification(
+              milestone.id,
+            );
+            this.logger.log(
+              `Sent 3-day milestone approach warning notification for ID: ${milestone.id}`,
+            );
           }
         }
       } catch (error) {
-        this.logger.error('Failed executing scheduled retention check runtime wrapper:', error);
+        this.logger.error(
+          "Failed executing scheduled retention check runtime wrapper:",
+          error,
+        );
       } finally {
         this.isRunning = false;
       }
     } finally {
-      await this.lock.releaseLock('cron:milestone-retention', token);
+      await this.lock.releaseLock("cron:milestone-retention", token);
     }
   }
 }

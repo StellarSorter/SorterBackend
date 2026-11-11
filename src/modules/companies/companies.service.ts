@@ -4,12 +4,12 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-} from '@nestjs/common';
-import { CompanyRole } from '@prisma/client';
-import { randomBytes } from 'crypto';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { UpdateProofSlaSettingsDto } from './dto/proof-sla-settings.dto';
-import { SetSpendingLimitDto } from './dto/spending-limit.dto';
+} from "@nestjs/common";
+import { CompanyRole } from "@prisma/client";
+import { randomBytes } from "crypto";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { UpdateProofSlaSettingsDto } from "./dto/proof-sla-settings.dto";
+import { SetSpendingLimitDto } from "./dto/spending-limit.dto";
 
 const TRANSFER_TTL_DAYS = 7;
 
@@ -26,7 +26,7 @@ export class CompaniesService {
       where: { id: userId },
       select: { proofSlaDays: true, proofSlaAction: true },
     });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     return user;
   }
 
@@ -34,8 +34,12 @@ export class CompaniesService {
     return this.prisma.user.update({
       where: { id: userId },
       data: {
-        ...(dto.proofSlaDays !== undefined ? { proofSlaDays: dto.proofSlaDays } : {}),
-        ...(dto.proofSlaAction !== undefined ? { proofSlaAction: dto.proofSlaAction } : {}),
+        ...(dto.proofSlaDays !== undefined
+          ? { proofSlaDays: dto.proofSlaDays }
+          : {}),
+        ...(dto.proofSlaAction !== undefined
+          ? { proofSlaAction: dto.proofSlaAction }
+          : {}),
       },
       select: { proofSlaDays: true, proofSlaAction: true },
     });
@@ -53,7 +57,9 @@ export class CompaniesService {
    */
   async initiateTransfer(currentOwnerId: string, newOwnerId: string) {
     if (currentOwnerId === newOwnerId) {
-      throw new BadRequestException('You cannot transfer ownership to yourself');
+      throw new BadRequestException(
+        "You cannot transfer ownership to yourself",
+      );
     }
 
     // Resolve the company: for single-user owners there is no CompanyMember row,
@@ -67,8 +73,8 @@ export class CompaniesService {
 
     if (!membership) {
       throw new BadRequestException(
-        'The proposed new owner is not a member of your company. ' +
-          'Invite them first via POST /team-invites.',
+        "The proposed new owner is not a member of your company. " +
+          "Invite them first via POST /team-invites.",
       );
     }
 
@@ -78,11 +84,13 @@ export class CompaniesService {
       data: { cancelledAt: new Date() },
     });
 
-    const expiresAt = new Date(Date.now() + TRANSFER_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + TRANSFER_TTL_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const transfer = await this.prisma.ownershipTransfer.create({
       data: {
-        id: randomBytes(16).toString('hex'),
+        id: randomBytes(16).toString("hex"),
         companyId,
         fromOwnerId: currentOwnerId,
         toMemberId: newOwnerId,
@@ -99,7 +107,7 @@ export class CompaniesService {
       newOwnerId,
       expiresAt: transfer.expiresAt,
       message:
-        'Transfer initiated. The new owner must accept via POST /companies/transfer-ownership/accept.',
+        "Transfer initiated. The new owner must accept via POST /companies/transfer-ownership/accept.",
     };
   }
 
@@ -120,18 +128,18 @@ export class CompaniesService {
         acceptedAt: null,
         cancelledAt: null,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!transfer) {
       throw new NotFoundException(
-        'No pending ownership transfer found for your account',
+        "No pending ownership transfer found for your account",
       );
     }
 
     if (transfer.expiresAt < new Date()) {
       throw new BadRequestException(
-        'This ownership transfer has expired. The current owner must initiate a new one.',
+        "This ownership transfer has expired. The current owner must initiate a new one.",
       );
     }
 
@@ -165,12 +173,12 @@ export class CompaniesService {
       // 4. Audit log
       await tx.auditLog.create({
         data: {
-          entityType: 'CompanyMember',
+          entityType: "CompanyMember",
           entityId: companyId,
-          action: 'OWNERSHIP_TRANSFER',
+          action: "OWNERSHIP_TRANSFER",
           oldValue: fromOwnerId,
           newValue: toMemberId,
-          reason: 'Ownership transfer accepted by new owner',
+          reason: "Ownership transfer accepted by new owner",
           changedBy: acceptingUserId,
         },
       });
@@ -181,7 +189,7 @@ export class CompaniesService {
     );
 
     return {
-      message: 'Ownership transfer complete. You are now the company owner.',
+      message: "Ownership transfer complete. You are now the company owner.",
       companyId,
       previousOwnerId: fromOwnerId,
       newOwnerId: toMemberId,
@@ -196,11 +204,16 @@ export class CompaniesService {
     const companyId = await this.resolveCompanyId(currentOwnerId);
 
     const transfer = await this.prisma.ownershipTransfer.findFirst({
-      where: { companyId, fromOwnerId: currentOwnerId, acceptedAt: null, cancelledAt: null },
+      where: {
+        companyId,
+        fromOwnerId: currentOwnerId,
+        acceptedAt: null,
+        cancelledAt: null,
+      },
     });
 
     if (!transfer) {
-      throw new NotFoundException('No pending ownership transfer to cancel');
+      throw new NotFoundException("No pending ownership transfer to cancel");
     }
 
     await this.prisma.ownershipTransfer.update({
@@ -208,7 +221,7 @@ export class CompaniesService {
       data: { cancelledAt: new Date() },
     });
 
-    return { message: 'Ownership transfer cancelled.' };
+    return { message: "Ownership transfer cancelled." };
   }
 
   /**
@@ -219,7 +232,7 @@ export class CompaniesService {
 
     const transfer = await this.prisma.ownershipTransfer.findFirst({
       where: { companyId, acceptedAt: null, cancelledAt: null },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!transfer) {
@@ -267,11 +280,7 @@ export class CompaniesService {
   // COMPANY ENGAGEMENT STATS (#374)
   // ----------------------------------------------------------
 
-  async getEngagementStats(
-    userId: string,
-    dateFrom?: string,
-    dateTo?: string,
-  ) {
+  async getEngagementStats(userId: string, dateFrom?: string, dateTo?: string) {
     const companyId = await this.resolveCompanyId(userId);
 
     // Build date filter
@@ -318,18 +327,20 @@ export class CompaniesService {
       totalEscrowed += eng.totalAmount;
       totalReleased += eng.releasedAmount;
 
-      if (eng.status === 'COMPLETED') {
+      if (eng.status === "COMPLETED") {
         completedEngagements++;
         const daysToComplete = Math.floor(
-          (eng.updatedAt.getTime() - eng.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+          (eng.updatedAt.getTime() - eng.createdAt.getTime()) /
+            (1000 * 60 * 60 * 24),
         );
         totalCompletionDays += daysToComplete;
       }
     }
 
-    const avgTimeToPlacement = completedEngagements > 0 
-      ? Math.round((totalCompletionDays / completedEngagements) * 10) / 10
-      : 0;
+    const avgTimeToPlacement =
+      completedEngagements > 0
+        ? Math.round((totalCompletionDays / completedEngagements) * 10) / 10
+        : 0;
 
     return {
       totalEngagements,
@@ -360,7 +371,7 @@ export class CompaniesService {
       where: { companyId_memberId: { companyId, memberId } },
     });
     if (!membership) {
-      throw new NotFoundException('Member not found in this company');
+      throw new NotFoundException("Member not found in this company");
     }
 
     return this.prisma.companyMember.update({
@@ -396,7 +407,7 @@ export class CompaniesService {
     const aggregate = await this.prisma.engagement.aggregate({
       where: {
         clientId: memberId,
-        status: { not: 'CANCELLED' },
+        status: { not: "CANCELLED" },
       },
       _sum: { totalAmount: true },
     });

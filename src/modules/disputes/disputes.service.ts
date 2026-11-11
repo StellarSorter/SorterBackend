@@ -4,9 +4,9 @@ import {
   Injectable,
   NotFoundException,
   Optional,
-} from '@nestjs/common';
-import { SystemConfigService } from '../../common/system-config/system-config.service';
-import { ConfigService } from '@nestjs/config';
+} from "@nestjs/common";
+import { SystemConfigService } from "../../common/system-config/system-config.service";
+import { ConfigService } from "@nestjs/config";
 import {
   Dispute,
   DisputeOutcome,
@@ -16,15 +16,18 @@ import {
   MilestoneStatus,
   NotificationType,
   UserRole,
-} from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { S3Service } from '../../common/s3/s3.service';
-import { FileScanService } from '../../common/file-scan/file-scan.service';
-import { ArbiterAssignmentService, EngagementParties } from './arbiter-assignment.service';
-import { DisputeSlaService } from './dispute-sla.service';
-import { ACTIVE_DISPUTE_STATUSES } from './dispute.constants';
+} from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { S3Service } from "../../common/s3/s3.service";
+import { FileScanService } from "../../common/file-scan/file-scan.service";
+import {
+  ArbiterAssignmentService,
+  EngagementParties,
+} from "./arbiter-assignment.service";
+import { DisputeSlaService } from "./dispute-sla.service";
+import { ACTIVE_DISPUTE_STATUSES } from "./dispute.constants";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -47,7 +50,7 @@ export interface DisputeActor {
 export class DisputesService {
   private readonly appealWindowHours: number;
   private readonly evidenceWindowHours: number;
-  private readonly arbiterFeeType: 'FLAT' | 'PERCENT';
+  private readonly arbiterFeeType: "FLAT" | "PERCENT";
   private readonly arbiterFeeValue: number;
 
   constructor(
@@ -61,20 +64,27 @@ export class DisputesService {
     @Optional() private readonly systemConfig?: SystemConfigService,
     @Optional() private readonly fileScan?: FileScanService,
   ) {
-    this.appealWindowHours = Number(this.config.get('DISPUTE_APPEAL_WINDOW_HOURS', 72));
+    this.appealWindowHours = Number(
+      this.config.get("DISPUTE_APPEAL_WINDOW_HOURS", 72),
+    );
     // Window during which either party may submit dispute evidence (#499).
-    this.evidenceWindowHours = Number(this.config.get('DISPUTE_EVIDENCE_WINDOW_HOURS', 72));
+    this.evidenceWindowHours = Number(
+      this.config.get("DISPUTE_EVIDENCE_WINDOW_HOURS", 72),
+    );
     // Arbiter fee charged on dispute resolution (#500): a FLAT amount in
     // stroops, or a PERCENT of the milestone amount.
     this.arbiterFeeType =
-      String(this.config.get('ARBITER_FEE_TYPE', 'PERCENT')).toUpperCase() === 'FLAT' ? 'FLAT' : 'PERCENT';
-    this.arbiterFeeValue = Number(this.config.get('ARBITER_FEE_VALUE', 5));
+      String(this.config.get("ARBITER_FEE_TYPE", "PERCENT")).toUpperCase() ===
+      "FLAT"
+        ? "FLAT"
+        : "PERCENT";
+    this.arbiterFeeValue = Number(this.config.get("ARBITER_FEE_VALUE", 5));
   }
 
   /** Arbiter fee owed for a settled dispute, in stroops (#500). */
   computeArbiterFee(milestoneAmount: bigint): bigint {
     if (this.arbiterFeeValue <= 0) return 0n;
-    if (this.arbiterFeeType === 'FLAT') {
+    if (this.arbiterFeeType === "FLAT") {
       return BigInt(Math.round(this.arbiterFeeValue));
     }
     // PERCENT: keep 2 decimal places of precision (basis points) so e.g.
@@ -87,12 +97,17 @@ export class DisputesService {
    * Records the arbiter's fee for a settled dispute (#500). Idempotent per
    * dispute (one payout row each), so a retried settlement never double-pays.
    */
-  async recordArbiterPayout(dispute: Pick<Dispute, 'id' | 'arbiterId'>, milestoneAmount: bigint) {
+  async recordArbiterPayout(
+    dispute: Pick<Dispute, "id" | "arbiterId">,
+    milestoneAmount: bigint,
+  ) {
     if (!dispute.arbiterId) return null;
     const amount = this.computeArbiterFee(milestoneAmount);
     if (amount <= 0n) return null;
 
-    const existing = await this.prisma.arbiterPayout.findUnique({ where: { disputeId: dispute.id } });
+    const existing = await this.prisma.arbiterPayout.findUnique({
+      where: { disputeId: dispute.id },
+    });
     if (existing) return existing;
 
     return this.prisma.arbiterPayout.create({
@@ -115,7 +130,10 @@ export class DisputesService {
    * it to an arbiter. Idempotent: an existing unsettled dispute is returned
    * as-is, so replays of the on-chain event do not create duplicates.
    */
-  async openForMilestone(milestoneId: string, opts: { reason?: string | null; raisedById?: string | null } = {}) {
+  async openForMilestone(
+    milestoneId: string,
+    opts: { reason?: string | null; raisedById?: string | null } = {},
+  ) {
     const existing = await this.prisma.dispute.findFirst({
       where: { milestoneId, status: { not: DisputeStatus.CLOSED } },
     });
@@ -125,7 +143,8 @@ export class DisputesService {
       where: { id: milestoneId },
       select: { engagementId: true, disputeReason: true },
     });
-    if (!milestone) throw new NotFoundException(`Milestone ${milestoneId} not found`);
+    if (!milestone)
+      throw new NotFoundException(`Milestone ${milestoneId} not found`);
 
     const now = new Date();
     const dispute = await this.prisma.dispute.create({
@@ -137,7 +156,9 @@ export class DisputesService {
         status: DisputeStatus.OPEN,
         fundsLocked: true,
         // Evidence window opens the moment the dispute is raised (#499).
-        evidenceDeadline: new Date(now.getTime() + this.evidenceWindowHours * HOUR_MS),
+        evidenceDeadline: new Date(
+          now.getTime() + this.evidenceWindowHours * HOUR_MS,
+        ),
         ...this.sla.stageFields(DisputeStage.ASSIGNMENT, now),
       },
     });
@@ -155,16 +176,29 @@ export class DisputesService {
       include: {
         appeal: true,
         engagement: true,
-        milestone: { select: { id: true, milestoneIndex: true, name: true, status: true, amount: true } },
+        milestone: {
+          select: {
+            id: true,
+            milestoneIndex: true,
+            name: true,
+            status: true,
+            amount: true,
+          },
+        },
       },
     });
     if (!dispute) throw new NotFoundException(`Dispute ${id} not found`);
-    if (!this.canView(dispute, user)) throw new ForbiddenException('Not a party to this dispute');
+    if (!this.canView(dispute, user))
+      throw new ForbiddenException("Not a party to this dispute");
 
     const { engagement, milestone, ...rest } = dispute;
     return {
       ...rest,
-      engagement: { id: engagement.id, jobTitle: engagement.jobTitle, status: engagement.status },
+      engagement: {
+        id: engagement.id,
+        jobTitle: engagement.jobTitle,
+        status: engagement.status,
+      },
       milestone: { ...milestone, amount: milestone.amount?.toString() ?? null },
       sla: {
         stage: dispute.stage,
@@ -192,7 +226,7 @@ export class DisputesService {
    * no further evidence is accepted.
    */
   isEvidenceWindowOpen(
-    dispute: Pick<Dispute, 'status' | 'evidenceDeadline'>,
+    dispute: Pick<Dispute, "status" | "evidenceDeadline">,
     now: Date = new Date(),
   ): boolean {
     if (!ACTIVE_DISPUTE_STATUSES.includes(dispute.status)) return false;
@@ -207,12 +241,14 @@ export class DisputesService {
   async findActiveForMilestone(milestoneId: string) {
     return this.prisma.dispute.findFirst({
       where: { milestoneId, status: { not: DisputeStatus.CLOSED } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
   isAppealWindowOpen(
-    dispute: Pick<Dispute, 'status' | 'isFinal' | 'appealDeadline'> & { appeal?: unknown },
+    dispute: Pick<Dispute, "status" | "isFinal" | "appealDeadline"> & {
+      appeal?: unknown;
+    },
     now: Date = new Date(),
   ): boolean {
     return (
@@ -226,21 +262,33 @@ export class DisputesService {
 
   /** Company or recruiter on the engagement — the two sides who may appeal. */
   isParty(engagement: EngagementParties, user: DisputeActor): boolean {
-    if (user.id && (user.id === engagement.companyId || user.id === engagement.recruiterId)) return true;
+    if (
+      user.id &&
+      (user.id === engagement.companyId || user.id === engagement.recruiterId)
+    )
+      return true;
     return (
       !!user.stellarAddress &&
-      (user.stellarAddress === engagement.companyAddress || user.stellarAddress === engagement.recruiterAddress)
+      (user.stellarAddress === engagement.companyAddress ||
+        user.stellarAddress === engagement.recruiterAddress)
     );
   }
 
   private canView(
-    dispute: Dispute & { engagement: EngagementParties & { arbiterAddress: string }; appeal: { arbiterId: string | null } | null },
+    dispute: Dispute & {
+      engagement: EngagementParties & { arbiterAddress: string };
+      appeal: { arbiterId: string | null } | null;
+    },
     user: DisputeActor,
   ): boolean {
     if (user.role === UserRole.ADMIN) return true;
     if (this.isParty(dispute.engagement, user)) return true;
-    if (user.id === dispute.arbiterId || user.id === dispute.appeal?.arbiterId) return true;
-    return !!user.stellarAddress && user.stellarAddress === dispute.engagement.arbiterAddress;
+    if (user.id === dispute.arbiterId || user.id === dispute.appeal?.arbiterId)
+      return true;
+    return (
+      !!user.stellarAddress &&
+      user.stellarAddress === dispute.engagement.arbiterAddress
+    );
   }
 
   // ----------------------------------------------------------
@@ -252,29 +300,50 @@ export class DisputesService {
    * Returns null when the milestone has no Dispute record (legacy disputes),
    * in which case the caller settles on-chain immediately as before.
    */
-  async recordDecision(milestoneId: string, outcome: DisputeOutcome, actor?: DisputeActor) {
+  async recordDecision(
+    milestoneId: string,
+    outcome: DisputeOutcome,
+    actor?: DisputeActor,
+  ) {
     const dispute = await this.prisma.dispute.findFirst({
       where: { milestoneId, status: { not: DisputeStatus.CLOSED } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     if (!dispute) return null;
     return this.decide(dispute, outcome, actor);
   }
 
-  async decide(dispute: Dispute, outcome: DisputeOutcome, actor?: DisputeActor) {
+  async decide(
+    dispute: Dispute,
+    outcome: DisputeOutcome,
+    actor?: DisputeActor,
+  ) {
     if (dispute.status === DisputeStatus.RESOLVED) {
-      throw new ConflictException('A decision has already been recorded for this dispute');
+      throw new ConflictException(
+        "A decision has already been recorded for this dispute",
+      );
     }
     if (dispute.stage === DisputeStage.APPEAL_REVIEW) {
-      throw new ConflictException('This dispute is under appeal; the appeal arbiter must decide it');
+      throw new ConflictException(
+        "This dispute is under appeal; the appeal arbiter must decide it",
+      );
     }
-    if (actor && actor.role !== UserRole.ADMIN && dispute.arbiterId && dispute.arbiterId !== actor.id) {
-      throw new ForbiddenException('Only the assigned arbiter can decide this dispute');
+    if (
+      actor &&
+      actor.role !== UserRole.ADMIN &&
+      dispute.arbiterId &&
+      dispute.arbiterId !== actor.id
+    ) {
+      throw new ForbiddenException(
+        "Only the assigned arbiter can decide this dispute",
+      );
     }
 
     const now = new Date();
     const deferred = this.appealWindowHours > 0;
-    const appealDeadline = new Date(now.getTime() + (deferred ? this.appealWindowHours * HOUR_MS : 0));
+    const appealDeadline = new Date(
+      now.getTime() + (deferred ? this.appealWindowHours * HOUR_MS : 0),
+    );
 
     const { count } = await this.prisma.dispute.updateMany({
       where: { id: dispute.id, status: { in: ACTIVE_DISPUTE_STATUSES } },
@@ -288,15 +357,20 @@ export class DisputesService {
         isFinal: !deferred,
       },
     });
-    if (!count) throw new ConflictException('The dispute is no longer awaiting a decision');
+    if (!count)
+      throw new ConflictException(
+        "The dispute is no longer awaiting a decision",
+      );
 
     if (!deferred) return this.settle(dispute.id);
 
-    const updated = await this.prisma.dispute.findUniqueOrThrow({ where: { id: dispute.id } });
+    const updated = await this.prisma.dispute.findUniqueOrThrow({
+      where: { id: dispute.id },
+    });
     await this.notifyParties(
       updated.engagementId,
       NotificationType.DISPUTE_RESOLVED,
-      'Dispute decision recorded',
+      "Dispute decision recorded",
       `The arbiter decided dispute ${updated.id}: ${outcome}. Either party may appeal until ` +
         `${appealDeadline.toISOString()}; escrowed funds stay locked until then.`,
       { disputeId: updated.id, outcome, appealDeadline },
@@ -316,7 +390,12 @@ export class DisputesService {
    */
   async settle(disputeId: string) {
     const { count } = await this.prisma.dispute.updateMany({
-      where: { id: disputeId, status: DisputeStatus.RESOLVED, isFinal: true, fundsReleasedAt: null },
+      where: {
+        id: disputeId,
+        status: DisputeStatus.RESOLVED,
+        isFinal: true,
+        fundsReleasedAt: null,
+      },
       data: { status: DisputeStatus.CLOSED },
     });
     const dispute = await this.prisma.dispute.findUniqueOrThrow({
@@ -333,14 +412,30 @@ export class DisputesService {
       if (!approved) {
         await this.prisma.refund.upsert({
           where: { milestoneId: milestone.id },
-          update: { amount, status: 'PENDING', reason: 'Resolved dispute in favor of the company' },
-          create: { milestoneId: milestone.id, amount, status: 'PENDING', reason: 'Resolved dispute in favor of the company' },
+          update: {
+            amount,
+            status: "PENDING",
+            reason: "Resolved dispute in favor of the company",
+          },
+          create: {
+            milestoneId: milestone.id,
+            amount,
+            status: "PENDING",
+            reason: "Resolved dispute in favor of the company",
+          },
         });
       }
 
-      await this.stellar.resolveMilestoneDispute(dispute.engagementId, milestone.milestoneIndex, approved);
+      await this.stellar.resolveMilestoneDispute(
+        dispute.engagementId,
+        milestone.milestoneIndex,
+        approved,
+      );
     } catch (error) {
-      await this.prisma.dispute.update({ where: { id: disputeId }, data: { status: DisputeStatus.RESOLVED } });
+      await this.prisma.dispute.update({
+        where: { id: disputeId },
+        data: { status: DisputeStatus.RESOLVED },
+      });
       throw error;
     }
 
@@ -349,7 +444,9 @@ export class DisputesService {
       where: { id: milestone.id },
       data: {
         status: approved ? MilestoneStatus.RESOLVED : MilestoneStatus.PENDING,
-        ...(approved && amount ? { paymentReleased: amount, confirmedAt: now } : {}),
+        ...(approved && amount
+          ? { paymentReleased: amount, confirmedAt: now }
+          : {}),
       },
     });
 
@@ -364,9 +461,9 @@ export class DisputesService {
     await this.notifyParties(
       dispute.engagementId,
       NotificationType.DISPUTE_RESOLVED,
-      'Dispute closed',
+      "Dispute closed",
       `Dispute ${disputeId} is final (${dispute.outcome}); escrowed funds have been ` +
-        `${approved ? 'released to the recruiter' : 'refunded to the company'}.`,
+        `${approved ? "released to the recruiter" : "refunded to the company"}.`,
       { disputeId, outcome: dispute.outcome, final: true },
     );
 
@@ -382,7 +479,12 @@ export class DisputesService {
     const now = new Date();
     return this.prisma.dispute.updateMany({
       where: { milestoneId, fundsReleasedAt: null },
-      data: { status: DisputeStatus.CLOSED, isFinal: true, fundsLocked: false, fundsReleasedAt: now },
+      data: {
+        status: DisputeStatus.CLOSED,
+        isFinal: true,
+        fundsLocked: false,
+        fundsReleasedAt: now,
+      },
     });
   }
 
@@ -394,11 +496,16 @@ export class DisputesService {
     data: Record<string, any>,
     excludeUserId?: string,
   ) {
-    const engagement = await this.prisma.engagement.findUnique({ where: { id: engagementId } });
+    const engagement = await this.prisma.engagement.findUnique({
+      where: { id: engagementId },
+    });
     if (!engagement) return;
     for (const userId of [engagement.companyId, engagement.recruiterId]) {
       if (!userId || userId === excludeUserId) continue;
-      await this.notifications.notifyUserById(userId, type, title, message, { engagementId, ...data });
+      await this.notifications.notifyUserById(userId, type, title, message, {
+        engagementId,
+        ...data,
+      });
     }
   }
 
@@ -422,7 +529,7 @@ export class DisputesService {
 
     const rows = await this.prisma.disputeMessage.findMany({
       where: { disputeId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
       include: { author: { select: { id: true, name: true, email: true } } },
     });
 
@@ -436,9 +543,10 @@ export class DisputesService {
         attachmentSize: m.attachmentSize,
         attachmentMimeType: m.attachmentMimeType,
         attachmentScanStatus: m.attachmentScanStatus,
-        attachmentUrl: m.attachmentS3Key && m.attachmentScanStatus === FileScanStatus.CLEAN
-          ? await this.s3.getPresignedUrl(m.attachmentS3Key).catch(() => null)
-          : null,
+        attachmentUrl:
+          m.attachmentS3Key && m.attachmentScanStatus === FileScanStatus.CLEAN
+            ? await this.s3.getPresignedUrl(m.attachmentS3Key).catch(() => null)
+            : null,
         createdAt: m.createdAt,
       })),
     );
@@ -465,8 +573,12 @@ export class DisputesService {
     // Upload attachment first so the DB row is only created when S3 succeeded.
     let attachmentS3Key: string | null = null;
     if (attachment) {
-      attachmentS3Key = `disputes/${disputeId}/messages/${Date.now()}-${attachment.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      await this.s3.uploadFile(attachmentS3Key, attachment.buffer, attachment.mimetype);
+      attachmentS3Key = `disputes/${disputeId}/messages/${Date.now()}-${attachment.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      await this.s3.uploadFile(
+        attachmentS3Key,
+        attachment.buffer,
+        attachment.mimetype,
+      );
     }
 
     const message = await this.prisma.disputeMessage.create({
@@ -487,7 +599,7 @@ export class DisputesService {
       include: { author: { select: { id: true, name: true, email: true } } },
     });
     if (attachmentS3Key) {
-      await this.fileScan?.enqueue('dispute-message', message.id);
+      await this.fileScan?.enqueue("dispute-message", message.id);
     }
 
     // Notify every participant except the author.
@@ -526,7 +638,7 @@ export class DisputesService {
     actor: DisputeActor,
   ): void {
     if (this.canView(dispute, actor)) return;
-    throw new ForbiddenException('Not a party to this dispute');
+    throw new ForbiddenException("Not a party to this dispute");
   }
 
   private async notifyMessageParticipants(
@@ -545,9 +657,13 @@ export class DisputesService {
     // Exclude the author
     recipientIds.delete(author.id);
 
-    const title = 'New message on dispute';
+    const title = "New message on dispute";
     const text = `A new message was posted on dispute ${dispute.id}.`;
-    const data = { disputeId: dispute.id, engagementId: dispute.engagementId, messageId };
+    const data = {
+      disputeId: dispute.id,
+      engagementId: dispute.engagementId,
+      messageId,
+    };
 
     await Promise.allSettled(
       [...recipientIds].map((userId) =>

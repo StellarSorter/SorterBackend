@@ -1,8 +1,13 @@
-import { Injectable, Logger, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Notification } from '@prisma/client';
-import * as webpush from 'web-push';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  ServiceUnavailableException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Notification } from "@prisma/client";
+import * as webpush from "web-push";
+import { PrismaService } from "../../common/prisma/prisma.service";
 
 export interface PushSubscriptionInput {
   endpoint: string;
@@ -28,13 +33,18 @@ export class WebPushService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
-    const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
+    const publicKey = this.config.get<string>("VAPID_PUBLIC_KEY");
+    const privateKey = this.config.get<string>("VAPID_PRIVATE_KEY");
     if (!publicKey || !privateKey) {
-      this.logger.warn('VAPID keys not configured — web push notifications are disabled');
+      this.logger.warn(
+        "VAPID keys not configured — web push notifications are disabled",
+      );
       return;
     }
-    const subject = this.config.get<string>('VAPID_SUBJECT', 'mailto:noreply@stellarsorter.com');
+    const subject = this.config.get<string>(
+      "VAPID_SUBJECT",
+      "mailto:noreply@stellarsorter.com",
+    );
     webpush.setVapidDetails(subject, publicKey, privateKey);
     this.configured = true;
   }
@@ -44,9 +54,9 @@ export class WebPushService implements OnModuleInit {
   }
 
   getPublicKey(): { publicKey: string } {
-    const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
+    const publicKey = this.config.get<string>("VAPID_PUBLIC_KEY");
     if (!this.configured || !publicKey) {
-      throw new ServiceUnavailableException('Web push is not configured');
+      throw new ServiceUnavailableException("Web push is not configured");
     }
     return { publicKey };
   }
@@ -72,7 +82,11 @@ export class WebPushService implements OnModuleInit {
         userAgent: input.userAgent,
       },
     });
-    return { id: subscription.id, endpoint: subscription.endpoint, createdAt: subscription.createdAt };
+    return {
+      id: subscription.id,
+      endpoint: subscription.endpoint,
+      createdAt: subscription.createdAt,
+    };
   }
 
   async unsubscribe(userId: string, endpoint: string) {
@@ -85,8 +99,14 @@ export class WebPushService implements OnModuleInit {
   async listForUser(userId: string) {
     return this.prisma.pushSubscription.findMany({
       where: { userId },
-      select: { id: true, endpoint: true, userAgent: true, lastUsedAt: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        endpoint: true,
+        userAgent: true,
+        lastUsedAt: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -102,7 +122,10 @@ export class WebPushService implements OnModuleInit {
     });
     if (subscriptions.length === 0) return;
 
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.stellarsorter.com');
+    const frontendUrl = this.config.get<string>(
+      "FRONTEND_URL",
+      "https://app.stellarsorter.com",
+    );
     const payload = JSON.stringify({
       id: notification.id,
       type: notification.type,
@@ -116,7 +139,10 @@ export class WebPushService implements OnModuleInit {
       subscriptions.map(async (sub) => {
         try {
           await webpush.sendNotification(
-            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            {
+              endpoint: sub.endpoint,
+              keys: { p256dh: sub.p256dh, auth: sub.auth },
+            },
             payload,
             { TTL: 60 * 60 * 24 },
           );
@@ -127,12 +153,16 @@ export class WebPushService implements OnModuleInit {
         } catch (error) {
           const statusCode: number | undefined = error?.statusCode;
           if (statusCode === 404 || statusCode === 410) {
-            await this.prisma.pushSubscription.deleteMany({ where: { id: sub.id } });
-            this.logger.log(`Removed expired push subscription ${sub.id} (status ${statusCode})`);
+            await this.prisma.pushSubscription.deleteMany({
+              where: { id: sub.id },
+            });
+            this.logger.log(
+              `Removed expired push subscription ${sub.id} (status ${statusCode})`,
+            );
             return;
           }
           this.logger.error(
-            `Web push to subscription ${sub.id} failed${statusCode ? ` (status ${statusCode})` : ''}: ${error?.message}`,
+            `Web push to subscription ${sub.id} failed${statusCode ? ` (status ${statusCode})` : ""}: ${error?.message}`,
           );
         }
       }),

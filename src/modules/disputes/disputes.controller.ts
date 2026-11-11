@@ -9,35 +9,41 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { DisputeStage, UserRole } from '@prisma/client';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { AppealService } from './appeal.service';
-import { DisputesService } from './disputes.service';
-import { DisputeDecisionDto } from './dto/dispute-decision.dto';
-import { OpenAppealDto } from './dto/open-appeal.dto';
-import { CreateDisputeMessageDto } from './dto/create-dispute-message.dto';
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { memoryStorage } from "multer";
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import { DisputeStage, UserRole } from "@prisma/client";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { AppealService } from "./appeal.service";
+import { DisputesService } from "./disputes.service";
+import { DisputeDecisionDto } from "./dto/dispute-decision.dto";
+import { OpenAppealDto } from "./dto/open-appeal.dto";
+import { CreateDisputeMessageDto } from "./dto/create-dispute-message.dto";
 
 const ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'application/pdf',
-  'video/mp4',
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "application/pdf",
+  "video/mp4",
 ]);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-@ApiTags('disputes')
+@ApiTags("disputes")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('disputes')
+@Controller("disputes")
 export class DisputesController {
   constructor(
     private readonly prisma: PrismaService,
@@ -45,20 +51,23 @@ export class DisputesController {
     private readonly appeals: AppealService,
   ) {}
 
-  @Get('arbiter-payouts')
+  @Get("arbiter-payouts")
   @UseGuards(RolesGuard)
   @Roles(UserRole.ARBITER, UserRole.ADMIN)
   @ApiOperation({
     summary:
-      'Billing report of arbiter fee payouts recorded on dispute resolution (#500). ' +
-      'Arbiters see their own payouts; admins see every payout.',
+      "Billing report of arbiter fee payouts recorded on dispute resolution (#500). " +
+      "Arbiters see their own payouts; admins see every payout.",
   })
-  @ApiResponse({ status: 200, description: 'Arbiter payout records, newest first' })
+  @ApiResponse({
+    status: 200,
+    description: "Arbiter payout records, newest first",
+  })
   async listArbiterPayouts(@CurrentUser() user: any) {
     const where = user.role === UserRole.ADMIN ? {} : { arbiterId: user.id };
     const payouts = await this.prisma.arbiterPayout.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: { arbiter: { select: { id: true, name: true, email: true } } },
     });
     return {
@@ -67,33 +76,64 @@ export class DisputesController {
     };
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Dispute detail, including SLA response deadline and appeal window' })
-  @ApiResponse({ status: 200, description: 'Dispute detail' })
-  @ApiResponse({ status: 403, description: 'Not a party to this dispute' })
-  @ApiResponse({ status: 404, description: 'Dispute not found' })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+  @Get(":id")
+  @ApiOperation({
+    summary:
+      "Dispute detail, including SLA response deadline and appeal window",
+  })
+  @ApiResponse({ status: 200, description: "Dispute detail" })
+  @ApiResponse({ status: 403, description: "Not a party to this dispute" })
+  @ApiResponse({ status: 404, description: "Dispute not found" })
+  findOne(@Param("id") id: string, @CurrentUser() user: any) {
     return this.disputes.findOneForUser(id, user);
   }
 
-  @Post(':id/appeal')
-  @ApiOperation({ summary: 'Appeal a dispute decision (company or recruiter, once, within the appeal window)' })
-  @ApiResponse({ status: 201, description: 'Appeal opened; funds stay locked until it is decided' })
-  @ApiResponse({ status: 403, description: 'Not the company or recruiter on this engagement' })
-  @ApiResponse({ status: 409, description: 'Already appealed, or the decision is final' })
-  @ApiResponse({ status: 422, description: 'No decision to appeal, or the appeal window has closed' })
-  appeal(@Param('id') id: string, @Body() dto: OpenAppealDto, @CurrentUser() user: any) {
+  @Post(":id/appeal")
+  @ApiOperation({
+    summary:
+      "Appeal a dispute decision (company or recruiter, once, within the appeal window)",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Appeal opened; funds stay locked until it is decided",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Not the company or recruiter on this engagement",
+  })
+  @ApiResponse({
+    status: 409,
+    description: "Already appealed, or the decision is final",
+  })
+  @ApiResponse({
+    status: 422,
+    description: "No decision to appeal, or the appeal window has closed",
+  })
+  appeal(
+    @Param("id") id: string,
+    @Body() dto: OpenAppealDto,
+    @CurrentUser() user: any,
+  ) {
     return this.appeals.openAppeal(id, user, dto.reason);
   }
 
-  @Post(':id/decision')
+  @Post(":id/decision")
   @UseGuards(RolesGuard)
   @Roles(UserRole.ARBITER, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Decide a dispute or its appeal (assigned arbiter only)' })
-  @ApiResponse({ status: 201, description: 'Decision recorded' })
-  @ApiResponse({ status: 403, description: 'Not the assigned arbiter' })
-  @ApiResponse({ status: 409, description: 'Dispute is not awaiting a decision' })
-  async decide(@Param('id') id: string, @Body() dto: DisputeDecisionDto, @CurrentUser() user: any) {
+  @ApiOperation({
+    summary: "Decide a dispute or its appeal (assigned arbiter only)",
+  })
+  @ApiResponse({ status: 201, description: "Decision recorded" })
+  @ApiResponse({ status: 403, description: "Not the assigned arbiter" })
+  @ApiResponse({
+    status: 409,
+    description: "Dispute is not awaiting a decision",
+  })
+  async decide(
+    @Param("id") id: string,
+    @Body() dto: DisputeDecisionDto,
+    @CurrentUser() user: any,
+  ) {
     const dispute = await this.prisma.dispute.findUnique({ where: { id } });
     if (!dispute) throw new NotFoundException(`Dispute ${id} not found`);
     if (dispute.stage === DisputeStage.APPEAL_REVIEW) {
@@ -106,29 +146,31 @@ export class DisputesController {
   // MESSAGING (#dispute-messaging)
   // ----------------------------------------------------------
 
-  @Get(':id/messages')
-  @ApiOperation({ summary: 'List messages for a dispute (participants and admins only)' })
-  @ApiResponse({ status: 200, description: 'Messages listed oldest-first' })
-  @ApiResponse({ status: 403, description: 'Not a party to this dispute' })
-  @ApiResponse({ status: 404, description: 'Dispute not found' })
-  listMessages(@Param('id') id: string, @CurrentUser() user: any) {
+  @Get(":id/messages")
+  @ApiOperation({
+    summary: "List messages for a dispute (participants and admins only)",
+  })
+  @ApiResponse({ status: 200, description: "Messages listed oldest-first" })
+  @ApiResponse({ status: 403, description: "Not a party to this dispute" })
+  @ApiResponse({ status: 404, description: "Dispute not found" })
+  listMessages(@Param("id") id: string, @CurrentUser() user: any) {
     return this.disputes.listMessages(id, user);
   }
 
-  @Post(':id/messages')
-  @UseInterceptors(FileInterceptor('attachment', { storage: memoryStorage() }))
-  @ApiConsumes('multipart/form-data', 'application/json')
+  @Post(":id/messages")
+  @UseInterceptors(FileInterceptor("attachment", { storage: memoryStorage() }))
+  @ApiConsumes("multipart/form-data", "application/json")
   @ApiOperation({
     summary:
-      'Post a message to a dispute (participants and admins only). ' +
-      'Optionally attach a file (JPEG/PNG/GIF/PDF/MP4, ≤ 10 MB) as multipart/form-data.',
+      "Post a message to a dispute (participants and admins only). " +
+      "Optionally attach a file (JPEG/PNG/GIF/PDF/MP4, ≤ 10 MB) as multipart/form-data.",
   })
-  @ApiResponse({ status: 201, description: 'Message created' })
-  @ApiResponse({ status: 400, description: 'Invalid file type or size' })
-  @ApiResponse({ status: 403, description: 'Not a party to this dispute' })
-  @ApiResponse({ status: 404, description: 'Dispute not found' })
+  @ApiResponse({ status: 201, description: "Message created" })
+  @ApiResponse({ status: 400, description: "Invalid file type or size" })
+  @ApiResponse({ status: 403, description: "Not a party to this dispute" })
+  @ApiResponse({ status: 404, description: "Dispute not found" })
   async createMessage(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() dto: CreateDisputeMessageDto,
     @CurrentUser() user: any,
     @UploadedFile() file?: Express.Multer.File,
@@ -140,7 +182,7 @@ export class DisputesController {
         );
       }
       if (file.size > MAX_FILE_SIZE) {
-        throw new BadRequestException('File size exceeds the 10 MB limit.');
+        throw new BadRequestException("File size exceeds the 10 MB limit.");
       }
     }
     return this.disputes.createMessage(id, user, dto.body, file);

@@ -31,7 +31,10 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { ApiKeyScopesGuard } from "../../common/guards/api-key-scopes.guard";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
-import { RequireScopes, ApiKeyScope } from "../../common/decorators/api-key-scopes.decorator";
+import {
+  RequireScopes,
+  ApiKeyScope,
+} from "../../common/decorators/api-key-scopes.decorator";
 import { UserJwtSubThrottlerGuard } from "../../common/guards/user-jwt-sub-throttler.guard";
 import { Idempotent } from "../../common/decorators/idempotent.decorator";
 import { IdempotencyInterceptor } from "../../common/interceptors/idempotency.interceptor";

@@ -1,5 +1,5 @@
-import { Global, Module } from '@nestjs/common';
-import { DistributedLockService } from './distributed-lock.service';
+import { Global, Module } from "@nestjs/common";
+import { DistributedLockService } from "./distributed-lock.service";
 
 @Global()
 @Module({

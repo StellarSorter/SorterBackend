@@ -1,18 +1,23 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
-import { CalendarController } from './calendar.controller';
-import { CalendarService } from './calendar.service';
-import { GdprService } from './gdpr.service';
-import { PiiAnonymizationSchedulerService } from './pii-anonymization-scheduler.service';
-import { S3Module } from '../../common/s3/s3.module';
-import { AppCacheModule } from '../../common/cache/cache.module';
-import { AuthModule } from '../auth/auth.module';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { UsersService } from "./users.service";
+import { UsersController } from "./users.controller";
+import { CalendarController } from "./calendar.controller";
+import { CalendarService } from "./calendar.service";
+import { GdprService } from "./gdpr.service";
+import { PiiAnonymizationSchedulerService } from "./pii-anonymization-scheduler.service";
+import { S3Module } from "../../common/s3/s3.module";
+import { AppCacheModule } from "../../common/cache/cache.module";
+import { AuthModule } from "../auth/auth.module";
 
 @Module({
   imports: [S3Module, AppCacheModule, AuthModule, ConfigModule],
-  providers: [UsersService, GdprService, PiiAnonymizationSchedulerService, CalendarService],
+  providers: [
+    UsersService,
+    GdprService,
+    PiiAnonymizationSchedulerService,
+    CalendarService,
+  ],
   controllers: [CalendarController, UsersController],
   exports: [UsersService, GdprService],
 })

@@ -1,9 +1,9 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { NotificationType } from '@prisma/client';
-import { SlackNotificationsService } from '../modules/notifications/slack-notifications.service';
-import { QUEUE_SLACK } from './queues.module';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import { NotificationType } from "@prisma/client";
+import { SlackNotificationsService } from "../modules/notifications/slack-notifications.service";
+import { QUEUE_SLACK } from "./queues.module";
 
 export interface SlackJobData {
   webhookUrl: string;

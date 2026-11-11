@@ -45,6 +45,11 @@ describe('NotificationsService', () => {
               findUnique: jest.fn(),
               upsert: jest.fn(),
             },
+            notificationBatch: {
+              findFirst: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockResolvedValue({ id: 'batch-1' }),
+              update: jest.fn().mockResolvedValue({}),
+            },
             $transaction: jest.fn(),
           },
         },

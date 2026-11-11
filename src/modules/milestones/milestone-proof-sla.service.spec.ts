@@ -5,6 +5,7 @@ import { MilestonesService } from './milestones.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StellarService } from '../../common/stellar/stellar.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DistributedLockService } from '../../common/lock/distributed-lock.service';
 
 const DAY = 24 * 60 * 60 * 1000;
 const SUBMITTED_AT = new Date('2026-09-01T00:00:00.000Z');
@@ -67,6 +68,7 @@ describe('MilestoneProofSlaService', () => {
         { provide: StellarService, useValue: stellar },
         { provide: NotificationsService, useValue: notifications },
         { provide: MilestonesService, useValue: milestones },
+        { provide: DistributedLockService, useValue: { tryAcquireLock: jest.fn().mockResolvedValue('token'), releaseLock: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
     service = module.get(MilestoneProofSlaService);

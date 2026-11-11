@@ -4,21 +4,24 @@ import {
   OnModuleDestroy,
   OnModuleInit,
   Optional,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { SystemConfigService } from '../../common/system-config/system-config.service';
-import { NotificationType } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { NotificationsService } from '../notifications/notifications.service';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { SystemConfigService } from "../../common/system-config/system-config.service";
+import { NotificationType } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
-const BALANCE_BREACH_KEY = 'stellar_balance_alert_breached';
+const BALANCE_BREACH_KEY = "stellar_balance_alert_breached";
 
 @Injectable()
-export class StellarBalanceAlertService implements OnModuleInit, OnModuleDestroy {
+export class StellarBalanceAlertService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(StellarBalanceAlertService.name);
   private interval?: NodeJS.Timeout;
   private isRunning = false;
+  private breachAlertSent = false;
 
   constructor(
     private readonly config: ConfigService,
@@ -30,7 +33,7 @@ export class StellarBalanceAlertService implements OnModuleInit, OnModuleDestroy
 
   onModuleInit() {
     const intervalMs = this.config.get<number>(
-      'STELLAR_BALANCE_ALERT_INTERVAL_MS',
+      "STELLAR_BALANCE_ALERT_INTERVAL_MS",
       300000,
     );
     this.interval = setInterval(() => {
@@ -53,49 +56,60 @@ export class StellarBalanceAlertService implements OnModuleInit, OnModuleDestroy
       const balance = await this.stellar.getBackendAccountBalance();
       // Admin override applies on the next check without a restart (#503).
       const threshold = this.systemConfig
-        ? this.systemConfig.getBigInt('stellar.balanceAlertThresholdStroops')
-        : BigInt(this.config.get<number>('STELLAR_BALANCE_ALERT_THRESHOLD_STROOPS', 10000000));
+        ? this.systemConfig.getBigInt("stellar.balanceAlertThresholdStroops")
+        : BigInt(
+            this.config.get<number>(
+              "STELLAR_BALANCE_ALERT_THRESHOLD_STROOPS",
+              10000000,
+            ),
+          );
       const breached = balance < threshold;
       const state = await this.prisma.systemConfig.findUnique({
         where: { key: BALANCE_BREACH_KEY },
       });
-      const wasBreached = state?.value === 'true';
+      const wasBreached = state?.value === "true";
 
       if (!breached) {
-        if (wasBreached) {
+        if (wasBreached || this.breachAlertSent) {
+          this.breachAlertSent = false;
           await this.prisma.systemConfig.upsert({
             where: { key: BALANCE_BREACH_KEY },
-            create: { key: BALANCE_BREACH_KEY, value: 'false' },
-            update: { value: 'false' },
+            create: { key: BALANCE_BREACH_KEY, value: "false" },
+            update: { value: "false" },
           });
         }
         return;
       }
 
-      if (wasBreached) return;
+      if (wasBreached || this.breachAlertSent) return;
 
       await this.prisma.systemConfig.upsert({
         where: { key: BALANCE_BREACH_KEY },
-        create: { key: BALANCE_BREACH_KEY, value: 'true' },
-        update: { value: 'true' },
+        create: { key: BALANCE_BREACH_KEY, value: "true" },
+        update: { value: "true" },
       });
+      this.breachAlertSent = true;
 
       const admins = await this.prisma.user.findMany({
-        where: { role: 'ADMIN', deactivatedAt: null },
+        where: { role: "ADMIN", deactivatedAt: null },
         select: { id: true },
       });
       for (const admin of admins) {
         await this.notifications.notifyUserById(
           admin.id,
-          'STELLAR_BALANCE_LOW' as NotificationType,
-          'Stellar Account Balance Low',
+          "STELLAR_BALANCE_LOW" as NotificationType,
+          "Stellar Account Balance Low",
           `The configured Stellar account ${address} has a balance of ${balance} stroops, below the alert threshold of ${threshold} stroops.`,
-          { address, balance: balance.toString(), threshold: threshold.toString() },
+          {
+            address,
+            balance: balance.toString(),
+            threshold: threshold.toString(),
+          },
         );
       }
     } catch (error) {
       this.logger.error(
-        'Stellar balance alert check failed',
+        "Stellar balance alert check failed",
         error instanceof Error ? error.message : String(error),
       );
     } finally {

@@ -1,11 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as nodemailer from "nodemailer";
+import { Transporter } from "nodemailer";
 
-import { EmailTemplate, EmailTemplateName } from './email-template.enum';
-import { renderEmailTemplate } from './email-template.renderer';
-import { BounceService } from './bounce.service';
+import { EmailTemplate, EmailTemplateName } from "./email-template.enum";
+import { renderEmailTemplate } from "./email-template.renderer";
+import { BounceService } from "./bounce.service";
 
 export interface SendEmailOptions {
   to: string;
@@ -23,14 +23,14 @@ export interface EmailTemplatePreview {
 }
 
 const SAMPLE_CONTEXT: Record<string, unknown> = {
-  firstName: 'Jane',
-  lastName: 'Doe',
-  email: 'jane.doe@example.com',
-  code: '123456',
-  actionUrl: 'https://example.com/action',
+  firstName: "Jane",
+  lastName: "Doe",
+  email: "jane.doe@example.com",
+  code: "123456",
+  actionUrl: "https://example.com/action",
   expiresInMinutes: 15,
-  organizationName: 'Acme Inc.',
-  supportEmail: 'support@example.com',
+  organizationName: "Acme Inc.",
+  supportEmail: "support@example.com",
 };
 
 @Injectable()
@@ -43,14 +43,17 @@ export class EmailService {
     private readonly configService: ConfigService,
     private readonly bounceService: BounceService,
   ) {
-    this.defaultLocale = this.configService.get<string>('EMAIL_DEFAULT_LOCALE', 'en');
+    this.defaultLocale = this.configService.get<string>(
+      "EMAIL_DEFAULT_LOCALE",
+      "en",
+    );
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: this.configService.get<number>('SMTP_PORT', 587),
-      secure: this.configService.get<boolean>('SMTP_SECURE', false),
+      host: this.configService.get<string>("SMTP_HOST"),
+      port: this.configService.get<number>("SMTP_PORT", 587),
+      secure: this.configService.get<boolean>("SMTP_SECURE", false),
       auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASSWORD'),
+        user: this.configService.get<string>("SMTP_USER"),
+        pass: this.configService.get<string>("SMTP_PASSWORD"),
       },
     });
   }
@@ -64,7 +67,11 @@ export class EmailService {
     const resolvedLocale = locale || this.defaultLocale;
     const template = EmailTemplate[templateName];
 
-    const { subject, html } = renderEmailTemplate(templateName, resolvedLocale, SAMPLE_CONTEXT);
+    const { subject, html } = renderEmailTemplate(
+      templateName,
+      resolvedLocale,
+      SAMPLE_CONTEXT,
+    );
 
     return {
       name: templateName,
@@ -85,10 +92,17 @@ export class EmailService {
 
     const resolvedLocale = locale || this.defaultLocale;
 
-    const { html } = renderEmailTemplate(template, resolvedLocale, context ?? {});
+    const { html } = renderEmailTemplate(
+      template,
+      resolvedLocale,
+      context ?? {},
+    );
 
     await this.transporter.sendMail({
-      from: this.configService.get<string>('EMAIL_FROM', 'no-reply@example.com'),
+      from: this.configService.get<string>(
+        "EMAIL_FROM",
+        "no-reply@example.com",
+      ),
       to,
       subject,
       html,

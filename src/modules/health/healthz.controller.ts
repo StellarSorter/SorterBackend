@@ -1,7 +1,13 @@
-import { Controller, Get, HttpCode, HttpStatus, ServiceUnavailableException } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { HealthService } from './health.service';
-import { QueueHealthIndicator } from './queue-health.indicator';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  ServiceUnavailableException,
+} from "@nestjs/common";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { HealthService } from "./health.service";
+import { QueueHealthIndicator } from "./queue-health.indicator";
 
 /**
  * Kubernetes probe endpoints (#510), served outside the API prefix.
@@ -13,35 +19,40 @@ import { QueueHealthIndicator } from './queue-health.indicator';
  *    recovers. Stellar Horizon is deliberately excluded: it is external and
  *    has its own failover (see /health for the full report).
  */
-@ApiTags('health')
-@Controller('healthz')
+@ApiTags("health")
+@Controller("healthz")
 export class HealthzController {
   constructor(
     private readonly healthService: HealthService,
     private readonly queueHealth: QueueHealthIndicator,
   ) {}
 
-  @Get('live')
+  @Get("live")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Liveness probe' })
+  @ApiOperation({ summary: "Liveness probe" })
   live() {
-    return { status: 'ok', uptimeSeconds: Math.round(process.uptime()) };
+    return { status: "ok", uptimeSeconds: Math.round(process.uptime()) };
   }
 
-  @Get('ready')
+  @Get("ready")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Readiness probe (database + Redis)' })
+  @ApiOperation({ summary: "Readiness probe (database + Redis)" })
   async ready() {
     const results = await Promise.all([
       this.healthService.isDatabaseHealthy(),
       this.queueHealth.isHealthy(),
     ]);
-    const checks = Object.assign({}, ...results) as Record<string, { status: string }>;
-    const healthy = Object.values(checks).every((check) => check.status === 'up');
+    const checks = Object.assign({}, ...results) as Record<
+      string,
+      { status: string }
+    >;
+    const healthy = Object.values(checks).every(
+      (check) => check.status === "up",
+    );
 
     if (!healthy) {
-      throw new ServiceUnavailableException({ status: 'unavailable', checks });
+      throw new ServiceUnavailableException({ status: "unavailable", checks });
     }
-    return { status: 'ok', checks };
+    return { status: "ok", checks };
   }
 }

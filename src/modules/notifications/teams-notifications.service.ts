@@ -1,35 +1,37 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { NotificationType } from '@prisma/client';
-import { SLACK_KEY_TYPES, isSlackKeyType } from './slack-notifications.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import axios from "axios";
+import { NotificationType } from "@prisma/client";
+import { SLACK_KEY_TYPES, isSlackKeyType } from "./slack-notifications.service";
 
 // Teams mirrors the same event selection as Slack and Discord (#391)
 export const TEAMS_KEY_TYPES = SLACK_KEY_TYPES;
 export { isSlackKeyType as isTeamsKeyType };
 
-export const ADAPTIVE_CARD_CONTENT_TYPE = 'application/vnd.microsoft.card.adaptive';
-export const ADAPTIVE_CARD_SCHEMA = 'http://adaptivecards.io/schemas/adaptive-card.json';
+export const ADAPTIVE_CARD_CONTENT_TYPE =
+  "application/vnd.microsoft.card.adaptive";
+export const ADAPTIVE_CARD_SCHEMA =
+  "http://adaptivecards.io/schemas/adaptive-card.json";
 
 const TYPE_EMOJI: Partial<Record<NotificationType, string>> = {
-  ENGAGEMENT_CREATED: '🎉',
-  PROOF_SUBMITTED: '📄',
-  MILESTONE_CONFIRMED: '✅',
-  PAYMENT_RELEASED: '💰',
-  DISPUTE_RAISED: '⚠️',
-  DISPUTE_RESOLVED: '⚖️',
-  REPLACEMENT_REQUESTED: '🔄',
-  ENGAGEMENT_CANCELLED: '❌',
-  FUNDING_SHORTFALL_DETECTED: '🚨',
+  ENGAGEMENT_CREATED: "🎉",
+  PROOF_SUBMITTED: "📄",
+  MILESTONE_CONFIRMED: "✅",
+  PAYMENT_RELEASED: "💰",
+  DISPUTE_RAISED: "⚠️",
+  DISPUTE_RESOLVED: "⚖️",
+  REPLACEMENT_REQUESTED: "🔄",
+  ENGAGEMENT_CANCELLED: "❌",
+  FUNDING_SHORTFALL_DETECTED: "🚨",
 };
 
 // Adaptive Card text colors used to flag attention-worthy events.
 const TYPE_COLOR: Partial<Record<NotificationType, string>> = {
-  DISPUTE_RAISED: 'Warning',
-  ENGAGEMENT_CANCELLED: 'Attention',
-  FUNDING_SHORTFALL_DETECTED: 'Attention',
-  PAYMENT_RELEASED: 'Good',
-  MILESTONE_CONFIRMED: 'Good',
+  DISPUTE_RAISED: "Warning",
+  ENGAGEMENT_CANCELLED: "Attention",
+  FUNDING_SHORTFALL_DETECTED: "Attention",
+  PAYMENT_RELEASED: "Good",
+  MILESTONE_CONFIRMED: "Good",
 };
 
 /**
@@ -54,21 +56,24 @@ export class TeamsNotificationsService {
     message: string,
     data?: Record<string, any>,
   ): Record<string, any> {
-    const emoji = TYPE_EMOJI[type] ?? '📬';
+    const emoji = TYPE_EMOJI[type] ?? "📬";
     const body = message?.trim() ? message.trim() : title;
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'https://app.stellarsorter.com');
+    const frontendUrl = this.config.get<string>(
+      "FRONTEND_URL",
+      "https://app.stellarsorter.com",
+    );
 
     const cardBody: Record<string, any>[] = [
       {
-        type: 'TextBlock',
+        type: "TextBlock",
         text: `${emoji} ${title}`,
-        size: 'Large',
-        weight: 'Bolder',
+        size: "Large",
+        weight: "Bolder",
         wrap: true,
         ...(TYPE_COLOR[type] ? { color: TYPE_COLOR[type] } : {}),
       },
       {
-        type: 'TextBlock',
+        type: "TextBlock",
         text: body,
         wrap: true,
       },
@@ -76,32 +81,32 @@ export class TeamsNotificationsService {
 
     const facts = this.buildFacts(data);
     if (facts.length > 0) {
-      cardBody.push({ type: 'FactSet', facts });
+      cardBody.push({ type: "FactSet", facts });
     }
 
     cardBody.push({
-      type: 'TextBlock',
-      text: 'StellarSorter',
-      size: 'Small',
+      type: "TextBlock",
+      text: "StellarSorter",
+      size: "Small",
       isSubtle: true,
-      spacing: 'Medium',
+      spacing: "Medium",
     });
 
     return {
-      type: 'message',
+      type: "message",
       attachments: [
         {
           contentType: ADAPTIVE_CARD_CONTENT_TYPE,
           contentUrl: null,
           content: {
             $schema: ADAPTIVE_CARD_SCHEMA,
-            type: 'AdaptiveCard',
-            version: '1.4',
+            type: "AdaptiveCard",
+            version: "1.4",
             body: cardBody,
             actions: [
               {
-                type: 'Action.OpenUrl',
-                title: 'View in StellarSorter',
+                type: "Action.OpenUrl",
+                title: "View in StellarSorter",
                 url: frontendUrl,
               },
             ],
@@ -125,20 +130,25 @@ export class TeamsNotificationsService {
     const payload = this.buildPayload(type, title, message, data);
     await axios.post(webhookUrl, payload, {
       timeout: 10_000,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
     this.logger.log(`Teams notification sent for ${type}`);
   }
 
-  private buildFacts(data?: Record<string, any>): { title: string; value: string }[] {
+  private buildFacts(
+    data?: Record<string, any>,
+  ): { title: string; value: string }[] {
     if (!data) return [];
     const facts: { title: string; value: string }[] = [];
-    if (data.engagementTitle) facts.push({ title: 'Engagement', value: String(data.engagementTitle) });
+    if (data.engagementTitle)
+      facts.push({ title: "Engagement", value: String(data.engagementTitle) });
     if (data.milestoneIndex !== undefined && data.milestoneIndex !== null) {
-      facts.push({ title: 'Milestone', value: String(data.milestoneIndex) });
+      facts.push({ title: "Milestone", value: String(data.milestoneIndex) });
     }
-    if (data.amount) facts.push({ title: 'Amount', value: String(data.amount) });
-    if (data.reason) facts.push({ title: 'Reason', value: String(data.reason) });
+    if (data.amount)
+      facts.push({ title: "Amount", value: String(data.amount) });
+    if (data.reason)
+      facts.push({ title: "Reason", value: String(data.reason) });
     return facts;
   }
 }

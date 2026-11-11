@@ -1,6 +1,6 @@
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { MilestoneStatus } from '@prisma/client';
+import { IsString, IsNotEmpty, IsEnum } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { MilestoneStatus } from "@prisma/client";
 
 export class UpdateMilestoneStatusDto {
   @ApiProperty({ enum: MilestoneStatus, example: MilestoneStatus.RESOLVED })
@@ -8,7 +8,7 @@ export class UpdateMilestoneStatusDto {
   @IsNotEmpty()
   status: MilestoneStatus;
 
-  @ApiProperty({ example: 'Technical failure, unable to verify on-chain.' })
+  @ApiProperty({ example: "Technical failure, unable to verify on-chain." })
   @IsString()
   @IsNotEmpty()
   reason: string;

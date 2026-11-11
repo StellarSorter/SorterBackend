@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createHash } from 'crypto';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { createHash } from "crypto";
 
-const HIBP_API = 'https://api.pwnedpasswords.com/range/';
+const HIBP_API = "https://api.pwnedpasswords.com/range/";
 // Keep the User-Agent small and descriptive — HIBP asks callers to identify themselves.
-const USER_AGENT = 'stellarsorter-backend/hibp-check';
+const USER_AGENT = "stellarsorter-backend/hibp-check";
 const REQUEST_TIMEOUT_MS = 3_000;
 
 @Injectable()
@@ -26,7 +26,10 @@ export class HibpService {
    * This means the raw password (and the full hash) never leaves the service.
    */
   async isBreached(password: string): Promise<boolean> {
-    const sha1 = createHash('sha1').update(password).digest('hex').toUpperCase();
+    const sha1 = createHash("sha1")
+      .update(password)
+      .digest("hex")
+      .toUpperCase();
     const prefix = sha1.slice(0, 5);
     const suffix = sha1.slice(5);
 
@@ -39,8 +42,8 @@ export class HibpService {
     try {
       const res = await fetch(url, {
         headers: {
-          'User-Agent': USER_AGENT,
-          'Add-Padding': 'true', // mitigates response-size side-channel
+          "User-Agent": USER_AGENT,
+          "Add-Padding": "true", // mitigates response-size side-channel
         },
         signal: controller.signal,
       });
@@ -63,8 +66,8 @@ export class HibpService {
     }
 
     // Each line: "SUFFIX:COUNT\r\n"  (CRLF line endings from the API)
-    for (const line of responseText.split('\n')) {
-      const [lineSuffix, countStr] = line.trim().split(':');
+    for (const line of responseText.split("\n")) {
+      const [lineSuffix, countStr] = line.trim().split(":");
       if (lineSuffix === suffix) {
         const count = parseInt(countStr, 10);
         return count > 0;

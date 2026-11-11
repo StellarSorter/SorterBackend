@@ -1,5 +1,5 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 /**
  * HorizonFailoverService
@@ -32,25 +32,25 @@ export class HorizonFailoverService implements OnModuleInit {
 
   onModuleInit() {
     // Parse URL list — HORIZON_URLS takes priority, falls back to STELLAR_HORIZON_URL
-    const multiUrl = this.config.get<string>('HORIZON_URLS', '');
-    const singleUrl = this.config.get<string>('STELLAR_HORIZON_URL', '');
-    const stellarConfig = this.config.get<any>('stellar') ?? {};
+    const multiUrl = this.config.get<string>("HORIZON_URLS", "");
+    const singleUrl = this.config.get<string>("STELLAR_HORIZON_URL", "");
+    const stellarConfig = this.config.get<any>("stellar") ?? {};
 
-    const raw = multiUrl || singleUrl || stellarConfig.horizonUrl || '';
+    const raw = multiUrl || singleUrl || stellarConfig.horizonUrl || "";
     this.urls = raw
-      .split(',')
+      .split(",")
       .map((u: string) => u.trim())
       .filter(Boolean);
 
     if (this.urls.length === 0) {
       throw new Error(
-        'No Horizon URLs configured. Set HORIZON_URLS or STELLAR_HORIZON_URL.',
+        "No Horizon URLs configured. Set HORIZON_URLS or STELLAR_HORIZON_URL.",
       );
     }
 
-    this.threshold = this.config.get<number>('HORIZON_FAILOVER_THRESHOLD', 3);
+    this.threshold = this.config.get<number>("HORIZON_FAILOVER_THRESHOLD", 3);
     this.recoveryIntervalMs = this.config.get<number>(
-      'HORIZON_RECOVERY_INTERVAL_MS',
+      "HORIZON_RECOVERY_INTERVAL_MS",
       60_000,
     );
 
@@ -81,7 +81,11 @@ export class HorizonFailoverService implements OnModuleInit {
   }
 
   /** All configured URLs with their health state — used in /health. */
-  get endpointStatus(): Array<{ url: string; active: boolean; consecutiveErrors: number }> {
+  get endpointStatus(): Array<{
+    url: string;
+    active: boolean;
+    consecutiveErrors: number;
+  }> {
     return this.urls.map((url, i) => ({
       url,
       active: i === this.activeIndex,
@@ -178,7 +182,9 @@ export class HorizonFailoverService implements OnModuleInit {
 
       try {
         const probeUrl = `${this.urls[i]}/`;
-        const res = await globalThis.fetch(probeUrl, { signal: AbortSignal.timeout(5000) });
+        const res = await globalThis.fetch(probeUrl, {
+          signal: AbortSignal.timeout(5000),
+        });
         if (res.ok || res.status < 500) {
           this.logger.log(
             `Horizon recovery probe succeeded for ${this.urls[i]} — restoring as active`,
@@ -187,7 +193,9 @@ export class HorizonFailoverService implements OnModuleInit {
           // Promote recovered endpoint to active only if it was the original primary (index 0)
           if (i === 0) {
             this.activeIndex = 0;
-            this.logger.log(`Horizon primary endpoint restored: ${this.urls[0]}`);
+            this.logger.log(
+              `Horizon primary endpoint restored: ${this.urls[0]}`,
+            );
           }
         }
       } catch {

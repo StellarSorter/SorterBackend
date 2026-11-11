@@ -3,8 +3,8 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import { ApiKeysService } from '../../modules/auth/api-keys.service';
+} from "@nestjs/common";
+import { ApiKeysService } from "../../modules/auth/api-keys.service";
 
 /**
  * Authenticates requests via the `X-Api-Key` header.
@@ -16,12 +16,10 @@ export class ApiKeyGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const rawKey =
-      request.headers['x-api-key'] ??
-      request.headers['X-Api-Key'];
+    const rawKey = request.headers["x-api-key"] ?? request.headers["X-Api-Key"];
 
-    if (!rawKey || typeof rawKey !== 'string') {
-      throw new UnauthorizedException('API key required');
+    if (!rawKey || typeof rawKey !== "string") {
+      throw new UnauthorizedException("API key required");
     }
 
     try {
@@ -29,7 +27,7 @@ export class ApiKeyGuard implements CanActivate {
       return true;
     } catch (err) {
       throw new UnauthorizedException(
-        err instanceof Error ? err.message : 'Invalid API key',
+        err instanceof Error ? err.message : "Invalid API key",
       );
     }
   }

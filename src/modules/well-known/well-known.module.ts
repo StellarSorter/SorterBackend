@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { WellKnownController } from './well-known.controller';
+import { Module } from "@nestjs/common";
+import { WellKnownController } from "./well-known.controller";
 
 @Module({
   controllers: [WellKnownController],

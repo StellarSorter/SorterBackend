@@ -1,11 +1,11 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { SystemConfigService } from '../../common/system-config/system-config.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType, MilestoneKind } from '@prisma/client';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger, Optional } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { SystemConfigService } from "../../common/system-config/system-config.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { NotificationType, MilestoneKind } from "@prisma/client";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 /**
  * PlacementReminderSchedulerService (#260)
@@ -34,25 +34,33 @@ export class PlacementReminderSchedulerService {
     private readonly lock: DistributedLockService,
     @Optional() private readonly systemConfig?: SystemConfigService,
   ) {
-    this.envReminderDays = this.config.get<number>('PLACEMENT_MILESTONE_REMINDER_DAYS', 7);
+    this.envReminderDays = this.config.get<number>(
+      "PLACEMENT_MILESTONE_REMINDER_DAYS",
+      7,
+    );
   }
 
   /** Reminder window; admin overrides apply without a restart (#503). */
   private get reminderDays(): number {
     return this.systemConfig
-      ? this.systemConfig.getNumber('milestones.placementReminderDays')
+      ? this.systemConfig.getNumber("milestones.placementReminderDays")
       : this.envReminderDays;
   }
 
   @Cron(CronExpression.EVERY_HOUR)
   async sendPlacementReminders() {
-    const token = await this.lock.tryAcquireLock('cron:placement-reminder', 600_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:placement-reminder",
+      600_000,
+    );
     if (!token) return;
     try {
       if (this.reminderDays <= 0) return; // disabled via env or SystemConfig
 
       const now = new Date();
-      const reminderThreshold = new Date(now.getTime() + this.reminderDays * 24 * 60 * 60 * 1000);
+      const reminderThreshold = new Date(
+        now.getTime() + this.reminderDays * 24 * 60 * 60 * 1000,
+      );
 
       // Find PLACEMENT milestones whose due date falls within the reminder window
       // and whose reminder has not yet been sent.
@@ -60,7 +68,7 @@ export class PlacementReminderSchedulerService {
         where: {
           kind: MilestoneKind.PLACEMENT,
           placementDueAt: {
-            gt: now,              // not already overdue
+            gt: now, // not already overdue
             lte: reminderThreshold,
           },
           reminderSent: false,
@@ -78,7 +86,9 @@ export class PlacementReminderSchedulerService {
 
       if (!dueSoon.length) return;
 
-      this.logger.log(`Sending ${dueSoon.length} placement milestone due-soon reminder(s)`);
+      this.logger.log(
+        `Sending ${dueSoon.length} placement milestone due-soon reminder(s)`,
+      );
 
       for (const milestone of dueSoon) {
         try {
@@ -120,7 +130,7 @@ export class PlacementReminderSchedulerService {
         }
       }
     } finally {
-      await this.lock.releaseLock('cron:placement-reminder', token);
+      await this.lock.releaseLock("cron:placement-reminder", token);
     }
   }
 }

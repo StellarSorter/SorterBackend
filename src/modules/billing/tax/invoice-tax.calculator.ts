@@ -19,16 +19,41 @@
  */
 
 export type TaxTreatment =
-  | 'NOT_REGISTERED'
-  | 'DOMESTIC'
-  | 'REVERSE_CHARGE'
-  | 'EU_DESTINATION'
-  | 'OUTSIDE_SCOPE';
+  | "NOT_REGISTERED"
+  | "DOMESTIC"
+  | "REVERSE_CHARGE"
+  | "EU_DESTINATION"
+  | "OUTSIDE_SCOPE";
 
 /** EU member states (ISO 3166-1 alpha-2). */
 export const EU_COUNTRIES = new Set([
-  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE',
-  'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+  "AT",
+  "BE",
+  "BG",
+  "HR",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HU",
+  "IE",
+  "IT",
+  "LV",
+  "LT",
+  "LU",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SK",
+  "SI",
+  "ES",
+  "SE",
 ]);
 
 /**
@@ -36,19 +61,44 @@ export const EU_COUNTRIES = new Set([
  * override per deployment with INVOICE_VAT_RATE_OVERRIDES.
  */
 export const STANDARD_VAT_RATES_BPS: Readonly<Record<string, number>> = {
-  AT: 2000, BE: 2100, BG: 2000, HR: 2500, CY: 1900, CZ: 2100, DK: 2500, EE: 2400,
-  FI: 2550, FR: 2000, DE: 1900, GR: 2400, HU: 2700, IE: 2300, IT: 2200, LV: 2100,
-  LT: 2100, LU: 1700, MT: 1800, NL: 2100, PL: 2300, PT: 2300, RO: 2100, SK: 2300,
-  SI: 2200, ES: 2100, SE: 2500,
-  GB: 2000, NO: 2500, CH: 810,
+  AT: 2000,
+  BE: 2100,
+  BG: 2000,
+  HR: 2500,
+  CY: 1900,
+  CZ: 2100,
+  DK: 2500,
+  EE: 2400,
+  FI: 2550,
+  FR: 2000,
+  DE: 1900,
+  GR: 2400,
+  HU: 2700,
+  IE: 2300,
+  IT: 2200,
+  LV: 2100,
+  LT: 2100,
+  LU: 1700,
+  MT: 1800,
+  NL: 2100,
+  PL: 2300,
+  PT: 2300,
+  RO: 2100,
+  SK: 2300,
+  SI: 2200,
+  ES: 2100,
+  SE: 2500,
+  GB: 2000,
+  NO: 2500,
+  CH: 810,
 };
 
 export const REVERSE_CHARGE_NOTICE =
-  'Reverse charge: VAT to be accounted for by the recipient (Article 196, Council Directive 2006/112/EC).';
+  "Reverse charge: VAT to be accounted for by the recipient (Article 196, Council Directive 2006/112/EC).";
 export const OUTSIDE_SCOPE_NOTICE =
-  'Services outside the scope of VAT in the supplier\'s country (place of supply: customer\'s country).';
+  "Services outside the scope of VAT in the supplier's country (place of supply: customer's country).";
 export const EU_DESTINATION_NOTICE =
-  'VAT charged at the rate of the customer\'s EU member state (One-Stop Shop).';
+  "VAT charged at the rate of the customer's EU member state (One-Stop Shop).";
 
 export interface TaxParty {
   /** ISO 3166-1 alpha-2 country code. */
@@ -93,30 +143,36 @@ export interface ComputeInvoiceTaxInput {
 }
 
 export function normalizeCountry(country?: string | null): string | null {
-  const value = (country ?? '').trim().toUpperCase();
+  const value = (country ?? "").trim().toUpperCase();
   return /^[A-Z]{2}$/.test(value) ? value : null;
 }
 
 /** Uppercase and strip spaces, dots and dashes: "de 123.456-789" → "DE123456789". */
 export function normalizeTaxId(taxId?: string | null): string | null {
-  const value = (taxId ?? '').replace(/[\s.\-]/g, '').toUpperCase();
+  const value = (taxId ?? "").replace(/[\s.\-]/g, "").toUpperCase();
   return value.length > 0 ? value : null;
 }
 
 /** VAT number prefix for a country (Greece uses "EL"). */
 export function vatPrefix(country: string): string {
-  return country === 'GR' ? 'EL' : country;
+  return country === "GR" ? "EL" : country;
 }
 
 /**
  * Structural check only (prefix + 2–13 alphanumerics). It does not prove the
  * number is registered — verify against VIES before relying on it.
  */
-export function isPlausibleVatId(taxId: string | null, country: string | null): boolean {
+export function isPlausibleVatId(
+  taxId: string | null,
+  country: string | null,
+): boolean {
   if (!taxId || !country) return false;
   if (!EU_COUNTRIES.has(country)) return /^[A-Z0-9]{4,20}$/.test(taxId);
   const prefix = vatPrefix(country);
-  return taxId.startsWith(prefix) && /^[A-Z0-9]{2,13}$/.test(taxId.slice(prefix.length));
+  return (
+    taxId.startsWith(prefix) &&
+    /^[A-Z0-9]{2,13}$/.test(taxId.slice(prefix.length))
+  );
 }
 
 export function standardRateBps(
@@ -144,7 +200,9 @@ export function formatRate(rateBps: number): string {
   return `${Number.isInteger(percent) ? percent.toFixed(0) : percent.toString()}%`;
 }
 
-export function computeInvoiceTax(input: ComputeInvoiceTaxInput): InvoiceTaxResult {
+export function computeInvoiceTax(
+  input: ComputeInvoiceTaxInput,
+): InvoiceTaxResult {
   const overrides = input.rateOverrides ?? {};
   const sellerCountry = normalizeCountry(input.seller.country);
   const sellerTaxId = normalizeTaxId(input.seller.taxId);
@@ -165,7 +223,9 @@ export function computeInvoiceTax(input: ComputeInvoiceTaxInput): InvoiceTaxResu
       subtotal,
       taxTotal,
       total: subtotal + taxTotal,
-      taxLines: label ? [{ label, rateBps, base: subtotal, amount: taxTotal }] : [],
+      taxLines: label
+        ? [{ label, rateBps, base: subtotal, amount: taxTotal }]
+        : [],
       notices,
       seller: { country: sellerCountry, taxId: sellerTaxId },
       customer: { country: customerCountry, taxId: customerTaxId },
@@ -173,24 +233,36 @@ export function computeInvoiceTax(input: ComputeInvoiceTaxInput): InvoiceTaxResu
   };
 
   if (!sellerCountry || !sellerTaxId) {
-    return result('NOT_REGISTERED', 0, null);
+    return result("NOT_REGISTERED", 0, null);
   }
 
   if (!customerCountry || customerCountry === sellerCountry) {
     const rate = standardRateBps(sellerCountry, overrides);
-    return result('DOMESTIC', rate, `VAT ${formatRate(rate)} (${sellerCountry})`);
+    return result(
+      "DOMESTIC",
+      rate,
+      `VAT ${formatRate(rate)} (${sellerCountry})`,
+    );
   }
 
-  const bothEu = EU_COUNTRIES.has(sellerCountry) && EU_COUNTRIES.has(customerCountry);
+  const bothEu =
+    EU_COUNTRIES.has(sellerCountry) && EU_COUNTRIES.has(customerCountry);
   if (bothEu) {
     if (isPlausibleVatId(customerTaxId, customerCountry)) {
-      return result('REVERSE_CHARGE', 0, 'VAT 0% (reverse charge)', [REVERSE_CHARGE_NOTICE]);
+      return result("REVERSE_CHARGE", 0, "VAT 0% (reverse charge)", [
+        REVERSE_CHARGE_NOTICE,
+      ]);
     }
     const rate = standardRateBps(customerCountry, overrides);
-    return result('EU_DESTINATION', rate, `VAT ${formatRate(rate)} (${customerCountry})`, [
-      EU_DESTINATION_NOTICE,
-    ]);
+    return result(
+      "EU_DESTINATION",
+      rate,
+      `VAT ${formatRate(rate)} (${customerCountry})`,
+      [EU_DESTINATION_NOTICE],
+    );
   }
 
-  return result('OUTSIDE_SCOPE', 0, 'VAT 0% (outside scope)', [OUTSIDE_SCOPE_NOTICE]);
+  return result("OUTSIDE_SCOPE", 0, "VAT 0% (outside scope)", [
+    OUTSIDE_SCOPE_NOTICE,
+  ]);
 }

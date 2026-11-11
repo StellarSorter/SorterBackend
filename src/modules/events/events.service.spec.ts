@@ -6,6 +6,7 @@ import { MilestonesService } from '../milestones/milestones.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EngagementsService } from '../engagements/engagements.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { DistributedLockService } from '../../common/lock/distributed-lock.service';
 import { NotificationType } from '@prisma/client';
 
 describe('EventsService', () => {
@@ -80,6 +81,7 @@ describe('EventsService', () => {
             sendWebhook: jest.fn(),
           },
         },
+        { provide: DistributedLockService, useValue: { tryAcquireLock: jest.fn().mockResolvedValue('token'), releaseLock: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 

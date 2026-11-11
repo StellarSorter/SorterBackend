@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { ListUsersDto } from './dto/list-users.dto';
-import { AdminSubRole, Prisma, UserRole, MilestoneStatus } from '@prisma/client';
-import { NotificationsService } from '../notifications/notifications.service';
-import { CacheService } from '../../common/cache/cache.service';
-import { cursorPage } from '../../common/pagination/cursor-pagination';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { ListUsersDto } from "./dto/list-users.dto";
+import {
+  AdminSubRole,
+  Prisma,
+  UserRole,
+  MilestoneStatus,
+} from "@prisma/client";
+import { NotificationsService } from "../notifications/notifications.service";
+import { CacheService } from "../../common/cache/cache.service";
+import { cursorPage } from "../../common/pagination/cursor-pagination";
 
 const USER_SELECT = {
   id: true,
@@ -23,7 +33,7 @@ const USER_SELECT = {
 
 @Injectable()
 export class AdminUsersService {
-  private static readonly METRICS_CACHE_KEY = 'admin:metrics';
+  private static readonly METRICS_CACHE_KEY = "admin:metrics";
   private static readonly METRICS_TTL_S = 60;
 
   constructor(
@@ -43,31 +53,40 @@ export class AdminUsersService {
       ...(searchTerm
         ? {
             OR: [
-              { id: { contains: searchTerm, mode: 'insensitive' } },
-              { name: { contains: searchTerm, mode: 'insensitive' } },
-              { email: { contains: searchTerm, mode: 'insensitive' } },
-              { stellarAddress: { contains: searchTerm, mode: 'insensitive' } },
-              { company: { contains: searchTerm, mode: 'insensitive' } },
+              { id: { contains: searchTerm, mode: "insensitive" } },
+              { name: { contains: searchTerm, mode: "insensitive" } },
+              { email: { contains: searchTerm, mode: "insensitive" } },
+              { stellarAddress: { contains: searchTerm, mode: "insensitive" } },
+              { company: { contains: searchTerm, mode: "insensitive" } },
             ],
           }
         : {}),
     };
 
-      if (dto.cursor) {
-        const users = await this.prisma.user.findMany({
-          where,
-          select: USER_SELECT,
-          cursor: { id: dto.cursor },
-          skip: 1,
-          take: limit + 1,
-          orderBy: { createdAt: 'desc' },
-        });
-        const pageResult = cursorPage(users, limit);
-        return { data: pageResult.data, meta: { limit, nextCursor: pageResult.nextCursor } };
-      }
+    if (dto.cursor) {
+      const users = await this.prisma.user.findMany({
+        where,
+        select: USER_SELECT,
+        cursor: { id: dto.cursor },
+        skip: 1,
+        take: limit + 1,
+        orderBy: { createdAt: "desc" },
+      });
+      const pageResult = cursorPage(users, limit);
+      return {
+        data: pageResult.data,
+        meta: { limit, nextCursor: pageResult.nextCursor },
+      };
+    }
 
     const [users, total] = await this.prisma.$transaction([
-      this.prisma.user.findMany({ where, select: USER_SELECT, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.user.findMany({
+        where,
+        select: USER_SELECT,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
       this.prisma.user.count({ where }),
     ]);
 
@@ -79,8 +98,9 @@ export class AdminUsersService {
 
   async deactivateUser(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.deactivatedAt) throw new BadRequestException('User is already deactivated');
+    if (!user) throw new NotFoundException("User not found");
+    if (user.deactivatedAt)
+      throw new BadRequestException("User is already deactivated");
 
     return this.prisma.user.update({
       where: { id },
@@ -91,8 +111,9 @@ export class AdminUsersService {
 
   async reactivateUser(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
-    if (!user.deactivatedAt) throw new BadRequestException('User is not deactivated');
+    if (!user) throw new NotFoundException("User not found");
+    if (!user.deactivatedAt)
+      throw new BadRequestException("User is not deactivated");
 
     return this.prisma.user.update({
       where: { id },
@@ -103,9 +124,9 @@ export class AdminUsersService {
 
   async setCompanyVerification(id: string, verified: boolean) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     if (user.role !== UserRole.COMPANY) {
-      throw new BadRequestException('Only company users can be verified');
+      throw new BadRequestException("Only company users can be verified");
     }
 
     const updated = await this.prisma.user.update({
@@ -126,14 +147,16 @@ export class AdminUsersService {
       where: { id: engagementId },
       include: { arbiter: true },
     });
-    if (!engagement) throw new NotFoundException('Engagement not found');
+    if (!engagement) throw new NotFoundException("Engagement not found");
 
     const newArbiter = await this.prisma.user.findUnique({
       where: { id: arbiterId },
     });
-    if (!newArbiter) throw new NotFoundException('Arbiter not found');
-    if (newArbiter.role !== UserRole.ARBITER) throw new BadRequestException('User is not an arbiter');
-    if (!newArbiter.stellarAddress) throw new BadRequestException('Arbiter has no stellar address');
+    if (!newArbiter) throw new NotFoundException("Arbiter not found");
+    if (newArbiter.role !== UserRole.ARBITER)
+      throw new BadRequestException("User is not an arbiter");
+    if (!newArbiter.stellarAddress)
+      throw new BadRequestException("Arbiter has no stellar address");
 
     const updated = await this.prisma.engagement.update({
       where: { id: engagementId },
@@ -147,8 +170,8 @@ export class AdminUsersService {
     if (isReassignment && engagement.arbiter) {
       await this.notificationsService.notifyUserById(
         engagement.arbiter.id,
-        'ARBITER_REASSIGNED',
-        'Arbiter Reassigned',
+        "ARBITER_REASSIGNED",
+        "Arbiter Reassigned",
         `You have been removed as arbiter from engagement ${engagementId}`,
         { engagementId },
       );
@@ -157,8 +180,8 @@ export class AdminUsersService {
     // Notify new arbiter
     await this.notificationsService.notifyUserById(
       newArbiter.id,
-      'ARBITER_ASSIGNED',
-      'Arbiter Assigned',
+      "ARBITER_ASSIGNED",
+      "Arbiter Assigned",
       `You have been assigned as arbiter to engagement ${engagementId}`,
       { engagementId },
     );
@@ -183,7 +206,9 @@ export class AdminUsersService {
   }
 
   async getAdminMetrics() {
-    const cached = await this.cache.get<object>(AdminUsersService.METRICS_CACHE_KEY);
+    const cached = await this.cache.get<object>(
+      AdminUsersService.METRICS_CACHE_KEY,
+    );
     if (cached) return cached;
 
     // Execute all metrics queries in parallel for better performance
@@ -199,11 +224,11 @@ export class AdminUsersService {
     ] = await Promise.all([
       // Total engagements by status
       this.prisma.engagement.groupBy({
-        by: ['status'],
+        by: ["status"],
         _count: true,
         where: { archivedAt: null },
       }),
-      
+
       // Total milestone volume (sum of totalAmount across all engagements)
       this.prisma.engagement.aggregate({
         _sum: {
@@ -211,7 +236,7 @@ export class AdminUsersService {
         },
         where: { archivedAt: null },
       }),
-      
+
       // Total released amount across all engagements
       this.prisma.engagement.aggregate({
         _sum: {
@@ -219,31 +244,31 @@ export class AdminUsersService {
         },
         where: { archivedAt: null },
       }),
-      
+
       // Active disputes count (milestones with DISPUTED status)
       this.prisma.milestone.count({
         where: { status: MilestoneStatus.DISPUTED },
       }),
-      
+
       // Registered users by role
       this.prisma.user.groupBy({
-        by: ['role'],
+        by: ["role"],
         _count: true,
         where: {
           deactivatedAt: null, // Only count active users
         },
       }),
-      
+
       // Total engagements (for backward compatibility)
       this.prisma.engagement.count({
         where: { archivedAt: null },
       }),
-      
+
       // Total disputed milestones (for backward compatibility)
       this.prisma.milestone.count({
         where: { status: MilestoneStatus.DISPUTED },
       }),
-      
+
       // Get arbiters with active disputes count (for backward compatibility)
       this.prisma.user.findMany({
         where: { role: UserRole.ARBITER },
@@ -266,16 +291,22 @@ export class AdminUsersService {
     const lockedAmount = totalVolume - totalReleased;
 
     // Format engagements by status
-    const engagementsByStatusFormatted = engagementsByStatus.reduce((acc, item) => {
-      acc[item.status] = item._count;
-      return acc;
-    }, {} as Record<string, number>);
+    const engagementsByStatusFormatted = engagementsByStatus.reduce(
+      (acc, item) => {
+        acc[item.status] = item._count;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Format users by role
-    const usersByRoleFormatted = usersByRole.reduce((acc, item) => {
-      acc[item.role] = item._count;
-      return acc;
-    }, {} as Record<string, number>);
+    const usersByRoleFormatted = usersByRole.reduce(
+      (acc, item) => {
+        acc[item.role] = item._count;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Format arbiter workload (for backward compatibility)
     const arbiterWorkload = arbiters.map((arbiter) => {
@@ -307,15 +338,22 @@ export class AdminUsersService {
       },
       users: {
         byRole: usersByRoleFormatted,
-        totalActive: Object.values(usersByRoleFormatted).reduce((sum, count) => sum + count, 0),
+        totalActive: Object.values(usersByRoleFormatted).reduce(
+          (sum, count) => sum + count,
+          0,
+        ),
       },
       // Backward compatible metrics
       totalEngagements,
       totalDisputedMilestones,
       arbiterWorkload,
     };
-    
-    await this.cache.set(AdminUsersService.METRICS_CACHE_KEY, result, AdminUsersService.METRICS_TTL_S);
+
+    await this.cache.set(
+      AdminUsersService.METRICS_CACHE_KEY,
+      result,
+      AdminUsersService.METRICS_TTL_S,
+    );
     return result;
   }
 
@@ -325,7 +363,7 @@ export class AdminUsersService {
 
   async setRateLimitOverride(id: string, limit: number) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     return this.prisma.user.update({
       where: { id },
@@ -336,7 +374,7 @@ export class AdminUsersService {
 
   async clearRateLimitOverride(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     return this.prisma.user.update({
       where: { id },
@@ -346,9 +384,12 @@ export class AdminUsersService {
   }
 
   async setCompanyPlan(companyId: string, planId: string | null) {
-    const user = await this.prisma.user.findUnique({ where: { id: companyId } });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.role !== UserRole.COMPANY) throw new BadRequestException('Only company users have plans');
+    const user = await this.prisma.user.findUnique({
+      where: { id: companyId },
+    });
+    if (!user) throw new NotFoundException("User not found");
+    if (user.role !== UserRole.COMPANY)
+      throw new BadRequestException("Only company users have plans");
     if (planId) {
       const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
       if (!plan) throw new NotFoundException(`Plan ${planId} not found`);
@@ -361,7 +402,9 @@ export class AdminUsersService {
   }
 
   async listPlans() {
-    return this.prisma.plan.findMany({ orderBy: { maxActiveEngagements: 'asc' } });
+    return this.prisma.plan.findMany({
+      orderBy: { maxActiveEngagements: "asc" },
+    });
   }
 
   // ----------------------------------------------------------
@@ -372,7 +415,9 @@ export class AdminUsersService {
     const user = await this.prisma.user.findUnique({ where: { id: targetId } });
     if (!user) throw new NotFoundException(`User ${targetId} not found`);
     if (user.role !== UserRole.ADMIN) {
-      throw new BadRequestException('Admin sub-roles can only be set on ADMIN users');
+      throw new BadRequestException(
+        "Admin sub-roles can only be set on ADMIN users",
+      );
     }
     return this.prisma.user.update({
       where: { id: targetId },

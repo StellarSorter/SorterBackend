@@ -1,10 +1,13 @@
 import {
-  Injectable, NotFoundException, ForbiddenException, BadRequestException,
-} from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateEngagementTemplateDto } from './dto/create-engagement-template.dto';
-import { UpdateEngagementTemplateDto } from './dto/update-engagement-template.dto';
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { CreateEngagementTemplateDto } from "./dto/create-engagement-template.dto";
+import { UpdateEngagementTemplateDto } from "./dto/update-engagement-template.dto";
 
 @Injectable()
 export class EngagementTemplatesService {
@@ -45,7 +48,7 @@ export class EngagementTemplatesService {
   async findAll(companyId: string) {
     return this.prisma.engagementTemplate.findMany({
       where: { companyId, archived: false },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -54,7 +57,8 @@ export class EngagementTemplatesService {
       where: { id },
     });
     if (!template) throw new NotFoundException(`Template ${id} not found`);
-    if (template.companyId !== companyId) throw new ForbiddenException('Not authorized to access this template');
+    if (template.companyId !== companyId)
+      throw new ForbiddenException("Not authorized to access this template");
     return template;
   }
 
@@ -62,7 +66,7 @@ export class EngagementTemplatesService {
     await this.findOne(id, companyId);
     return this.prisma.engagementTemplateVersion.findMany({
       where: { templateId: id },
-      orderBy: { version: 'desc' },
+      orderBy: { version: "desc" },
     });
   }
 
@@ -70,7 +74,11 @@ export class EngagementTemplatesService {
   // immutable version snapshot and advance the template's currentVersion to point at it.
   // Past engagements keep their existing templateVersionId, so their referenced content
   // never changes underneath them.
-  async update(id: string, companyId: string, dto: UpdateEngagementTemplateDto) {
+  async update(
+    id: string,
+    companyId: string,
+    dto: UpdateEngagementTemplateDto,
+  ) {
     const existing = await this.findOne(id, companyId);
     const merged = {
       name: dto.name ?? existing.name,
@@ -131,13 +139,15 @@ export class EngagementTemplatesService {
         milestoneConfig: true,
         createdAt: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
   // Issue #263 — Adopting a public template copies it into the requester's own templates
   async adopt(id: string, companyId: string, name?: string) {
-    const source = await this.prisma.engagementTemplate.findUnique({ where: { id } });
+    const source = await this.prisma.engagementTemplate.findUnique({
+      where: { id },
+    });
     if (!source || !source.isPublic || source.archived) {
       throw new NotFoundException(`Public template ${id} not found`);
     }
@@ -174,7 +184,9 @@ export class EngagementTemplatesService {
   async importTemplate(companyId: string, payload: unknown) {
     const p = payload as any;
     if (!p?.name || !p?.jobTitle || !p?.milestoneConfig) {
-      throw new BadRequestException('Import payload must include name, jobTitle, and milestoneConfig');
+      throw new BadRequestException(
+        "Import payload must include name, jobTitle, and milestoneConfig",
+      );
     }
     return this.create(companyId, {
       name: p.name,

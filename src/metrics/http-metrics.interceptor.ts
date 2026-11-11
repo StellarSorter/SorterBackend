@@ -3,17 +3,17 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { MetricsService } from './metrics.service';
+} from "@nestjs/common";
+import { Observable } from "rxjs";
+import { tap } from "rxjs/operators";
+import { MetricsService } from "./metrics.service";
 
 @Injectable()
 export class HttpMetricsInterceptor implements NestInterceptor {
   constructor(private readonly metrics: MetricsService) {}
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<any> {
-    if (ctx.getType() !== 'http') return next.handle();
+    if (ctx.getType() !== "http") return next.handle();
 
     const req = ctx.switchToHttp().getRequest();
     const { method } = req;
@@ -23,13 +23,23 @@ export class HttpMetricsInterceptor implements NestInterceptor {
       tap({
         next: () => {
           const res = ctx.switchToHttp().getResponse();
-          const route = req.route?.path ?? req.path ?? 'unknown';
-          this.metrics.recordHttpRequest(method, route, res.statusCode, Date.now() - start);
+          const route = req.route?.path ?? req.path ?? "unknown";
+          this.metrics.recordHttpRequest(
+            method,
+            route,
+            res.statusCode,
+            Date.now() - start,
+          );
         },
         error: (err) => {
           const status = err?.status ?? 500;
-          const route = req.route?.path ?? req.path ?? 'unknown';
-          this.metrics.recordHttpRequest(method, route, status, Date.now() - start);
+          const route = req.route?.path ?? req.path ?? "unknown";
+          this.metrics.recordHttpRequest(
+            method,
+            route,
+            status,
+            Date.now() - start,
+          );
         },
       }),
     );

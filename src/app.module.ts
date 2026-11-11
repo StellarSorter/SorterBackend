@@ -49,9 +49,19 @@ import { SystemConfigModule } from "./common/system-config/system-config.module"
 import { EmailModule } from "./email/email.module";
 import { WellKnownModule } from "./modules/well-known/well-known.module";
 
-export function shouldSkipThrottle(req: { path?: string; url?: string; originalUrl?: string }): boolean {
-  const path = req.path ?? req.originalUrl?.split('?')[0] ?? req.url?.split('?')[0] ?? '';
-  return path === '/health' || path === '/health/live' || path === '/health/ready' || path === '/status';
+export function shouldSkipThrottle(req: {
+  path?: string;
+  url?: string;
+  originalUrl?: string;
+}): boolean {
+  const path =
+    req.path ?? req.originalUrl?.split("?")[0] ?? req.url?.split("?")[0] ?? "";
+  return (
+    path === "/health" ||
+    path === "/health/live" ||
+    path === "/health/ready" ||
+    path === "/status"
+  );
 }
 
 @Module({
@@ -61,8 +71,14 @@ export function shouldSkipThrottle(req: { path?: string; url?: string; originalU
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        throttlers: [{ ttl: config.get<number>('THROTTLE_TTL', 60), limit: config.get<number>('THROTTLE_LIMIT', 100) }],
-        skipIf: (context) => shouldSkipThrottle(context.switchToHttp().getRequest()),
+        throttlers: [
+          {
+            ttl: config.get<number>("THROTTLE_TTL", 60),
+            limit: config.get<number>("THROTTLE_LIMIT", 100),
+          },
+        ],
+        skipIf: (context) =>
+          shouldSkipThrottle(context.switchToHttp().getRequest()),
       }),
     }),
     ScheduleModule.forRoot(),

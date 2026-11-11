@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { EngagementSummaryDto } from './dto/engagement-summary.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { EngagementSummaryDto } from "./dto/engagement-summary.dto";
 
 /**
  * EngagementCandidateDetailsService — surfaces candidate-centric views of an
@@ -19,21 +23,21 @@ export class EngagementCandidateDetailsService {
    *
    * Access is restricted to the company and recruiter of the engagement.
    */
-  async getSummary(engagementId: string, userId: string): Promise<EngagementSummaryDto> {
+  async getSummary(
+    engagementId: string,
+    userId: string,
+  ): Promise<EngagementSummaryDto> {
     const engagement = await this.prisma.engagement.findUnique({
       where: { id: engagementId },
       include: { milestones: true },
     });
 
     if (!engagement) {
-      throw new NotFoundException('Engagement not found');
+      throw new NotFoundException("Engagement not found");
     }
 
-    if (
-      engagement.clientId !== userId &&
-      engagement.freelancerId !== userId
-    ) {
-      throw new ForbiddenException('You do not have access to this engagement');
+    if (engagement.clientId !== userId && engagement.freelancerId !== userId) {
+      throw new ForbiddenException("You do not have access to this engagement");
     }
 
     let totalAmount = BigInt(0);
@@ -42,15 +46,12 @@ export class EngagementCandidateDetailsService {
 
     for (const milestone of engagement.milestones) {
       const amount =
-        typeof milestone.amount === 'bigint'
+        typeof milestone.amount === "bigint"
           ? milestone.amount
           : BigInt(milestone.amount as any);
       totalAmount += amount;
 
-      if (
-        milestone.status === 'CONFIRMED' ||
-        milestone.status === 'RESOLVED'
-      ) {
+      if (milestone.status === "CONFIRMED" || milestone.status === "RESOLVED") {
         releasedAmount += amount;
         milestonesCompleted++;
       }

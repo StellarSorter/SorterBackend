@@ -2,7 +2,9 @@
  * Batch function: receives every key requested in one tick and must return
  * one value (or Error) per key, in the same order.
  */
-export type BatchLoadFn<K, V> = (keys: readonly K[]) => Promise<ReadonlyArray<V | Error>>;
+export type BatchLoadFn<K, V> = (
+  keys: readonly K[],
+) => Promise<ReadonlyArray<V | Error>>;
 
 export interface BatchLoaderOptions {
   /** Split very large batches into chunks of this size (default: unlimited). */
@@ -78,9 +80,10 @@ export class BatchLoader<K, V> {
     const pending = this.queue;
     this.queue = [];
 
-    const size = this.options.maxBatchSize && this.options.maxBatchSize > 0
-      ? this.options.maxBatchSize
-      : pending.length;
+    const size =
+      this.options.maxBatchSize && this.options.maxBatchSize > 0
+        ? this.options.maxBatchSize
+        : pending.length;
     for (let i = 0; i < pending.length; i += size) {
       void this.runBatch(pending.slice(i, i + size));
     }

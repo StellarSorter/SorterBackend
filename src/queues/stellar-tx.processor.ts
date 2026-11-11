@@ -1,10 +1,11 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { StellarService } from '../common/stellar/stellar.service';
-import { QUEUE_STELLAR_TX } from './queues.module';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import { StellarService } from "../common/stellar/stellar.service";
+import { QUEUE_STELLAR_TX } from "./queues.module";
 
-export type StellarTxAction = 'release_payment' | 'resolve_dispute' | 'unlock_milestone';
+export type StellarTxAction =
+  "release_payment" | "resolve_dispute" | "unlock_milestone";
 
 export interface StellarTxJobData {
   action: StellarTxAction;
@@ -23,17 +24,29 @@ export class StellarTxProcessor extends WorkerHost {
 
   async process(job: Job<StellarTxJobData>): Promise<void> {
     const { action, engagementId, milestoneIndex, approved } = job.data;
-    this.logger.log(`Processing stellar-tx job ${job.id}: ${action} on engagement ${engagementId} milestone ${milestoneIndex} (attempt: ${job.attemptsMade + 1})`);
+    this.logger.log(
+      `Processing stellar-tx job ${job.id}: ${action} on engagement ${engagementId} milestone ${milestoneIndex} (attempt: ${job.attemptsMade + 1})`,
+    );
 
     switch (action) {
-      case 'release_payment':
-        await this.stellar.releaseMilestonePayment(engagementId, milestoneIndex);
+      case "release_payment":
+        await this.stellar.releaseMilestonePayment(
+          engagementId,
+          milestoneIndex,
+        );
         break;
-      case 'resolve_dispute':
-        await this.stellar.resolveMilestoneDispute(engagementId, milestoneIndex, approved ?? false);
+      case "resolve_dispute":
+        await this.stellar.resolveMilestoneDispute(
+          engagementId,
+          milestoneIndex,
+          approved ?? false,
+        );
         break;
-      case 'unlock_milestone':
-        await this.stellar.unlockRetentionMilestone(engagementId, milestoneIndex);
+      case "unlock_milestone":
+        await this.stellar.unlockRetentionMilestone(
+          engagementId,
+          milestoneIndex,
+        );
         break;
       default:
         throw new Error(`Unknown stellar-tx action: ${action}`);

@@ -1,11 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { MilestoneStatus, NotificationType, ProofSlaAction, ProofVersionStatus, UserRole } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { MilestonesService } from './milestones.service';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import {
+  MilestoneStatus,
+  NotificationType,
+  ProofSlaAction,
+  ProofVersionStatus,
+  UserRole,
+} from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { MilestonesService } from "./milestones.service";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_PROOF_SLA_DAYS = 7;
@@ -40,7 +46,11 @@ export class MilestoneProofSlaService {
     private readonly lock: DistributedLockService,
   ) {}
 
-  static elapsedFraction(submittedAt: Date, slaDays: number, now: Date): number {
+  static elapsedFraction(
+    submittedAt: Date,
+    slaDays: number,
+    now: Date,
+  ): number {
     return (now.getTime() - submittedAt.getTime()) / (slaDays * DAY_MS);
   }
 
@@ -50,10 +60,19 @@ export class MilestoneProofSlaService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async runProofSlaChecks(now: Date = new Date()): Promise<ProofSlaRunSummary> {
-    const token = await this.lock.tryAcquireLock('cron:milestone-proof-sla', 600_000);
-    if (!token) return { reminders50: 0, reminders90: 0, autoApproved: 0, escalated: 0 };
+    const token = await this.lock.tryAcquireLock(
+      "cron:milestone-proof-sla",
+      600_000,
+    );
+    if (!token)
+      return { reminders50: 0, reminders90: 0, autoApproved: 0, escalated: 0 };
     try {
-      const summary: ProofSlaRunSummary = { reminders50: 0, reminders90: 0, autoApproved: 0, escalated: 0 };
+      const summary: ProofSlaRunSummary = {
+        reminders50: 0,
+        reminders90: 0,
+        autoApproved: 0,
+        escalated: 0,
+      };
 
       const pending = await this.prisma.milestoneProofVersion.findMany({
         where: {
@@ -65,7 +84,15 @@ export class MilestoneProofSlaService {
           milestone: {
             include: {
               engagement: {
-                include: { company: { select: { id: true, proofSlaDays: true, proofSlaAction: true } } },
+                include: {
+                  company: {
+                    select: {
+                      id: true,
+                      proofSlaDays: true,
+                      proofSlaAction: true,
+                    },
+                  },
+                },
               },
             },
           },
@@ -84,18 +111,30 @@ export class MilestoneProofSlaService {
       }
       return summary;
     } finally {
-      await this.lock.releaseLock('cron:milestone-proof-sla', token);
+      await this.lock.releaseLock("cron:milestone-proof-sla", token);
     }
   }
 
-  private async evaluate(version: PendingVersion, now: Date, summary: ProofSlaRunSummary) {
+  private async evaluate(
+    version: PendingVersion,
+    now: Date,
+    summary: ProofSlaRunSummary,
+  ) {
     const company = version.milestone.engagement.company;
     const slaDays = company?.proofSlaDays || DEFAULT_PROOF_SLA_DAYS;
     const action = company?.proofSlaAction ?? ProofSlaAction.ESCALATE_TO_ADMIN;
-    const fraction = MilestoneProofSlaService.elapsedFraction(version.submittedAt, slaDays, now);
+    const fraction = MilestoneProofSlaService.elapsedFraction(
+      version.submittedAt,
+      slaDays,
+      now,
+    );
 
     if (fraction >= 1) {
-      const claimed = await this.claim(version.id, { slaExpiredAt: null }, { slaExpiredAt: now });
+      const claimed = await this.claim(
+        version.id,
+        { slaExpiredAt: null },
+        { slaExpiredAt: now },
+      );
       if (!claimed) return;
       if (action === ProofSlaAction.AUTO_APPROVE) {
         await this.autoApprove(version, now);
@@ -112,7 +151,10 @@ export class MilestoneProofSlaService {
       const claimed = await this.claim(
         version.id,
         { reminder90SentAt: null },
-        { reminder90SentAt: now, reminder50SentAt: version.reminder50SentAt ?? now },
+        {
+          reminder90SentAt: now,
+          reminder50SentAt: version.reminder50SentAt ?? now,
+        },
       );
       if (claimed) {
         await this.remind(version, 90, slaDays, action);
@@ -122,7 +164,11 @@ export class MilestoneProofSlaService {
     }
 
     if (fraction >= 0.5 && !version.reminder50SentAt) {
-      const claimed = await this.claim(version.id, { reminder50SentAt: null }, { reminder50SentAt: now });
+      const claimed = await this.claim(
+        version.id,
+        { reminder50SentAt: null },
+        { reminder50SentAt: now },
+      );
       if (claimed) {
         await this.remind(version, 50, slaDays, action);
         summary.reminders50++;
@@ -130,7 +176,11 @@ export class MilestoneProofSlaService {
     }
   }
 
-  private async claim(id: string, where: Record<string, null>, data: Record<string, Date>): Promise<boolean> {
+  private async claim(
+    id: string,
+    where: Record<string, null>,
+    data: Record<string, Date>,
+  ): Promise<boolean> {
     const { count } = await this.prisma.milestoneProofVersion.updateMany({
       where: { id, status: ProofVersionStatus.SUBMITTED, ...where },
       data,
@@ -138,16 +188,28 @@ export class MilestoneProofSlaService {
     return count > 0;
   }
 
-  private async remind(version: PendingVersion, percent: 50 | 90, slaDays: number, action: ProofSlaAction) {
+  private async remind(
+    version: PendingVersion,
+    percent: 50 | 90,
+    slaDays: number,
+    action: ProofSlaAction,
+  ) {
     const { milestone } = version;
-    const deadline = MilestoneProofSlaService.deadline(version.submittedAt, slaDays);
+    const deadline = MilestoneProofSlaService.deadline(
+      version.submittedAt,
+      slaDays,
+    );
     const consequence =
-      action === ProofSlaAction.AUTO_APPROVE ? 'the proof will be approved automatically' : 'it will be escalated to an admin';
+      action === ProofSlaAction.AUTO_APPROVE
+        ? "the proof will be approved automatically"
+        : "it will be escalated to an admin";
 
     await this.notifications.notifyUser(
       milestone.engagement.companyAddress,
       NotificationType.PROOF_REVIEW_REMINDER,
-      percent === 90 ? 'Proof review deadline is close' : 'Proof awaiting your review',
+      percent === 90
+        ? "Proof review deadline is close"
+        : "Proof awaiting your review",
       `${percent}% of the ${slaDays}-day review window for milestone ${milestone.milestoneIndex} on ` +
         `engagement ${milestone.engagementId} has passed. Review by ${deadline.toISOString()}, after which ${consequence}.`,
       {
@@ -163,17 +225,31 @@ export class MilestoneProofSlaService {
   private async autoApprove(version: PendingVersion, now: Date) {
     const { milestone } = version;
     try {
-      await this.stellar.releaseMilestonePayment(milestone.engagementId, milestone.milestoneIndex);
+      await this.stellar.releaseMilestonePayment(
+        milestone.engagementId,
+        milestone.milestoneIndex,
+      );
     } catch (error) {
       // Release the claim so the next run retries the payout.
-      await this.prisma.milestoneProofVersion.update({ where: { id: version.id }, data: { slaExpiredAt: null } });
+      await this.prisma.milestoneProofVersion.update({
+        where: { id: version.id },
+        data: { slaExpiredAt: null },
+      });
       throw error;
     }
 
-    await this.milestones.markConfirmed(milestone.engagementId, milestone.milestoneIndex, BigInt(milestone.amount || 0));
+    await this.milestones.markConfirmed(
+      milestone.engagementId,
+      milestone.milestoneIndex,
+      BigInt(milestone.amount || 0),
+    );
     await this.prisma.milestoneProofVersion.update({
       where: { id: version.id },
-      data: { status: ProofVersionStatus.APPROVED, reviewedAt: now, reviewedById: null },
+      data: {
+        status: ProofVersionStatus.APPROVED,
+        reviewedAt: now,
+        reviewedById: null,
+      },
     });
 
     const data = {
@@ -185,17 +261,17 @@ export class MilestoneProofSlaService {
     await this.notifications.notifyUser(
       milestone.engagement.companyAddress,
       NotificationType.PROOF_SLA_ESCALATED,
-      'Proof auto-approved',
+      "Proof auto-approved",
       `The review window for milestone ${milestone.milestoneIndex} on engagement ${milestone.engagementId} ` +
-        'expired, so the proof was approved automatically and the payment released.',
+        "expired, so the proof was approved automatically and the payment released.",
       data,
     );
     await this.notifications.notifyUser(
       milestone.engagement.recruiterAddress,
       NotificationType.PAYMENT_RELEASED,
-      'Payment released',
+      "Payment released",
       `Milestone ${milestone.milestoneIndex} on engagement ${milestone.engagementId} was approved after the ` +
-        'company review window expired.',
+        "company review window expired.",
       data,
     );
   }
@@ -218,7 +294,7 @@ export class MilestoneProofSlaService {
       await this.notifications.notifyUserById(
         admin.id,
         NotificationType.PROOF_SLA_ESCALATED,
-        'Proof review SLA breached',
+        "Proof review SLA breached",
         `Proof for milestone ${milestone.milestoneIndex} on engagement ${milestone.engagementId} has gone ` +
           `unreviewed for more than ${slaDays} days.`,
         data,
@@ -227,7 +303,7 @@ export class MilestoneProofSlaService {
     await this.notifications.notifyUser(
       milestone.engagement.companyAddress,
       NotificationType.PROOF_SLA_ESCALATED,
-      'Proof review escalated',
+      "Proof review escalated",
       `Your ${slaDays}-day review window for milestone ${milestone.milestoneIndex} on engagement ` +
         `${milestone.engagementId} expired and the proof has been escalated to an admin.`,
       data,
@@ -249,7 +325,11 @@ interface PendingVersion {
     engagement: {
       companyAddress: string;
       recruiterAddress: string;
-      company: { id: string; proofSlaDays: number; proofSlaAction: ProofSlaAction } | null;
+      company: {
+        id: string;
+        proofSlaDays: number;
+        proofSlaAction: ProofSlaAction;
+      } | null;
     };
   };
 }

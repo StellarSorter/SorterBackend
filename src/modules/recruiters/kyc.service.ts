@@ -3,16 +3,16 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { KycStatus, UserRole } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { S3Service } from '../../common/s3/s3.service';
+} from "@nestjs/common";
+import { KycStatus, UserRole } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { S3Service } from "../../common/s3/s3.service";
 
 const ALLOWED_KYC_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'application/pdf',
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "application/pdf",
 ];
 const MAX_KYC_FILE_BYTES = 10 * 1024 * 1024;
 
@@ -34,7 +34,7 @@ export class KycService {
         kycReviewedBy: true,
         kycRejectionReason: true,
         kycDocuments: {
-          orderBy: { uploadedAt: 'desc' },
+          orderBy: { uploadedAt: "desc" },
           select: {
             id: true,
             fileName: true,
@@ -46,32 +46,34 @@ export class KycService {
         },
       },
     });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     if (user.role !== UserRole.RECRUITER) {
-      throw new ForbiddenException('KYC is only available for recruiter accounts');
+      throw new ForbiddenException(
+        "KYC is only available for recruiter accounts",
+      );
     }
     return user;
   }
 
   async submitDocument(userId: string, file: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     if (user.role !== UserRole.RECRUITER) {
-      throw new ForbiddenException('Only recruiters can submit KYC documents');
+      throw new ForbiddenException("Only recruiters can submit KYC documents");
     }
     if (user.kycStatus === KycStatus.APPROVED) {
-      throw new BadRequestException('KYC is already approved');
+      throw new BadRequestException("KYC is already approved");
     }
     if (!ALLOWED_KYC_MIME_TYPES.includes(file.mimetype)) {
       throw new BadRequestException(
-        `Invalid file type. Allowed: ${ALLOWED_KYC_MIME_TYPES.join(', ')}`,
+        `Invalid file type. Allowed: ${ALLOWED_KYC_MIME_TYPES.join(", ")}`,
       );
     }
     if (file.size > MAX_KYC_FILE_BYTES) {
-      throw new BadRequestException('File size exceeds 10 MB limit');
+      throw new BadRequestException("File size exceeds 10 MB limit");
     }
 
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
     const key = `kyc/${userId}/${Date.now()}-${safeName}`;
     await this.s3.uploadFile(key, file.buffer, file.mimetype);
     const s3Url = await this.s3.getPresignedUrl(key);
@@ -114,7 +116,7 @@ export class KycService {
           kycStatus: true,
           createdAt: true,
           kycDocuments: {
-            orderBy: { uploadedAt: 'desc' },
+            orderBy: { uploadedAt: "desc" },
             select: {
               id: true,
               fileName: true,
@@ -125,13 +127,16 @@ export class KycService {
             },
           },
         },
-        orderBy: { updatedAt: 'asc' },
+        orderBy: { updatedAt: "asc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
       this.prisma.user.count({ where }),
     ]);
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async approve(userId: string, adminId: string) {
@@ -149,17 +154,19 @@ export class KycService {
     reason?: string,
   ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     if (user.role !== UserRole.RECRUITER) {
-      throw new BadRequestException('User is not a recruiter');
+      throw new BadRequestException("User is not a recruiter");
     }
     if (user.kycStatus !== KycStatus.PENDING) {
-      throw new BadRequestException(`KYC is not pending (current: ${user.kycStatus})`);
+      throw new BadRequestException(
+        `KYC is not pending (current: ${user.kycStatus})`,
+      );
     }
 
     const docCount = await this.prisma.kycDocument.count({ where: { userId } });
     if (docCount === 0) {
-      throw new BadRequestException('No KYC documents submitted');
+      throw new BadRequestException("No KYC documents submitted");
     }
 
     return this.prisma.user.update({
@@ -168,7 +175,8 @@ export class KycService {
         kycStatus: status,
         kycReviewedAt: new Date(),
         kycReviewedBy: adminId,
-        kycRejectionReason: status === KycStatus.REJECTED ? (reason ?? null) : null,
+        kycRejectionReason:
+          status === KycStatus.REJECTED ? (reason ?? null) : null,
       },
       select: {
         id: true,

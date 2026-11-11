@@ -3,6 +3,9 @@ import { MilestonesService } from './milestones.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StellarService } from '../../common/stellar/stellar.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { S3Service } from '../../common/s3/s3.service';
+import { DisputesService } from '../disputes/disputes.service';
+import { ProofVersionsService } from './proof-versions.service';
 import { NotFoundException, UnprocessableEntityException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { MilestoneStatus } from '@prisma/client';
 
@@ -26,6 +29,7 @@ const makeMockPrisma = () => ({
     upsert: jest.fn(),
   },
   notification: { create: jest.fn() },
+  refund: { upsert: jest.fn() },
   milestoneApproval: {
     findUnique: jest.fn(),
     create: jest.fn(),
@@ -105,6 +109,9 @@ describe('MilestonesService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: StellarService, useValue: mockStellar },
         { provide: NotificationsService, useValue: mockNotifications },
+        { provide: S3Service, useValue: { uploadFile: jest.fn(), getPresignedUrl: jest.fn() } },
+        { provide: DisputesService, useValue: { openForMilestone: jest.fn(), recordDecision: jest.fn(), markSettledOnChain: jest.fn(), findActiveForMilestone: jest.fn(), isEvidenceWindowOpen: jest.fn(), notifyParties: jest.fn(), isParty: jest.fn(), settle: jest.fn() } },
+        { provide: ProofVersionsService, useValue: { history: jest.fn().mockResolvedValue([]), assertReviewable: jest.fn(), markApproved: jest.fn(), recordVersion: jest.fn() } },
       ],
     }).compile();
 

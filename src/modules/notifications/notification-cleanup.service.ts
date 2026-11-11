@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 
 /**
  * NotificationCleanupService
@@ -22,7 +22,7 @@ export class NotificationCleanupService {
 
   constructor() {
     this.logger.debug(
-      'NotificationCleanupService loaded (cron superseded by DataRetentionService)',
+      "NotificationCleanupService loaded (cron superseded by DataRetentionService)",
     );
   }
 }

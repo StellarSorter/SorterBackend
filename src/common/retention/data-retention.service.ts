@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { DistributedLockService } from '../lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../prisma/prisma.service";
+import { DistributedLockService } from "../lock/distributed-lock.service";
 
 // ---------------------------------------------------------------------------
 // Per-category retention configuration
@@ -59,28 +59,36 @@ export class DataRetentionService {
   // here so there is exactly one scheduled job for all category deletions.
   // -------------------------------------------------------------------------
 
-  @Cron('0 3 * * *', { timeZone: 'UTC', name: 'data-retention' })
+  @Cron("0 3 * * *", { timeZone: "UTC", name: "data-retention" })
   async handleScheduledRetention(): Promise<void> {
-    const token = await this.lock.tryAcquireLock('cron:data-retention', 3_600_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:data-retention",
+      3_600_000,
+    );
     if (!token) return;
     try {
       if (this.isRunning) {
-        this.logger.warn('Data retention job already running — skipping this tick');
+        this.logger.warn(
+          "Data retention job already running — skipping this tick",
+        );
         return;
       }
       this.isRunning = true;
-      this.logger.log('Data retention job started');
+      this.logger.log("Data retention job started");
 
       try {
         const summary = await this.enforceRetention();
         this.logSummary(summary);
       } catch (err) {
-        this.logger.error('Data retention job failed with an unhandled error', err);
+        this.logger.error(
+          "Data retention job failed with an unhandled error",
+          err,
+        );
       } finally {
         this.isRunning = false;
       }
     } finally {
-      await this.lock.releaseLock('cron:data-retention', token);
+      await this.lock.releaseLock("cron:data-retention", token);
     }
   }
 
@@ -102,12 +110,12 @@ export class DataRetentionService {
 
     // Run each category, collecting results regardless of individual failures.
     const runners: Array<[string, () => Promise<number>]> = [
-      ['notifications.read', () => this.purgeReadNotifications()],
-      ['notifications.unread', () => this.purgeUnreadNotifications()],
-      ['security_events', () => this.purgeSecurityEvents()],
-      ['idempotency_keys', () => this.purgeExpiredIdempotencyKeys()],
-      ['refresh_tokens', () => this.purgeStaleRefreshTokens()],
-      ['data_deletion_requests', () => this.purgeProcessedDeletionRequests()],
+      ["notifications.read", () => this.purgeReadNotifications()],
+      ["notifications.unread", () => this.purgeUnreadNotifications()],
+      ["security_events", () => this.purgeSecurityEvents()],
+      ["idempotency_keys", () => this.purgeExpiredIdempotencyKeys()],
+      ["refresh_tokens", () => this.purgeStaleRefreshTokens()],
+      ["data_deletion_requests", () => this.purgeProcessedDeletionRequests()],
     ];
 
     for (const [name, runner] of runners) {
@@ -151,7 +159,7 @@ export class DataRetentionService {
    * Set to -1 to disable.
    */
   private async purgeReadNotifications(): Promise<number> {
-    const days = this.config.get<number>('RETENTION_NOTIFICATIONS_DAYS', 90);
+    const days = this.config.get<number>("RETENTION_NOTIFICATIONS_DAYS", 90);
     if (days === DISABLED) return DISABLED;
 
     const cutoff = this.daysAgo(days);
@@ -169,7 +177,10 @@ export class DataRetentionService {
    * Set to -1 to disable (keeps unread notifications indefinitely).
    */
   private async purgeUnreadNotifications(): Promise<number> {
-    const days = this.config.get<number>('RETENTION_NOTIFICATIONS_UNREAD_DAYS', 365);
+    const days = this.config.get<number>(
+      "RETENTION_NOTIFICATIONS_UNREAD_DAYS",
+      365,
+    );
     if (days === DISABLED) return DISABLED;
 
     const cutoff = this.daysAgo(days);
@@ -186,7 +197,7 @@ export class DataRetentionService {
    * Set to -1 to disable.
    */
   private async purgeSecurityEvents(): Promise<number> {
-    const days = this.config.get<number>('RETENTION_SECURITY_EVENTS_DAYS', 365);
+    const days = this.config.get<number>("RETENTION_SECURITY_EVENTS_DAYS", 365);
     if (days === DISABLED) return DISABLED;
 
     const cutoff = this.daysAgo(days);
@@ -204,7 +215,10 @@ export class DataRetentionService {
    * Expired keys are safe to delete immediately once their TTL has passed.
    */
   private async purgeExpiredIdempotencyKeys(): Promise<number> {
-    const enabled = this.config.get<number>('RETENTION_IDEMPOTENCY_KEYS_DAYS', 0);
+    const enabled = this.config.get<number>(
+      "RETENTION_IDEMPOTENCY_KEYS_DAYS",
+      0,
+    );
     if (enabled === DISABLED) return DISABLED;
 
     const { count } = await this.prisma.idempotencyKey.deleteMany({
@@ -222,7 +236,7 @@ export class DataRetentionService {
    * Set to -1 to disable.
    */
   private async purgeStaleRefreshTokens(): Promise<number> {
-    const days = this.config.get<number>('RETENTION_REFRESH_TOKENS_DAYS', 30);
+    const days = this.config.get<number>("RETENTION_REFRESH_TOKENS_DAYS", 30);
     if (days === DISABLED) return DISABLED;
 
     const cutoff = this.daysAgo(days);
@@ -250,7 +264,10 @@ export class DataRetentionService {
    * Set to -1 to disable.
    */
   private async purgeProcessedDeletionRequests(): Promise<number> {
-    const days = this.config.get<number>('RETENTION_DATA_DELETION_REQS_DAYS', 365);
+    const days = this.config.get<number>(
+      "RETENTION_DATA_DELETION_REQS_DAYS",
+      365,
+    );
     if (days === DISABLED) return DISABLED;
 
     const cutoff = this.daysAgo(days);
@@ -284,9 +301,9 @@ export class DataRetentionService {
     }
 
     if (summary.errors.length > 0) {
-      this.logger.warn(lines.join('\n'));
+      this.logger.warn(lines.join("\n"));
     } else {
-      this.logger.log(lines.join('\n'));
+      this.logger.log(lines.join("\n"));
     }
   }
 

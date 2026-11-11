@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { EventsService } from './events.service';
-import { EventsController } from './events.controller';
-import { HorizonIndexerService } from './horizon-indexer.service';
-import { ChainEventRetryService } from './chain-event-retry.service';
-import { PlacementReminderSchedulerService } from './placement-reminder-scheduler.service';
-import { MilestonesModule } from '../milestones/milestones.module';
-import { NotificationsModule } from '../notifications/notifications.module';
-import { EngagementsModule } from '../engagements/engagements.module';
-import { WebhooksModule } from '../webhooks/webhooks.module';
+import { Module } from "@nestjs/common";
+import { EventsService } from "./events.service";
+import { EventsController } from "./events.controller";
+import { HorizonIndexerService } from "./horizon-indexer.service";
+import { ChainEventRetryService } from "./chain-event-retry.service";
+import { PlacementReminderSchedulerService } from "./placement-reminder-scheduler.service";
+import { MilestonesModule } from "../milestones/milestones.module";
+import { NotificationsModule } from "../notifications/notifications.module";
+import { EngagementsModule } from "../engagements/engagements.module";
+import { WebhooksModule } from "../webhooks/webhooks.module";
 
 @Module({
   imports: [
@@ -17,7 +17,12 @@ import { WebhooksModule } from '../webhooks/webhooks.module';
     WebhooksModule,
   ],
   controllers: [EventsController],
-  providers: [EventsService, HorizonIndexerService, ChainEventRetryService, PlacementReminderSchedulerService],
+  providers: [
+    EventsService,
+    HorizonIndexerService,
+    ChainEventRetryService,
+    PlacementReminderSchedulerService,
+  ],
   exports: [EventsService],
 })
 export class EventsModule {}

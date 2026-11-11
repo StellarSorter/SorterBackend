@@ -41,15 +41,15 @@ export interface TokenConfig {
 }
 
 interface StellarRuntimeConfig {
-  network: 'testnet' | 'mainnet';
+  network: "testnet" | "mainnet";
   rpcUrl: string;
   horizonUrl: string;
   networkPassphrase: string;
   contractAddress?: string;
 }
 
-const DEFAULT_EXPECTED_CONTRACT_VERSION = '1';
-const CONTRACT_VERSION_METHOD = 'version';
+const DEFAULT_EXPECTED_CONTRACT_VERSION = "1";
+const CONTRACT_VERSION_METHOD = "version";
 
 @Injectable()
 export class StellarService implements OnModuleInit {
@@ -71,25 +71,27 @@ export class StellarService implements OnModuleInit {
 
   async onModuleInit() {
     const stellarConfig =
-      this.config.get<StellarRuntimeConfig>('stellar') ??
+      this.config.get<StellarRuntimeConfig>("stellar") ??
       ({} as StellarRuntimeConfig);
 
     this.networkName = stellarConfig.network;
     this.horizonUrl = stellarConfig.horizonUrl;
     this.networkPassphrase = stellarConfig.networkPassphrase;
-    this.contractId = stellarConfig.contractAddress ?? '';
-    this.rpcClient = new SorobanRpc.Server(stellarConfig.rpcUrl, { allowHttp: true });
+    this.contractId = stellarConfig.contractAddress ?? "";
+    this.rpcClient = new SorobanRpc.Server(stellarConfig.rpcUrl, {
+      allowHttp: true,
+    });
 
     // Parse allowed tokens from config
     try {
-      const allowedTokensJson = this.config.get<string>('ALLOWED_TOKENS', '[]');
+      const allowedTokensJson = this.config.get<string>("ALLOWED_TOKENS", "[]");
       this.allowedTokens = JSON.parse(allowedTokensJson);
     } catch (e) {
-      this.logger.error('Failed to parse ALLOWED_TOKENS from config', e);
+      this.logger.error("Failed to parse ALLOWED_TOKENS from config", e);
       this.allowedTokens = [];
     }
 
-    const secretKey = this.config.get<string>('STELLAR_SECRET_KEY');
+    const secretKey = this.config.get<string>("STELLAR_SECRET_KEY");
     if (secretKey) {
       this.backendKeypair = Keypair.fromSecret(secretKey);
     }
@@ -98,30 +100,41 @@ export class StellarService implements OnModuleInit {
     this.logger.log(`Stellar RPC: ${stellarConfig.rpcUrl}`);
     this.logger.log(`Stellar Horizon: ${this.horizonUrl}`);
     this.logger.log(`Contract: ${this.contractId}`);
-    this.logger.log(`Allowed tokens: ${this.allowedTokens.map(t => `${t.symbol} (${t.address})`).join(', ')}`);
+    this.logger.log(
+      `Allowed tokens: ${this.allowedTokens.map((t) => `${t.symbol} (${t.address})`).join(", ")}`,
+    );
 
     await this.checkContractCompatibility();
   }
 
   private async checkContractCompatibility(): Promise<void> {
-    const skip = this.config.get<boolean | string>('SKIP_CONTRACT_COMPATIBILITY_CHECK', false);
-    if (skip === true || ['true', '1', 'yes'].includes(String(skip).toLowerCase())) {
+    const skip = this.config.get<boolean | string>(
+      "SKIP_CONTRACT_COMPATIBILITY_CHECK",
+      false,
+    );
+    if (
+      skip === true ||
+      ["true", "1", "yes"].includes(String(skip).toLowerCase())
+    ) {
       this.logger.warn(
-        'Skipping Soroban contract compatibility check; use only with a local mock contract',
+        "Skipping Soroban contract compatibility check; use only with a local mock contract",
       );
       return;
     }
 
     const expectedVersion = this.config.get<string>(
-      'STELLARSORTER_CONTRACT_VERSION',
+      "STELLARSORTER_CONTRACT_VERSION",
       DEFAULT_EXPECTED_CONTRACT_VERSION,
     );
 
     try {
-      const version = await this.simulateContractCall(CONTRACT_VERSION_METHOD, []);
+      const version = await this.simulateContractCall(
+        CONTRACT_VERSION_METHOD,
+        [],
+      );
       const actualVersion =
-        typeof version === 'object' && version !== null
-          ? version.version ?? version.contract_version
+        typeof version === "object" && version !== null
+          ? (version.version ?? version.contract_version)
           : version;
 
       if (String(actualVersion) !== expectedVersion) {
@@ -131,12 +144,14 @@ export class StellarService implements OnModuleInit {
         );
       }
 
-      this.logger.log(`Soroban contract compatibility verified (version ${expectedVersion})`);
+      this.logger.log(
+        `Soroban contract compatibility verified (version ${expectedVersion})`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(
         `Soroban contract compatibility check failed for ${this.contractId}: ${message}. ` +
-          'Set SKIP_CONTRACT_COMPATIBILITY_CHECK=true only for local mock development.',
+          "Set SKIP_CONTRACT_COMPATIBILITY_CHECK=true only for local mock development.",
       );
     }
   }
@@ -197,7 +212,7 @@ export class StellarService implements OnModuleInit {
     const result = await this.rpcClient.getEvents({
       startLedger,
       endLedger,
-      filters: [{ type: 'contract', contractIds: [this.contractId] }],
+      filters: [{ type: "contract", contractIds: [this.contractId] }],
       limit: 100,
     } as any);
     return result.events ?? [];
@@ -445,7 +460,7 @@ export class StellarService implements OnModuleInit {
     const keypair = signer ?? this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
@@ -462,7 +477,7 @@ export class StellarService implements OnModuleInit {
     prepared.sign(keypair);
 
     const sendResult = await this.rpcClient.sendTransaction(prepared);
-    if (sendResult.status === 'ERROR') {
+    if (sendResult.status === "ERROR") {
       throw new StellarError(
         `Transaction submission failed: ${sendResult.errorResult}`,
         StellarErrorCode.SUBMISSION_FAILED,
@@ -474,16 +489,23 @@ export class StellarService implements OnModuleInit {
     let getResult: SorobanRpc.Api.GetTransactionResponse;
 
     do {
-      await new Promise((r) => setTimeout(r, StellarService.TX_POLL_INTERVAL_MS));
+      await new Promise((r) =>
+        setTimeout(r, StellarService.TX_POLL_INTERVAL_MS),
+      );
       getResult = await this.rpcClient.getTransaction(sendResult.hash);
-      if (Date.now() > deadline && getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
+      if (
+        Date.now() > deadline &&
+        getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND
+      ) {
         throw new StellarError(
           `Transaction not confirmed within 30 s (hash: ${sendResult.hash})`,
           StellarErrorCode.CONFIRMATION_TIMEOUT,
           sendResult.hash,
         );
       }
-    } while (getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND);
+    } while (
+      getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND
+    );
 
     if (getResult.status !== SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
       throw new StellarError(
@@ -518,13 +540,13 @@ export class StellarService implements OnModuleInit {
     const keypair = params.signer ?? this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
 
     const contract = new Contract(this.contractId);
-    let account: Awaited<ReturnType<SorobanRpc.Server['getAccount']>>;
+    let account: Awaited<ReturnType<SorobanRpc.Server["getAccount"]>>;
     try {
       account = await this.rpcClient.getAccount(keypair.publicKey());
     } catch (err) {
@@ -551,13 +573,13 @@ export class StellarService implements OnModuleInit {
     })
       .addOperation(
         contract.call(
-          'create_engagement',
-          nativeToScVal(params.engagementId, { type: 'string' }),
-          nativeToScVal(params.companyAddress, { type: 'address' }),
-          nativeToScVal(params.recruiterAddress, { type: 'address' }),
-          nativeToScVal(params.arbiterAddress, { type: 'address' }),
-          nativeToScVal(params.tokenAddress, { type: 'address' }),
-          nativeToScVal(BigInt(params.totalAmount), { type: 'i128' }),
+          "create_engagement",
+          nativeToScVal(params.engagementId, { type: "string" }),
+          nativeToScVal(params.companyAddress, { type: "address" }),
+          nativeToScVal(params.recruiterAddress, { type: "address" }),
+          nativeToScVal(params.arbiterAddress, { type: "address" }),
+          nativeToScVal(params.tokenAddress, { type: "address" }),
+          nativeToScVal(BigInt(params.totalAmount), { type: "i128" }),
           milestonesScVal,
         ),
       )
@@ -580,7 +602,7 @@ export class StellarService implements OnModuleInit {
     const keypair = signer ?? this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
@@ -594,9 +616,9 @@ export class StellarService implements OnModuleInit {
     })
       .addOperation(
         contract.call(
-          'unlock_retention_milestone',
-          nativeToScVal(engagementId, { type: 'string' }),
-          nativeToScVal(milestoneIndex, { type: 'u32' }),
+          "unlock_retention_milestone",
+          nativeToScVal(engagementId, { type: "string" }),
+          nativeToScVal(milestoneIndex, { type: "u32" }),
         ),
       )
       .setTimeout(60)
@@ -627,7 +649,7 @@ export class StellarService implements OnModuleInit {
     const keypair = signer ?? this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
@@ -641,9 +663,9 @@ export class StellarService implements OnModuleInit {
     })
       .addOperation(
         contract.call(
-          'release_milestone_payment',
-          nativeToScVal(engagementId, { type: 'string' }),
-          nativeToScVal(milestoneIndex, { type: 'u32' }),
+          "release_milestone_payment",
+          nativeToScVal(engagementId, { type: "string" }),
+          nativeToScVal(milestoneIndex, { type: "u32" }),
         ),
       )
       .setTimeout(60)
@@ -664,7 +686,7 @@ export class StellarService implements OnModuleInit {
     const keypair = signer ?? this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
@@ -678,8 +700,8 @@ export class StellarService implements OnModuleInit {
     })
       .addOperation(
         contract.call(
-          'cancel_engagement',
-          nativeToScVal(engagementId, { type: 'string' }),
+          "cancel_engagement",
+          nativeToScVal(engagementId, { type: "string" }),
         ),
       )
       .setTimeout(60)
@@ -702,7 +724,7 @@ export class StellarService implements OnModuleInit {
     const keypair = signer ?? this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
@@ -716,10 +738,10 @@ export class StellarService implements OnModuleInit {
     })
       .addOperation(
         contract.call(
-          'resolve_dispute',
-          nativeToScVal(engagementId, { type: 'string' }),
-          nativeToScVal(milestoneIndex, { type: 'u32' }),
-          nativeToScVal(approved, { type: 'bool' }),
+          "resolve_dispute",
+          nativeToScVal(engagementId, { type: "string" }),
+          nativeToScVal(milestoneIndex, { type: "u32" }),
+          nativeToScVal(approved, { type: "bool" }),
         ),
       )
       .setTimeout(60)
@@ -745,12 +767,12 @@ export class StellarService implements OnModuleInit {
 
   /** Check if a token address is in the allowlist */
   isTokenAllowed(tokenAddress: string): boolean {
-    return this.allowedTokens.some(t => t.address === tokenAddress);
+    return this.allowedTokens.some((t) => t.address === tokenAddress);
   }
 
   /** Get token config by address, throws if not allowed */
   getTokenConfig(tokenAddress: string): TokenConfig {
-    const config = this.allowedTokens.find(t => t.address === tokenAddress);
+    const config = this.allowedTokens.find((t) => t.address === tokenAddress);
     if (!config) {
       throw new BadRequestException(`Token ${tokenAddress} is not allowed`);
     }
@@ -778,7 +800,7 @@ export class StellarService implements OnModuleInit {
     const address = this.getBackendAccountAddress();
     if (!address) return 0n;
 
-    const { balance } = await this.getBalance(address, 'native');
+    const { balance } = await this.getBalance(address, "native");
     return balance;
   }
 
@@ -793,7 +815,9 @@ export class StellarService implements OnModuleInit {
     try {
       const isNative = tokenAddress === "native" || tokenAddress === "XLM";
       if (!isNative) this.getTokenConfig(tokenAddress);
-      const response = await fetch(`${this.horizonUrl}/accounts/${accountAddress}`);
+      const response = await fetch(
+        `${this.horizonUrl}/accounts/${accountAddress}`,
+      );
       if (!response.ok) {
         // For balance endpoint and validations we want a hard failure.
         throw new BadRequestException(
@@ -837,26 +861,34 @@ export class StellarService implements OnModuleInit {
   }
 
   /** Convert stroops (i128 as string/bigint) to human-readable amount */
-  stroopsToHuman(stroops: string | bigint, tokenAddress: string, decimalsOverride?: number): string {
-    const config = decimalsOverride ? { decimals: decimalsOverride } : this.getTokenConfig(tokenAddress);
+  stroopsToHuman(
+    stroops: string | bigint,
+    tokenAddress: string,
+    decimalsOverride?: number,
+  ): string {
+    const config = decimalsOverride
+      ? { decimals: decimalsOverride }
+      : this.getTokenConfig(tokenAddress);
     const value = BigInt(stroops);
     const divisor = BigInt(10) ** BigInt(config.decimals);
     const whole = value / divisor;
-    const fraction = (value % divisor).toString().padStart(config.decimals, '0');
+    const fraction = (value % divisor)
+      .toString()
+      .padStart(config.decimals, "0");
     return parseFloat(`${whole}.${fraction}`).toFixed(config.decimals);
   }
 
   /** Convert human-readable amount to stroops */
   humanToStroops(human: string, tokenOrDecimals: string | number): bigint {
     let decimals: number;
-    if (typeof tokenOrDecimals === 'string') {
+    if (typeof tokenOrDecimals === "string") {
       const config = this.getTokenConfig(tokenOrDecimals);
       decimals = config.decimals;
     } else {
       decimals = tokenOrDecimals;
     }
-    const [whole, fraction = ''] = human.split('.');
-    const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals);
+    const [whole, fraction = ""] = human.split(".");
+    const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
     const divisor = BigInt(10) ** BigInt(decimals);
     return BigInt(whole) * divisor + BigInt(paddedFraction);
   }
@@ -866,7 +898,7 @@ export class StellarService implements OnModuleInit {
     const divisor = BigInt(10) ** BigInt(7);
     const value = BigInt(stroops);
     const whole = value / divisor;
-    const fraction = (value % divisor).toString().padStart(7, '0');
+    const fraction = (value % divisor).toString().padStart(7, "0");
     return parseFloat(`${whole}.${fraction}`).toFixed(decimals);
   }
 
@@ -892,7 +924,9 @@ export class StellarService implements OnModuleInit {
     requireFunded = true,
   ): Promise<boolean> {
     try {
-      const response = await fetch(`${this.horizonUrl}/accounts/${accountAddress}`);
+      const response = await fetch(
+        `${this.horizonUrl}/accounts/${accountAddress}`,
+      );
       if (!response.ok) return false;
       if (!requireFunded) return true;
 
@@ -922,11 +956,18 @@ export class StellarService implements OnModuleInit {
    * Verify that `signature` (hex or base64) was produced by signing `message`
    * with the private key corresponding to `publicKey`.
    */
-  verifySignature(publicKey: string, message: string, signature: string): boolean {
+  verifySignature(
+    publicKey: string,
+    message: string,
+    signature: string,
+  ): boolean {
     try {
       const keypair = Keypair.fromPublicKey(publicKey);
-      const msgBuffer = Buffer.from(message, 'utf8');
-      const sigBuffer = Buffer.from(signature, signature.includes('=') || /[+/]/.test(signature) ? 'base64' : 'hex');
+      const msgBuffer = Buffer.from(message, "utf8");
+      const sigBuffer = Buffer.from(
+        signature,
+        signature.includes("=") || /[+/]/.test(signature) ? "base64" : "hex",
+      );
       return keypair.verify(msgBuffer, sigBuffer);
     } catch {
       return false;
@@ -946,11 +987,11 @@ export class StellarService implements OnModuleInit {
     const keypair = this.backendKeypair;
     if (!keypair) {
       throw new StellarError(
-        'Backend Stellar keypair is not configured',
+        "Backend Stellar keypair is not configured",
         StellarErrorCode.KEYPAIR_NOT_CONFIGURED,
       );
     }
-    const amountBigInt = BigInt(releaseAmount.toString().split('.')[0]);
+    const amountBigInt = BigInt(releaseAmount.toString().split(".")[0]);
     const contract = new Contract(this.contractId);
     const account = await this.rpcClient.getAccount(keypair.publicKey());
     const tx = new TransactionBuilder(account, {
@@ -959,11 +1000,11 @@ export class StellarService implements OnModuleInit {
     })
       .addOperation(
         contract.call(
-          'release_partial_milestone_payment',
-          nativeToScVal(engagementId, { type: 'string' }),
-          nativeToScVal(milestoneIndex, { type: 'u32' }),
-          nativeToScVal(amountBigInt, { type: 'i128' }),
-          nativeToScVal(refundRemainder, { type: 'bool' }),
+          "release_partial_milestone_payment",
+          nativeToScVal(engagementId, { type: "string" }),
+          nativeToScVal(milestoneIndex, { type: "u32" }),
+          nativeToScVal(amountBigInt, { type: "i128" }),
+          nativeToScVal(refundRemainder, { type: "bool" }),
         ),
       )
       .setTimeout(60)
@@ -976,7 +1017,10 @@ export class StellarService implements OnModuleInit {
    * Extract all decorated signatures from a signed XDR transaction envelope.
    */
   extractSignatures(signedXdr: string): xdr.DecoratedSignature[] {
-    const tx = TransactionBuilder.fromXDR(signedXdr, this.networkPassphrase) as Transaction;
+    const tx = TransactionBuilder.fromXDR(
+      signedXdr,
+      this.networkPassphrase,
+    ) as Transaction;
     return [...tx.signatures];
   }
 
@@ -987,14 +1031,17 @@ export class StellarService implements OnModuleInit {
     unsignedXdr: string,
     signatures: xdr.DecoratedSignature[],
   ): Promise<{ txHash: string }> {
-    const tx = TransactionBuilder.fromXDR(unsignedXdr, this.networkPassphrase) as Transaction;
+    const tx = TransactionBuilder.fromXDR(
+      unsignedXdr,
+      this.networkPassphrase,
+    ) as Transaction;
     for (const sig of signatures) {
       tx.signatures.push(sig);
     }
     const result = await this.rpcClient.sendTransaction(tx);
-    if (result.status === 'ERROR') {
+    if (result.status === "ERROR") {
       throw new StellarError(
-        `Multisig transaction submission failed: ${(result as any).errorResult?.toXDR?.('base64') ?? 'unknown'}`,
+        `Multisig transaction submission failed: ${(result as any).errorResult?.toXDR?.("base64") ?? "unknown"}`,
         StellarErrorCode.SUBMISSION_FAILED,
       );
     }
@@ -1006,8 +1053,11 @@ export class StellarService implements OnModuleInit {
    * @returns { baseFee: number, sorobanFee: number } in stroops
    */
   async getFeeEstimate(): Promise<{ baseFee: number; sorobanFee: number }> {
-    const CACHE_KEY = 'stellar:fee_estimate';
-    const cached = await this.cache.get<{ baseFee: number; sorobanFee: number }>(CACHE_KEY);
+    const CACHE_KEY = "stellar:fee_estimate";
+    const cached = await this.cache.get<{
+      baseFee: number;
+      sorobanFee: number;
+    }>(CACHE_KEY);
     if (cached) return cached;
 
     await this.rpcClient.getLatestLedger();

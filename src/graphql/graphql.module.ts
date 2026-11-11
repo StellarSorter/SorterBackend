@@ -7,7 +7,10 @@ import { GraphqlResolver } from "./graphql.resolver";
 import { NotificationsResolver } from "./notifications.resolver";
 import { EngagementFieldsResolver } from "./resolvers/engagement-fields.resolver";
 import { authenticateConnection } from "./graphql-ws-auth";
-import { createGraphqlLoaders, GraphqlContext } from "./loaders/graphql-loaders";
+import {
+  createGraphqlLoaders,
+  GraphqlContext,
+} from "./loaders/graphql-loaders";
 import { PrismaModule } from "../common/prisma/prisma.module";
 import { PrismaService } from "../common/prisma/prisma.service";
 import { NotificationsModule } from "../modules/notifications/notifications.module";
@@ -40,7 +43,10 @@ import { JwtKeyStore } from "../modules/auth/jwt-keys/jwt-key-store.service";
             "graphql-ws": {
               path: "/graphql",
               onConnect: async (ctx: any) => {
-                const user = await authenticateConnection(jwt, ctx.connectionParams);
+                const user = await authenticateConnection(
+                  jwt,
+                  ctx.connectionParams,
+                );
                 if (!user) return false; // closes the socket with 4403 Forbidden
                 ctx.extra.user = user;
                 return true;
@@ -49,7 +55,13 @@ import { JwtKeyStore } from "../modules/auth/jwt-keys/jwt-key-store.service";
           },
           // Fresh DataLoaders per operation so batching/caching never leaks
           // across requests or users (#515).
-          context: ({ req, extra }: { req?: any; extra?: any }): GraphqlContext => {
+          context: ({
+            req,
+            extra,
+          }: {
+            req?: any;
+            extra?: any;
+          }): GraphqlContext => {
             const loaders = createGraphqlLoaders(prisma);
             return extra ? { user: extra.user, loaders } : { req, loaders };
           },

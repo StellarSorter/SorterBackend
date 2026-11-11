@@ -1,11 +1,16 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { UserRole } from '@prisma/client';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { UserRole } from "@prisma/client";
 import {
   ADMIN_PERMISSION_KEY,
   ADMIN_PERMISSION_ROLES,
   AdminPermission,
-} from '../decorators/admin-permission.decorator';
+} from "../decorators/admin-permission.decorator";
 
 /**
  * AdminPermissionsGuard
@@ -25,10 +30,9 @@ export class AdminPermissionsGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const permission = this.reflector.getAllAndOverride<AdminPermission | undefined>(
-      ADMIN_PERMISSION_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const permission = this.reflector.getAllAndOverride<
+      AdminPermission | undefined
+    >(ADMIN_PERMISSION_KEY, [context.getHandler(), context.getClass()]);
 
     // No permission constraint on this route → all admins pass.
     if (!permission) return true;

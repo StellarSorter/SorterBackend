@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { CacheService } from '../cache/cache.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import axios from "axios";
+import { CacheService } from "../cache/cache.service";
 
 /**
  * CoinGecko coin IDs for the tokens StellarSorter allows on-chain. CoinGecko's
@@ -9,18 +9,18 @@ import { CacheService } from '../cache/cache.service';
  * no rate (fiat fields are omitted rather than erroring).
  */
 const SYMBOL_TO_COINGECKO_ID: Record<string, string> = {
-  USDC: 'usd-coin',
-  USDT: 'tether',
-  XLM: 'stellar',
-  XRP: 'ripple',
-  ETH: 'ethereum',
-  BTC: 'bitcoin',
-  DAI: 'dai',
-  BUSD: 'binance-usd',
-  EURC: 'euro-coin',
+  USDC: "usd-coin",
+  USDT: "tether",
+  XLM: "stellar",
+  XRP: "ripple",
+  ETH: "ethereum",
+  BTC: "bitcoin",
+  DAI: "dai",
+  BUSD: "binance-usd",
+  EURC: "euro-coin",
 };
 
-const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
+const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 const DEFAULT_TTL_S = 300; // 5 minutes — rate data is not volatile enough to hit the provider harder
 
 /**
@@ -67,7 +67,10 @@ export class ExchangeRateService {
     try {
       const rate = await this.fetchRate(coinId, currency);
       if (rate != null) {
-        const ttl = this.config.get<number>('EXCHANGE_RATE_TTL_S', DEFAULT_TTL_S);
+        const ttl = this.config.get<number>(
+          "EXCHANGE_RATE_TTL_S",
+          DEFAULT_TTL_S,
+        );
         await this.cache?.set(cacheKey, rate, ttl);
       }
       return rate;
@@ -80,17 +83,20 @@ export class ExchangeRateService {
     }
   }
 
-  private async fetchRate(coinId: string, fiat: string): Promise<number | null> {
-    const apiKey = this.config.get<string>('COINGECKO_API_KEY');
+  private async fetchRate(
+    coinId: string,
+    fiat: string,
+  ): Promise<number | null> {
+    const apiKey = this.config.get<string>("COINGECKO_API_KEY");
     const params: Record<string, string> = {
       ids: coinId,
       vs_currencies: fiat.toLowerCase(),
     };
-    const headers: Record<string, string> = { accept: 'application/json' };
+    const headers: Record<string, string> = { accept: "application/json" };
     if (apiKey) {
       // Demo/free keys are passed via this header; the public keyless
       // endpoint is used when no key is configured.
-      headers['x-cg-demo-api-key'] = apiKey;
+      headers["x-cg-demo-api-key"] = apiKey;
     }
 
     const response = await axios.get(`${COINGECKO_BASE_URL}/simple/price`, {
@@ -100,7 +106,7 @@ export class ExchangeRateService {
     });
 
     const value = response.data?.[coinId]?.[fiat.toLowerCase()];
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
   }
 
   private isSupportedCurrency(currency: string): boolean {

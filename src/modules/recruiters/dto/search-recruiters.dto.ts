@@ -1,13 +1,20 @@
-import { IsOptional, IsString, IsInt, MaxLength, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  MaxLength,
+  Min,
+  Max,
+} from "class-validator";
+import { Type } from "class-transformer";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export const RECRUITERS_MAX_PAGE_SIZE = 100;
 
 export class SearchRecruitersDto {
   @ApiPropertyOptional({
-    description: 'Case-insensitive partial match against recruiter name',
-    example: 'alice',
+    description: "Case-insensitive partial match against recruiter name",
+    example: "alice",
     maxLength: 100,
   })
   @IsOptional()
@@ -16,7 +23,7 @@ export class SearchRecruitersDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Page number (1-based)',
+    description: "Page number (1-based)",
     example: 1,
     default: 1,
     minimum: 1,
@@ -41,7 +48,9 @@ export class SearchRecruitersDto {
   @Max(RECRUITERS_MAX_PAGE_SIZE)
   limit?: number = 20;
 
-  @ApiPropertyOptional({ description: 'ID of the last recruiter from the previous page' })
+  @ApiPropertyOptional({
+    description: "ID of the last recruiter from the previous page",
+  })
   @IsOptional()
   @IsString()
   cursor?: string;

@@ -1,9 +1,9 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { NotificationsService } from '../modules/notifications/notifications.service';
-import { NotificationType } from '@prisma/client';
-import { QUEUE_EMAIL } from './queues.module';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import { NotificationsService } from "../modules/notifications/notifications.service";
+import { NotificationType } from "@prisma/client";
+import { QUEUE_EMAIL } from "./queues.module";
 
 export interface EmailJobData {
   to: string;
@@ -24,10 +24,20 @@ export class EmailProcessor extends WorkerHost {
   }
 
   async process(job: Job<EmailJobData>): Promise<void> {
-    const { to, subject, message, type, notificationId, data, locale } = job.data;
-    this.logger.log(`Sending email job ${job.id} to ${to} (type: ${type}, attempt: ${job.attemptsMade + 1})`);
+    const { to, subject, message, type, notificationId, data, locale } =
+      job.data;
+    this.logger.log(
+      `Sending email job ${job.id} to ${to} (type: ${type}, attempt: ${job.attemptsMade + 1})`,
+    );
 
-    await this.notifications.sendEmailDirect(to, subject, message, type, data, locale);
+    await this.notifications.sendEmailDirect(
+      to,
+      subject,
+      message,
+      type,
+      data,
+      locale,
+    );
 
     if (notificationId) {
       await this.notifications.markEmailSent(notificationId);

@@ -1442,21 +1442,20 @@ model CreditLedger {
   companyId      String
   sequence       Int
   type           CreditLedgerEntryType
-  amount         Decimal               @db.Decimal(18, 7)
-  balance        Decimal               @db.Decimal(18, 7)
-  balanceAfter   Decimal               @db.Decimal(18, 7)
-  note           String?
+  amount         BigInt
+  balanceAfter   BigInt
   description    String?
   reference      String?
   idempotencyKey String?
   createdById    String?
   createdAt      DateTime              @default(now())
 
-  company User @relation("CompanyCreditLedger", fields: [companyId], references: [id], onDelete: Cascade)
+  company User @relation("CompanyCreditLedger", fields: [companyId], references: [id], onDelete: Restrict)
 
   @@unique([companyId, sequence])
   @@unique([companyId, idempotencyKey])
-  @@index([companyId])
+  @@index([companyId, createdAt])
+  @@index([reference])
   @@map("credit_ledger")
 }
 
@@ -1488,8 +1487,8 @@ model MilestonePartialRelease {
   id                  String                 @id @default(uuid())
   milestoneId         String
   engagementId        String
-  releaseAmount       Decimal                @db.Decimal(18, 7)
-  remainderAmount     Decimal                @db.Decimal(18, 7) @default(0)
+  releaseAmount       BigInt
+  remainderAmount     BigInt                 @default(0)
   remainderAction     PartialRemainderAction @default(RETAIN)
   reason              String?
   status              PartialReleaseStatus   @default(PROPOSED)

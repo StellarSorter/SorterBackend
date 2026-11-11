@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { IdempotencyService } from './idempotency.service';
+import { Module } from "@nestjs/common";
+import { IdempotencyService } from "./idempotency.service";
 
 /**
  * Provides the shared IdempotencyService to any feature module that imports it.

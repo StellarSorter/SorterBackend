@@ -34,7 +34,10 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { CompanyRoles } from "../../common/decorators/company-roles.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { PrismaService } from "../../common/prisma/prisma.service";
-import { CreditLedgerService, serializeCreditEntry } from "./credit-ledger.service";
+import {
+  CreditLedgerService,
+  serializeCreditEntry,
+} from "./credit-ledger.service";
 
 export class CreditTransactionsQueryDto {
   @ApiPropertyOptional({ default: 1, minimum: 1 })
@@ -77,10 +80,15 @@ export class CreateCreditEntryDto {
       "Signed integer amount in minor units. Positive adds credit; negative (REVERSAL/ADJUSTMENT only) removes it.",
   })
   @IsString()
-  @Matches(/^-?[1-9]\d{0,18}$/, { message: "amount must be a non-zero integer string" })
+  @Matches(/^-?[1-9]\d{0,18}$/, {
+    message: "amount must be a non-zero integer string",
+  })
   amount: string;
 
-  @ApiProperty({ maxLength: 500, description: "Why the entry is being recorded (kept in the audit trail)" })
+  @ApiProperty({
+    maxLength: 500,
+    description: "Why the entry is being recorded (kept in the audit trail)",
+  })
   @IsString()
   @MaxLength(500)
   description: string;
@@ -91,7 +99,10 @@ export class CreateCreditEntryDto {
   @MaxLength(128)
   reference?: string;
 
-  @ApiPropertyOptional({ maxLength: 128, description: "Retry-safe key; the same key never applies twice" })
+  @ApiPropertyOptional({
+    maxLength: 128,
+    description: "Retry-safe key; the same key never applies twice",
+  })
   @IsOptional()
   @IsString()
   @MaxLength(128)
@@ -108,19 +119,29 @@ export class CreditLedgerController {
   constructor(private readonly credits: CreditLedgerService) {}
 
   @Get("balance")
-  @ApiOperation({ summary: "Current prepaid credit balance (OWNER and BILLING roles)" })
+  @ApiOperation({
+    summary: "Current prepaid credit balance (OWNER and BILLING roles)",
+  })
   async getBalance(@CurrentUser("id") companyId: string) {
     const balance = await this.credits.getBalance(companyId);
     return { companyId, balance: balance.toString() };
   }
 
   @Get("transactions")
-  @ApiOperation({ summary: "Prepaid credit ledger history, newest first (OWNER and BILLING roles)" })
+  @ApiOperation({
+    summary:
+      "Prepaid credit ledger history, newest first (OWNER and BILLING roles)",
+  })
   listTransactions(
     @CurrentUser("id") companyId: string,
     @Query() query: CreditTransactionsQueryDto,
   ) {
-    return this.credits.listEntries(companyId, query.page, query.limit, query.type);
+    return this.credits.listEntries(
+      companyId,
+      query.page,
+      query.limit,
+      query.type,
+    );
   }
 }
 
@@ -135,7 +156,9 @@ export class AdminCreditLedgerController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: "A company's credit balance and ledger history (admin only)" })
+  @ApiOperation({
+    summary: "A company's credit balance and ledger history (admin only)",
+  })
   async get(
     @Param("companyId") companyId: string,
     @Query() query: CreditTransactionsQueryDto,
@@ -150,7 +173,10 @@ export class AdminCreditLedgerController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Record a credit purchase, grant, reversal or adjustment (admin only)" })
+  @ApiOperation({
+    summary:
+      "Record a credit purchase, grant, reversal or adjustment (admin only)",
+  })
   async create(
     @Param("companyId") companyId: string,
     @Body() dto: CreateCreditEntryDto,
@@ -162,7 +188,9 @@ export class AdminCreditLedgerController {
       dto.type === CreditLedgerEntryType.REVERSAL ||
       dto.type === CreditLedgerEntryType.ADJUSTMENT;
     if (amount < 0n && !negativeAllowed) {
-      throw new BadRequestException("Negative amounts are only allowed for REVERSAL or ADJUSTMENT entries");
+      throw new BadRequestException(
+        "Negative amounts are only allowed for REVERSAL or ADJUSTMENT entries",
+      );
     }
 
     const entry = await this.credits.append(companyId, {

@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { AuthService, RequestMeta } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { AuthService, RequestMeta } from "./auth.service";
+import { LoginDto } from "./dto/login.dto";
 
 /**
  * WalletAuthService — Sign-In With Stellar nonce flow (#444).
@@ -11,17 +11,23 @@ import { LoginDto } from './dto/login.dto';
  */
 @Injectable()
 export class WalletAuthService {
-  private readonly nonces = new Map<string, { nonce: string; expiresAt: number }>();
+  private readonly nonces = new Map<
+    string,
+    { nonce: string; expiresAt: number }
+  >();
 
   constructor(
-    // AuthService is injected to reuse login() without duplicating credential logic.
+    @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
   ) {}
 
   /** Generate and store a 5-minute challenge nonce for a Stellar address. */
   generateNonce(stellarAddress: string): string {
     const nonce = `stellarsorter:${stellarAddress}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
-    this.nonces.set(stellarAddress, { nonce, expiresAt: Date.now() + 5 * 60 * 1000 });
+    this.nonces.set(stellarAddress, {
+      nonce,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
     return nonce;
   }
 

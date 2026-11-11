@@ -1,26 +1,40 @@
 import {
-  IsString, IsNotEmpty, IsArray, ValidateNested,
-  IsInt, Min, Max, IsOptional, IsIn, registerDecorator, ValidationOptions, ValidationArguments,
-  ArrayMaxSize, IsDateString,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  ValidateNested,
+  IsInt,
+  Min,
+  Max,
+  IsOptional,
+  IsIn,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+  ArrayMaxSize,
+  IsDateString,
+} from "class-validator";
+import { Type } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
 
 export function MilestonesSum100(validationOptions?: ValidationOptions) {
   return function (object: Object, propertyName: string) {
     registerDecorator({
-      name: 'milestonesSum100',
+      name: "milestonesSum100",
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
       validator: {
         validate(value: any, args: ValidationArguments) {
           if (!Array.isArray(value)) return false;
-          const sum = value.reduce((acc, m) => acc + (m.paymentPercent || 0), 0);
+          const sum = value.reduce(
+            (acc, m) => acc + (m.paymentPercent || 0),
+            0,
+          );
           return sum === 100;
         },
         defaultMessage(args: ValidationArguments) {
-          return 'Milestone paymentPercent values must sum to exactly 100';
+          return "Milestone paymentPercent values must sum to exactly 100";
         },
       },
     });
@@ -31,7 +45,7 @@ export function MilestonesSum100(validationOptions?: ValidationOptions) {
 export function IsFutureDate(validationOptions?: ValidationOptions) {
   return function (object: Object, propertyName: string) {
     registerDecorator({
-      name: 'isFutureDate',
+      name: "isFutureDate",
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
@@ -49,22 +63,26 @@ export function IsFutureDate(validationOptions?: ValidationOptions) {
 }
 
 export class MilestoneInputDto {
-  @ApiProperty({ example: 'Candidate Placed' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({ example: "Candidate Placed" })
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
   @ApiProperty({ example: 30 })
-  @IsInt() @Min(1) @Max(100)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   paymentPercent: number;
 
-  @ApiProperty({ example: 'PLACEMENT', enum: ['PLACEMENT', 'RETENTION'] })
-  @IsIn(['PLACEMENT', 'RETENTION'])
-  kind: 'PLACEMENT' | 'RETENTION';
+  @ApiProperty({ example: "PLACEMENT", enum: ["PLACEMENT", "RETENTION"] })
+  @IsIn(["PLACEMENT", "RETENTION"])
+  kind: "PLACEMENT" | "RETENTION";
 
   @ApiProperty({
     required: false,
-    example: '2026-10-01',
-    description: 'ISO date — expected proof-submission date for PLACEMENT milestones. Used by the placement reminder scheduler (#260).',
+    example: "2026-10-01",
+    description:
+      "ISO date — expected proof-submission date for PLACEMENT milestones. Used by the placement reminder scheduler (#260).",
   })
   @IsOptional()
   @IsDateString()
@@ -72,54 +90,71 @@ export class MilestoneInputDto {
 }
 
 export class CreateEngagementDto {
-  @ApiProperty({ example: 'ENG-2026-001' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({ example: "ENG-2026-001" })
+  @IsString()
+  @IsNotEmpty()
   engagementId: string;
 
-  @ApiProperty({ example: 'GABC...company' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({ example: "GABC...company" })
+  @IsString()
+  @IsNotEmpty()
   companyAddress: string;
 
-  @ApiProperty({ example: 'GABC...recruiter' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({ example: "GABC...recruiter" })
+  @IsString()
+  @IsNotEmpty()
   recruiterAddress: string;
 
-  @ApiProperty({ example: 'GABC...arbiter' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({ example: "GABC...arbiter" })
+  @IsString()
+  @IsNotEmpty()
   arbiterAddress: string;
 
-  @ApiProperty({ example: 'CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({
+    example: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  })
+  @IsString()
+  @IsNotEmpty()
   tokenAddress: string;
 
-  @ApiProperty({ example: '5000000000', description: 'Total recruiter fee in stroops' })
-  @IsString() @IsNotEmpty()
+  @ApiProperty({
+    example: "5000000000",
+    description: "Total recruiter fee in stroops",
+  })
+  @IsString()
+  @IsNotEmpty()
   totalAmount: string;
 
-  @ApiProperty({ required: false, example: 'template-id' })
-  @IsOptional() @IsString()
+  @ApiProperty({ required: false, example: "template-id" })
+  @IsOptional()
+  @IsString()
   templateId?: string;
 
-  @ApiProperty({ example: 'Senior Software Engineer', required: false })
-  @IsOptional() @IsString()
+  @ApiProperty({ example: "Senior Software Engineer", required: false })
+  @IsOptional()
+  @IsString()
   jobTitle?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   jobDescription?: string;
 
-  @ApiProperty({ required: false, example: '$120k - $160k' })
-  @IsOptional() @IsString()
+  @ApiProperty({ required: false, example: "$120k - $160k" })
+  @IsOptional()
+  @IsString()
   salaryRange?: string;
 
-  @ApiProperty({ required: false, example: 'Remote' })
-  @IsOptional() @IsString()
+  @ApiProperty({ required: false, example: "Remote" })
+  @IsOptional()
+  @IsString()
   location?: string;
 
   @ApiProperty({
     required: false,
-    example: '2026-12-01',
-    description: 'ISO date — target start date (hiring deadline) for the role. Must be in the future (#470).',
+    example: "2026-12-01",
+    description:
+      "ISO date — target start date (hiring deadline) for the role. Must be in the future (#470).",
   })
   @IsOptional()
   @IsDateString()
@@ -127,7 +162,8 @@ export class CreateEngagementDto {
   targetStartDate?: string;
 
   @ApiProperty({ type: [MilestoneInputDto], required: false })
-  @IsOptional() @IsArray()
+  @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => MilestoneInputDto)
   milestones?: MilestoneInputDto[];
@@ -136,19 +172,30 @@ export class CreateEngagementDto {
     required: false,
     type: [Number],
     example: [30, 90],
-    description: 'One retention window (days) per RETENTION milestone, in order',
+    description:
+      "One retention window (days) per RETENTION milestone, in order",
   })
   @IsOptional()
   @IsArray()
   retentionDays?: number[];
 
-  @ApiProperty({ required: false, example: 1, description: 'Number of distinct approvals required before a milestone can be confirmed' })
+  @ApiProperty({
+    required: false,
+    example: 1,
+    description:
+      "Number of distinct approvals required before a milestone can be confirmed",
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   requiredApprovals?: number;
 
-  @ApiProperty({ required: false, type: [String], example: ['urgent', 'senior'], description: 'Free-form labels for dashboard filtering' })
+  @ApiProperty({
+    required: false,
+    type: [String],
+    example: ["urgent", "senior"],
+    description: "Free-form labels for dashboard filtering",
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

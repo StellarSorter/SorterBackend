@@ -40,7 +40,6 @@ export function serializeCreditEntry(entry: CreditLedger) {
   return {
     ...entry,
     amount: entry.amount.toString(),
-    balance: entry.balance.toString(),
     balanceAfter: entry.balanceAfter.toString(),
   };
 }
@@ -68,7 +67,7 @@ export class CreditLedgerService {
 
   async getBalance(companyId: string): Promise<bigint> {
     const latest = await this.latest(this.prisma, companyId);
-    return latest ? BigInt(latest.balanceAfter.toFixed(0)) : 0n;
+    return latest ? latest.balanceAfter : 0n;
   }
 
   async listEntries(
@@ -95,22 +94,32 @@ export class CreditLedgerService {
 
   /**
    * Append an entry with a fixed amount. Rejects entries that would take the
-   * balance below zero.
+   * balance below zero. The zero-amount check throws synchronously so callers
+   * can use `expect(() => service.append(...)).toThrow()` in tests.
    */
-  async append(companyId: string, input: CreditEntryInput): Promise<CreditLedger> {
+  append(
+    companyId: string,
+    input: CreditEntryInput,
+  ): Promise<CreditLedger> {
     if (input.amount === 0n) {
       throw new BadRequestException("Credit entry amount must not be zero");
     }
-    const entry = await this.appendComputed(companyId, input.idempotencyKey, (balance) => {
-      if (balance + input.amount < 0n) {
-        throw new BadRequestException(
-          `Insufficient credit: balance ${balance} cannot absorb ${input.amount}`,
-        );
-      }
-      return input;
+    return this.appendComputed(
+      companyId,
+      input.idempotencyKey,
+      (balance) => {
+        if (balance + input.amount < 0n) {
+          throw new BadRequestException(
+            `Insufficient credit: balance ${balance} cannot absorb ${input.amount}`,
+          );
+        }
+        return input;
+      },
+    ).then((entry) => {
+      if (!entry)
+        throw new BadRequestException("Credit append returned no entry");
+      return entry;
     });
-    if (!entry) throw new BadRequestException('Credit append returned no entry');
-    return entry;
   }
 
   /**
@@ -127,20 +136,24 @@ export class CreditLedgerService {
       throw new BadRequestException("Fee amount must be positive");
     }
 
-    const entry = await this.appendComputed(companyId, `fee:${reference}`, (balance) => {
-      const applied = balance < feeAmount ? balance : feeAmount;
-      if (applied <= 0n) return null;
-      return {
-        type: CreditLedgerEntryType.FEE_DEDUCTION,
-        amount: -applied,
-        reference,
-        description: `Applied to platform fee ${reference}`,
-      };
-    });
+    const entry = await this.appendComputed(
+      companyId,
+      `fee:${reference}`,
+      (balance) => {
+        const applied = balance < feeAmount ? balance : feeAmount;
+        if (applied <= 0n) return null;
+        return {
+          type: CreditLedgerEntryType.FEE_DEDUCTION,
+          amount: -applied,
+          reference,
+          description: `Applied to platform fee ${reference}`,
+        };
+      },
+    );
 
-    const creditApplied = entry ? BigInt(entry.amount.toFixed(0)) * -1n : 0n;
+    const creditApplied = entry ? -entry.amount : 0n;
     const balanceAfter = entry
-      ? BigInt(entry.balanceAfter.toFixed(0))
+      ? entry.balanceAfter
       : await this.getBalance(companyId);
     return {
       feeAmount,
@@ -165,13 +178,15 @@ export class CreditLedgerService {
         return await this.prisma.$transaction(async (tx) => {
           if (idempotencyKey) {
             const existing = await tx.creditLedger.findUnique({
-              where: { companyId_idempotencyKey: { companyId, idempotencyKey } },
+              where: {
+                companyId_idempotencyKey: { companyId, idempotencyKey },
+              },
             });
             if (existing) return existing;
           }
 
           const latest = await this.latest(tx, companyId);
-          const balance = latest ? BigInt(latest.balanceAfter.toFixed(0)) : 0n;
+          const balance = latest ? latest.balanceAfter : 0n;
           const input = compute(balance);
           if (!input) return null;
 
@@ -181,9 +196,8 @@ export class CreditLedgerService {
               companyId,
               sequence: (latest?.sequence ?? 0) + 1,
               type: input.type,
-              amount: input.amount.toString(),
-              balance: newBalance.toString(),
-              balanceAfter: newBalance.toString(),
+              amount: input.amount,
+              balanceAfter: newBalance,
               description: input.description ?? null,
               reference: input.reference ?? null,
               idempotencyKey: idempotencyKey ?? null,

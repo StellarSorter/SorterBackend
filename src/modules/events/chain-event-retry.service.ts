@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { EventsService } from './events.service';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { EventsService } from "./events.service";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 const MAX_RETRIES = 5;
 
@@ -22,12 +22,15 @@ export class ChainEventRetryService {
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async retryUnprocessed(): Promise<void> {
-    const token = await this.lock.tryAcquireLock('cron:chain-event-retry', 60_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:chain-event-retry",
+      60_000,
+    );
     if (!token) return;
     try {
       const candidates = await this.prisma.chainEvent.findMany({
         where: { processed: false, retryCount: { lt: MAX_RETRIES } },
-        orderBy: { ledger: 'asc' },
+        orderBy: { ledger: "asc" },
       });
 
       for (const event of candidates) {
@@ -41,11 +44,15 @@ export class ChainEventRetryService {
         }
       }
     } finally {
-      await this.lock.releaseLock('cron:chain-event-retry', token);
+      await this.lock.releaseLock("cron:chain-event-retry", token);
     }
   }
 
-  async recordFailure(id: string, currentRetryCount: number, error: unknown): Promise<void> {
+  async recordFailure(
+    id: string,
+    currentRetryCount: number,
+    error: unknown,
+  ): Promise<void> {
     const newCount = currentRetryCount + 1;
     await this.prisma.chainEvent.update({
       where: { id },
@@ -61,8 +68,13 @@ export class ChainEventRetryService {
     }
   }
 
-  async moveToDeadLetter(chainEventId: string, errorMessage?: string): Promise<void> {
-    const event = await this.prisma.chainEvent.findUnique({ where: { id: chainEventId } });
+  async moveToDeadLetter(
+    chainEventId: string,
+    errorMessage?: string,
+  ): Promise<void> {
+    const event = await this.prisma.chainEvent.findUnique({
+      where: { id: chainEventId },
+    });
     if (!event) return;
 
     await this.prisma.$transaction(async (tx) => {

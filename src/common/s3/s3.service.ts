@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   S3Client,
   PutObjectCommand,
@@ -8,7 +8,8 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   CopyObjectCommand,
-} from '@aws-sdk/client-s3';import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 @Injectable()
 export class S3Service {
@@ -19,15 +20,20 @@ export class S3Service {
 
   constructor(private configService: ConfigService) {
     this.s3 = new S3Client({
-      region: this.configService.get<string>('S3_REGION'),
+      region: this.configService.get<string>("S3_REGION"),
       credentials: {
-        accessKeyId: this.configService.get<string>('S3_ACCESS_KEY_ID')!,
-        secretAccessKey: this.configService.get<string>('S3_SECRET_ACCESS_KEY')!,
+        accessKeyId: this.configService.get<string>("S3_ACCESS_KEY_ID")!,
+        secretAccessKey: this.configService.get<string>(
+          "S3_SECRET_ACCESS_KEY",
+        )!,
       },
-      endpoint: this.configService.get<string>('S3_ENDPOINT'),
+      endpoint: this.configService.get<string>("S3_ENDPOINT"),
     });
-    this.bucket = this.configService.get<string>('S3_BUCKET')!;
-    this.defaultPresignedUrlExpiry = this.configService.get<number>('S3_PRESIGNED_URL_EXPIRY', 3600);
+    this.bucket = this.configService.get<string>("S3_BUCKET")!;
+    this.defaultPresignedUrlExpiry = this.configService.get<number>(
+      "S3_PRESIGNED_URL_EXPIRY",
+      3600,
+    );
   }
 
   async uploadFile(
@@ -50,16 +56,24 @@ export class S3Service {
       Bucket: this.bucket,
       Key: key,
     });
-    return await getSignedUrl(this.s3, command, { expiresIn: expiresIn ?? this.defaultPresignedUrlExpiry });
+    return await getSignedUrl(this.s3, command, {
+      expiresIn: expiresIn ?? this.defaultPresignedUrlExpiry,
+    });
   }
 
-  async getPresignedUploadUrl(key: string, contentType: string, expiresIn?: number): Promise<string> {
+  async getPresignedUploadUrl(
+    key: string,
+    contentType: string,
+    expiresIn?: number,
+  ): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
       ContentType: contentType,
     });
-    return await getSignedUrl(this.s3, command, { expiresIn: expiresIn ?? this.defaultPresignedUrlExpiry });
+    return await getSignedUrl(this.s3, command, {
+      expiresIn: expiresIn ?? this.defaultPresignedUrlExpiry,
+    });
   }
 
   /**
@@ -82,7 +96,7 @@ export class S3Service {
     await this.s3.send(
       new CopyObjectCommand({
         Bucket: this.bucket,
-        CopySource: `${this.bucket}/${encodeURIComponent(sourceKey).replace(/%2F/g, '/')}`,
+        CopySource: `${this.bucket}/${encodeURIComponent(sourceKey).replace(/%2F/g, "/")}`,
         Key: destinationKey,
       }),
     );
@@ -93,14 +107,16 @@ export class S3Service {
   /**
    * List all objects in the bucket with a given prefix.
    */
-  async listObjects(prefix?: string): Promise<{ key: string; lastModified: Date; size: number }[]> {
+  async listObjects(
+    prefix?: string,
+  ): Promise<{ key: string; lastModified: Date; size: number }[]> {
     const command = new ListObjectsV2Command({
       Bucket: this.bucket,
       Prefix: prefix,
     });
 
     const response = await this.s3.send(command);
-    
+
     return (response.Contents || []).map((obj) => ({
       key: obj.Key!,
       lastModified: obj.LastModified!,
@@ -132,7 +148,7 @@ export class S3Service {
       await this.s3.send(command);
       return true;
     } catch (error) {
-      if ((error as any).name === 'NotFound') {
+      if ((error as any).name === "NotFound") {
         return false;
       }
       throw error;

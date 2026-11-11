@@ -1,12 +1,12 @@
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { PrismaModule } from '../prisma/prisma.module';
-import { S3Module } from '../s3/s3.module';
-import { NotificationsModule } from '../../modules/notifications/notifications.module';
-import { fileScanQueueOptions } from './file-scan.constants';
-import { ClamAvScannerService } from './clamav-scanner.service';
-import { FileScanService } from './file-scan.service';
-import { FileScanProcessor } from './file-scan.processor';
+import { Module } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
+import { PrismaModule } from "../prisma/prisma.module";
+import { S3Module } from "../s3/s3.module";
+import { NotificationsModule } from "../../modules/notifications/notifications.module";
+import { fileScanQueueOptions } from "./file-scan.constants";
+import { ClamAvScannerService } from "./clamav-scanner.service";
+import { FileScanService } from "./file-scan.service";
+import { FileScanProcessor } from "./file-scan.processor";
 
 /**
  * FileScanModule (#471)

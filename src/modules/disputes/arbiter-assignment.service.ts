@@ -1,9 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DisputeStage, DisputeStatus, NotificationType, UserRole } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { DisputeSlaService } from './dispute-sla.service';
-import { ACTIVE_DISPUTE_STATUSES } from './dispute.constants';
+import { Injectable, Logger } from "@nestjs/common";
+import {
+  DisputeStage,
+  DisputeStatus,
+  NotificationType,
+  UserRole,
+} from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { DisputeSlaService } from "./dispute-sla.service";
+import { ACTIVE_DISPUTE_STATUSES } from "./dispute.constants";
 
 export interface EngagementParties {
   id: string;
@@ -40,12 +45,16 @@ export class ArbiterAssignmentService {
   ) {}
 
   /** Arbiter user ids that must not decide disputes on this engagement. */
-  async conflictedArbiterIds(engagement: EngagementParties): Promise<Set<string>> {
+  async conflictedArbiterIds(
+    engagement: EngagementParties,
+  ): Promise<Set<string>> {
     const recusals = await this.prisma.arbiterRecusal.findMany({
       where: { engagementId: engagement.id },
       select: { arbiterId: true },
     });
-    const conflicted = new Set<string>(recusals.map((r) => r.arbiterId as string));
+    const conflicted = new Set<string>(
+      recusals.map((r) => r.arbiterId as string),
+    );
     if (engagement.companyId) conflicted.add(engagement.companyId);
     if (engagement.recruiterId) conflicted.add(engagement.recruiterId);
     return conflicted;
@@ -55,10 +64,16 @@ export class ArbiterAssignmentService {
    * Picks the least-loaded eligible arbiter. Ties go to the longest-standing
    * arbiter so selection is deterministic. Returns null when nobody is eligible.
    */
-  async selectArbiter(engagement: EngagementParties, exclude: string[] = []): Promise<ArbiterCandidate | null> {
+  async selectArbiter(
+    engagement: EngagementParties,
+    exclude: string[] = [],
+  ): Promise<ArbiterCandidate | null> {
     const conflicted = await this.conflictedArbiterIds(engagement);
     for (const id of exclude) conflicted.add(id);
-    const partyAddresses = new Set([engagement.companyAddress, engagement.recruiterAddress]);
+    const partyAddresses = new Set([
+      engagement.companyAddress,
+      engagement.recruiterAddress,
+    ]);
 
     const arbiters = await this.prisma.user.findMany({
       where: {
@@ -68,22 +83,29 @@ export class ArbiterAssignmentService {
         id: { notIn: [...conflicted] },
       },
       select: { id: true, name: true, stellarAddress: true },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     });
-    const eligible = arbiters.filter((a) => !a.stellarAddress || !partyAddresses.has(a.stellarAddress));
+    const eligible = arbiters.filter(
+      (a) => !a.stellarAddress || !partyAddresses.has(a.stellarAddress),
+    );
     if (!eligible.length) return null;
 
     const loads = await this.prisma.dispute.groupBy({
-      by: ['arbiterId'],
-      where: { arbiterId: { in: eligible.map((a) => a.id) }, status: { in: ACTIVE_DISPUTE_STATUSES } },
+      by: ["arbiterId"],
+      where: {
+        arbiterId: { in: eligible.map((a) => a.id) },
+        status: { in: ACTIVE_DISPUTE_STATUSES },
+      },
       _count: { _all: true },
     });
     const loadById = new Map(loads.map((l) => [l.arbiterId, l._count._all]));
 
     let best: ArbiterCandidate | null = null;
     for (const arbiter of eligible) {
-      const activeDisputes: number = (loadById.get(arbiter.id) as number | undefined) ?? 0;
-      if (!best || activeDisputes < best.activeDisputes) best = { ...arbiter, activeDisputes };
+      const activeDisputes: number =
+        (loadById.get(arbiter.id) as number | undefined) ?? 0;
+      if (!best || activeDisputes < best.activeDisputes)
+        best = { ...arbiter, activeDisputes };
     }
     return best;
   }
@@ -99,13 +121,20 @@ export class ArbiterAssignmentService {
       where: { id: disputeId },
       include: { engagement: true },
     });
-    if (!dispute || dispute.arbiterId || dispute.arbiterManuallyAssigned || dispute.status !== DisputeStatus.OPEN) {
+    if (
+      !dispute ||
+      dispute.arbiterId ||
+      dispute.arbiterManuallyAssigned ||
+      dispute.status !== DisputeStatus.OPEN
+    ) {
       return dispute;
     }
 
     const arbiter = await this.selectArbiter(dispute.engagement);
     if (!arbiter) {
-      this.logger.warn(`No eligible arbiter for dispute ${disputeId}; awaiting manual assignment`);
+      this.logger.warn(
+        `No eligible arbiter for dispute ${disputeId}; awaiting manual assignment`,
+      );
       return dispute;
     }
 
@@ -124,7 +153,7 @@ export class ArbiterAssignmentService {
       await this.notifications.notifyUserById(
         arbiter.id,
         NotificationType.ARBITER_ASSIGNED,
-        'Dispute assigned',
+        "Dispute assigned",
         `You have been assigned dispute ${disputeId} on engagement ${dispute.engagementId}.`,
         { disputeId, engagementId: dispute.engagementId },
       );
@@ -138,7 +167,10 @@ export class ArbiterAssignmentService {
    * arbiter. Appeals keep their independence — an appeal is never handed back
    * to the arbiter whose decision is being appealed.
    */
-  async applyManualOverride(engagementId: string, arbiterId: string): Promise<number> {
+  async applyManualOverride(
+    engagementId: string,
+    arbiterId: string,
+  ): Promise<number> {
     const disputes = await this.prisma.dispute.findMany({
       where: { engagementId, status: { in: ACTIVE_DISPUTE_STATUSES } },
       include: { appeal: true },
@@ -148,7 +180,9 @@ export class ArbiterAssignmentService {
     for (const dispute of disputes) {
       const isAppeal = dispute.stage === DisputeStage.APPEAL_REVIEW;
       if (isAppeal && dispute.appeal?.originalArbiterId === arbiterId) {
-        this.logger.warn(`Skipping override for appeal on dispute ${dispute.id}: arbiter made the original decision`);
+        this.logger.warn(
+          `Skipping override for appeal on dispute ${dispute.id}: arbiter made the original decision`,
+        );
         continue;
       }
 
@@ -159,11 +193,16 @@ export class ArbiterAssignmentService {
           arbiterAssignedAt: new Date(),
           arbiterManuallyAssigned: true,
           status: DisputeStatus.UNDER_REVIEW,
-          ...(dispute.stage === DisputeStage.ASSIGNMENT ? this.sla.stageFields(DisputeStage.ARBITER_REVIEW) : {}),
+          ...(dispute.stage === DisputeStage.ASSIGNMENT
+            ? this.sla.stageFields(DisputeStage.ARBITER_REVIEW)
+            : {}),
         },
       });
       if (isAppeal && dispute.appeal) {
-        await this.prisma.disputeAppeal.update({ where: { id: dispute.appeal.id }, data: { arbiterId } });
+        await this.prisma.disputeAppeal.update({
+          where: { id: dispute.appeal.id },
+          data: { arbiterId },
+        });
       }
       updated++;
     }

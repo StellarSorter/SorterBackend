@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   computeInvoiceTax,
   InvoiceLineInput,
@@ -7,7 +7,7 @@ import {
   normalizeCountry,
   normalizeTaxId,
   TaxParty,
-} from './invoice-tax.calculator';
+} from "./invoice-tax.calculator";
 
 export interface InvoiceSeller extends TaxParty {
   name: string;
@@ -31,9 +31,11 @@ export class InvoiceTaxService {
 
   seller(): InvoiceSeller {
     return {
-      name: this.config.get<string>('INVOICE_SELLER_NAME') || 'StellarSorter',
-      country: normalizeCountry(this.config.get<string>('INVOICE_SELLER_COUNTRY')),
-      taxId: normalizeTaxId(this.config.get<string>('INVOICE_SELLER_TAX_ID')),
+      name: this.config.get<string>("INVOICE_SELLER_NAME") || "StellarSorter",
+      country: normalizeCountry(
+        this.config.get<string>("INVOICE_SELLER_COUNTRY"),
+      ),
+      taxId: normalizeTaxId(this.config.get<string>("INVOICE_SELLER_TAX_ID")),
     };
   }
 
@@ -47,14 +49,21 @@ export class InvoiceTaxService {
   }
 
   private rateOverrides(): Record<string, number> {
-    const raw = this.config.get<string>('INVOICE_VAT_RATE_OVERRIDES');
+    const raw = this.config.get<string>("INVOICE_VAT_RATE_OVERRIDES");
     if (!raw) return {};
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
     const overrides: Record<string, number> = {};
     for (const [country, bps] of Object.entries(parsed ?? {})) {
       const code = normalizeCountry(country);
-      if (!code || !Number.isInteger(bps) || (bps as number) < 0 || (bps as number) > 10000) {
-        throw new Error(`Invalid INVOICE_VAT_RATE_OVERRIDES entry "${country}": ${bps}`);
+      if (
+        !code ||
+        !Number.isInteger(bps) ||
+        (bps as number) < 0 ||
+        (bps as number) > 10000
+      ) {
+        throw new Error(
+          `Invalid INVOICE_VAT_RATE_OVERRIDES entry "${country}": ${bps}`,
+        );
       }
       overrides[code] = bps as number;
     }

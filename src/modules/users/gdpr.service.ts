@@ -4,12 +4,12 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { EngagementStatus } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { UserDataExportDto } from './dto/user-data-export.dto';
-import { DeleteAccountDto } from './dto/delete-account.dto';
-import { AuthService } from '../auth/auth.service';
+} from "@nestjs/common";
+import { EngagementStatus } from "@prisma/client";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { UserDataExportDto } from "./dto/user-data-export.dto";
+import { DeleteAccountDto } from "./dto/delete-account.dto";
+import { AuthService } from "../auth/auth.service";
 
 @Injectable()
 export class GdprService {
@@ -37,7 +37,7 @@ export class GdprService {
         updatedAt: true,
       },
     });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     const addressOr: Array<Record<string, string>> = [];
     if (user.stellarAddress) {
@@ -82,11 +82,11 @@ export class GdprService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.notification.findMany({
         where: { userId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           type: true,
@@ -99,7 +99,7 @@ export class GdprService {
       }),
       this.prisma.engagementComment.findMany({
         where: { authorId: userId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           engagementId: true,
@@ -152,12 +152,17 @@ export class GdprService {
   }
 
   /** DELETE /users/me — anonymise PII, retain stellarAddress for on-chain integrity */
-  async requestErasure(userId: string, dto: DeleteAccountDto): Promise<{ message: string }> {
+  async requestErasure(
+    userId: string,
+    dto: DeleteAccountDto,
+  ): Promise<{ message: string }> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     if (user.deletedAt) {
-      throw new ConflictException('Account deletion has already been requested');
+      throw new ConflictException(
+        "Account deletion has already been requested",
+      );
     }
 
     await this.requireReauthentication(user, dto);
@@ -167,7 +172,12 @@ export class GdprService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: userId },
-        data: { name: null, email: null, googleId: null, deletedAt: new Date() },
+        data: {
+          name: null,
+          email: null,
+          googleId: null,
+          deletedAt: new Date(),
+        },
       }),
       this.prisma.dataDeletionRequest.create({
         data: { userId },
@@ -176,7 +186,7 @@ export class GdprService {
 
     return {
       message:
-        'Account closed and PII anonymised. A deletion request has been queued for admin review.',
+        "Account closed and PII anonymised. A deletion request has been queued for admin review.",
     };
   }
 
@@ -185,7 +195,7 @@ export class GdprService {
     const skip = (page - 1) * limit;
     const [data, total] = await this.prisma.$transaction([
       this.prisma.dataDeletionRequest.findMany({
-        orderBy: { requestedAt: 'desc' },
+        orderBy: { requestedAt: "desc" },
         skip,
         take: limit,
       }),
@@ -196,8 +206,10 @@ export class GdprService {
 
   /** POST /admin/data-deletion-requests/:id/process */
   async processRequest(requestId: string, adminId: string) {
-    const req = await this.prisma.dataDeletionRequest.findUnique({ where: { id: requestId } });
-    if (!req) throw new NotFoundException('Deletion request not found');
+    const req = await this.prisma.dataDeletionRequest.findUnique({
+      where: { id: requestId },
+    });
+    if (!req) throw new NotFoundException("Deletion request not found");
 
     return this.prisma.dataDeletionRequest.update({
       where: { id: requestId },
@@ -215,21 +227,30 @@ export class GdprService {
   ) {
     if (dto.password) {
       if (!user.passwordHash) {
-        throw new BadRequestException('Account does not support password re-authentication');
+        throw new BadRequestException(
+          "Account does not support password re-authentication",
+        );
       }
-      const ok = await this.authService.checkPassword(dto.password, user.passwordHash);
+      const ok = await this.authService.checkPassword(
+        dto.password,
+        user.passwordHash,
+      );
       if (!ok) {
-        throw new UnauthorizedException('Invalid password');
+        throw new UnauthorizedException("Invalid password");
       }
       return;
     }
 
     if (dto.signature) {
       if (!user.stellarAddress) {
-        throw new BadRequestException('Account has no Stellar address for signature re-authentication');
+        throw new BadRequestException(
+          "Account has no Stellar address for signature re-authentication",
+        );
       }
       if (!dto.nonce) {
-        throw new BadRequestException('nonce is required when providing a signature');
+        throw new BadRequestException(
+          "nonce is required when providing a signature",
+        );
       }
       const ok = this.authService.verifyWalletSignature(
         user.stellarAddress,
@@ -237,13 +258,15 @@ export class GdprService {
         dto.signature,
       );
       if (!ok) {
-        throw new UnauthorizedException('Invalid signature or expired challenge nonce');
+        throw new UnauthorizedException(
+          "Invalid signature or expired challenge nonce",
+        );
       }
       return;
     }
 
     throw new UnauthorizedException(
-      'Re-authentication required: provide password or a signed challenge nonce',
+      "Re-authentication required: provide password or a signed challenge nonce",
     );
   }
 

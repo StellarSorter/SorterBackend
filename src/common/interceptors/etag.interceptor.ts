@@ -3,10 +3,10 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
-} from '@nestjs/common';
-import { createHash } from 'crypto';
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+} from "@nestjs/common";
+import { createHash } from "crypto";
+import { Observable, of } from "rxjs";
+import { map } from "rxjs/operators";
 
 /**
  * Global interceptor that adds ETag headers to GET responses and
@@ -19,22 +19,22 @@ import { map } from 'rxjs/operators';
 @Injectable()
 export class EtagInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    if (context.getType() !== 'http') return next.handle();
+    if (context.getType() !== "http") return next.handle();
 
     const http = context.switchToHttp();
     const request = http.getRequest();
     const response = http.getResponse();
 
-    if (request.method !== 'GET') {
+    if (request.method !== "GET") {
       return next.handle();
     }
 
     return next.handle().pipe(
       map((body) => {
         const etag = this.computeEtag(body);
-        response.setHeader('ETag', etag);
+        response.setHeader("ETag", etag);
 
-        const ifNoneMatch = request.headers['if-none-match'];
+        const ifNoneMatch = request.headers["if-none-match"];
         if (ifNoneMatch && this.matches(ifNoneMatch, etag)) {
           response.status(304);
           return undefined;
@@ -47,12 +47,14 @@ export class EtagInterceptor implements NestInterceptor {
 
   private computeEtag(body: unknown): string {
     const serialized = JSON.stringify(body ?? null);
-    const hash = createHash('sha1').update(serialized).digest('hex');
+    const hash = createHash("sha1").update(serialized).digest("hex");
     return `"${hash}"`;
   }
 
   private matches(ifNoneMatch: string, etag: string): boolean {
-    const candidates = ifNoneMatch.split(',').map((value) => value.trim());
-    return candidates.some((candidate) => candidate === etag || candidate === '*');
+    const candidates = ifNoneMatch.split(",").map((value) => value.trim());
+    return candidates.some(
+      (candidate) => candidate === etag || candidate === "*",
+    );
   }
 }

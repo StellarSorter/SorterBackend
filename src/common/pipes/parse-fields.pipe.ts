@@ -3,7 +3,7 @@ import {
   BadRequestException,
   Injectable,
   PipeTransform,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
 /**
  * Parses and validates a `fields` query parameter for sparse fieldsets.
@@ -18,25 +18,35 @@ import {
  * `undefined` when the parameter is absent (meaning: return full objects).
  */
 @Injectable()
-export class ParseFieldsPipe implements PipeTransform<string | undefined, string[] | undefined> {
+export class ParseFieldsPipe implements PipeTransform<
+  string | undefined,
+  string[] | undefined
+> {
   constructor(private readonly allowedFields: readonly string[]) {}
 
-  transform(value: string | undefined, _metadata: ArgumentMetadata): string[] | undefined {
-    if (value === undefined || value === null || value === '') {
+  transform(
+    value: string | undefined,
+    _metadata: ArgumentMetadata,
+  ): string[] | undefined {
+    if (value === undefined || value === null || value === "") {
       return undefined;
     }
 
-    if (typeof value !== 'string') {
-      throw new BadRequestException('`fields` must be a comma-separated list of field names');
+    if (typeof value !== "string") {
+      throw new BadRequestException(
+        "`fields` must be a comma-separated list of field names",
+      );
     }
 
     const requested = value
-      .split(',')
+      .split(",")
       .map((field) => field.trim())
       .filter((field) => field.length > 0);
 
     if (requested.length === 0) {
-      throw new BadRequestException('`fields` must contain at least one field name');
+      throw new BadRequestException(
+        "`fields` must contain at least one field name",
+      );
     }
 
     const allowed = new Set(this.allowedFields);
@@ -44,7 +54,7 @@ export class ParseFieldsPipe implements PipeTransform<string | undefined, string
 
     if (unknown.length > 0) {
       throw new BadRequestException(
-        `Unknown field(s): ${unknown.join(', ')}. Allowed fields: ${this.allowedFields.join(', ')}`,
+        `Unknown field(s): ${unknown.join(", ")}. Allowed fields: ${this.allowedFields.join(", ")}`,
       );
     }
 

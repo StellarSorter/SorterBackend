@@ -1,10 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import CircuitBreaker from 'opossum';
-import { MetricsService } from '../../metrics/metrics.service';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import CircuitBreaker from "opossum";
+import { MetricsService } from "../../metrics/metrics.service";
 
 export interface CircuitBreakerStats {
-  state: 'closed' | 'open' | 'half-open';
+  state: "closed" | "open" | "half-open";
   successCount: number;
   failureCount: number;
   rejectCount: number;
@@ -47,11 +47,23 @@ export class CircuitBreakerService implements OnModuleInit {
     private readonly metrics: MetricsService,
   ) {
     // Circuit breaker configuration
-    this.timeout = this.config.get<number>('STELLAR_BREAKER_TIMEOUT', 10000); // 10s
-    this.errorThresholdPercentage = this.config.get<number>('STELLAR_BREAKER_ERROR_THRESHOLD', 50); // 50%
-    this.resetTimeout = this.config.get<number>('STELLAR_BREAKER_RESET_TIMEOUT', 30000); // 30s
-    this.rollingCountTimeout = this.config.get<number>('STELLAR_BREAKER_ROLLING_COUNT_TIMEOUT', 10000); // 10s
-    this.rollingCountBuckets = this.config.get<number>('STELLAR_BREAKER_ROLLING_COUNT_BUCKETS', 10);
+    this.timeout = this.config.get<number>("STELLAR_BREAKER_TIMEOUT", 10000); // 10s
+    this.errorThresholdPercentage = this.config.get<number>(
+      "STELLAR_BREAKER_ERROR_THRESHOLD",
+      50,
+    ); // 50%
+    this.resetTimeout = this.config.get<number>(
+      "STELLAR_BREAKER_RESET_TIMEOUT",
+      30000,
+    ); // 30s
+    this.rollingCountTimeout = this.config.get<number>(
+      "STELLAR_BREAKER_ROLLING_COUNT_TIMEOUT",
+      10000,
+    ); // 10s
+    this.rollingCountBuckets = this.config.get<number>(
+      "STELLAR_BREAKER_ROLLING_COUNT_BUCKETS",
+      10,
+    );
   }
 
   onModuleInit() {
@@ -63,45 +75,49 @@ export class CircuitBreakerService implements OnModuleInit {
       resetTimeout: this.resetTimeout,
       rollingCountTimeout: this.rollingCountTimeout,
       rollingCountBuckets: this.rollingCountBuckets,
-      name: 'stellar-rpc',
+      name: "stellar-rpc",
     });
 
     // Register event listeners for logging and metrics
-    this.breaker.on('open', () => {
-      this.logger.warn('Circuit breaker OPENED — failing fast for Stellar RPC calls');
+    this.breaker.on("open", () => {
+      this.logger.warn(
+        "Circuit breaker OPENED — failing fast for Stellar RPC calls",
+      );
       this.metrics.stellarCircuitBreakerState?.set(1);
     });
 
-    this.breaker.on('halfOpen', () => {
-      this.logger.log('Circuit breaker HALF-OPEN — testing Stellar RPC recovery');
+    this.breaker.on("halfOpen", () => {
+      this.logger.log(
+        "Circuit breaker HALF-OPEN — testing Stellar RPC recovery",
+      );
       this.metrics.stellarCircuitBreakerState?.set(2);
     });
 
-    this.breaker.on('close', () => {
-      this.logger.log('Circuit breaker CLOSED — Stellar RPC calls healthy');
+    this.breaker.on("close", () => {
+      this.logger.log("Circuit breaker CLOSED — Stellar RPC calls healthy");
       this.metrics.stellarCircuitBreakerState?.set(0);
     });
 
-    this.breaker.on('success', () => {
-      this.metrics.stellarRpcCallsTotal?.inc({ result: 'success' });
+    this.breaker.on("success", () => {
+      this.metrics.stellarRpcCallsTotal?.inc({ result: "success" });
     });
 
-    this.breaker.on('failure', () => {
-      this.metrics.stellarRpcCallsTotal?.inc({ result: 'failure' });
+    this.breaker.on("failure", () => {
+      this.metrics.stellarRpcCallsTotal?.inc({ result: "failure" });
     });
 
-    this.breaker.on('timeout', () => {
-      this.logger.warn('Stellar RPC call timed out');
-      this.metrics.stellarRpcCallsTotal?.inc({ result: 'timeout' });
+    this.breaker.on("timeout", () => {
+      this.logger.warn("Stellar RPC call timed out");
+      this.metrics.stellarRpcCallsTotal?.inc({ result: "timeout" });
     });
 
-    this.breaker.on('reject', () => {
-      this.logger.debug('Stellar RPC call rejected (circuit open)');
-      this.metrics.stellarRpcCallsTotal?.inc({ result: 'reject' });
+    this.breaker.on("reject", () => {
+      this.logger.debug("Stellar RPC call rejected (circuit open)");
+      this.metrics.stellarRpcCallsTotal?.inc({ result: "reject" });
     });
 
-    this.breaker.on('fallback', () => {
-      this.metrics.stellarRpcCallsTotal?.inc({ result: 'fallback' });
+    this.breaker.on("fallback", () => {
+      this.metrics.stellarRpcCallsTotal?.inc({ result: "fallback" });
     });
 
     this.logger.log(
@@ -114,13 +130,16 @@ export class CircuitBreakerService implements OnModuleInit {
    * @param fn - async function to execute
    * @param fallback - optional fallback function to call if circuit is open
    */
-  async execute<T>(fn: () => Promise<T>, fallback?: () => Promise<T>): Promise<T> {
+  async execute<T>(
+    fn: () => Promise<T>,
+    fallback?: () => Promise<T>,
+  ): Promise<T> {
     try {
-      return await this.breaker.fire(fn) as T;
+      return (await this.breaker.fire(fn)) as T;
     } catch (error) {
       // Circuit open and fallback provided
       if (fallback && this.breaker.opened) {
-        this.logger.debug('Circuit open — using fallback');
+        this.logger.debug("Circuit open — using fallback");
         return await fallback();
       }
       throw error;
@@ -141,7 +160,11 @@ export class CircuitBreakerService implements OnModuleInit {
   getStats(): CircuitBreakerStats {
     const stats = this.breaker.stats;
     return {
-      state: this.breaker.opened ? 'open' : this.breaker.halfOpen ? 'half-open' : 'closed',
+      state: this.breaker.opened
+        ? "open"
+        : this.breaker.halfOpen
+          ? "half-open"
+          : "closed",
       successCount: stats.successes,
       failureCount: stats.failures,
       rejectCount: stats.rejects,

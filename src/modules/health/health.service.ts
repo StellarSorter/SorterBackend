@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { HealthIndicatorResult } from '@nestjs/terminus';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { HorizonFailoverService } from '../../common/stellar/horizon-failover.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { HealthIndicatorResult } from "@nestjs/terminus";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { HorizonFailoverService } from "../../common/stellar/horizon-failover.service";
 
 @Injectable()
 export class HealthService {
@@ -17,10 +17,10 @@ export class HealthService {
   async isDatabaseHealthy(): Promise<HealthIndicatorResult> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return { database: { status: 'up' } };
+      return { database: { status: "up" } };
     } catch (e) {
-      this.logger.error('Database health check failed', e.message);
-      return { database: { status: 'down', message: e.message } };
+      this.logger.error("Database health check failed", e.message);
+      return { database: { status: "down", message: e.message } };
     }
   }
 
@@ -30,16 +30,16 @@ export class HealthService {
       const endpoints = this.horizonFailover.endpointStatus;
       return {
         stellarHorizon: {
-          status: 'up',
+          status: "up",
           activeEndpoint: this.horizonFailover.activeUrl,
           endpoints,
         },
       };
     } catch (e) {
-      this.logger.warn('Stellar Horizon health check degraded', e.message);
+      this.logger.warn("Stellar Horizon health check degraded", e.message);
       return {
         stellarHorizon: {
-          status: 'down',
+          status: "down",
           message: e.message,
           activeEndpoint: this.horizonFailover.activeUrl,
           endpoints: this.horizonFailover.endpointStatus,

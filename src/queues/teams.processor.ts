@@ -1,9 +1,9 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { NotificationType } from '@prisma/client';
-import { TeamsNotificationsService } from '../modules/notifications/teams-notifications.service';
-import { QUEUE_TEAMS } from './queues.module';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import { NotificationType } from "@prisma/client";
+import { TeamsNotificationsService } from "../modules/notifications/teams-notifications.service";
+import { QUEUE_TEAMS } from "./queues.module";
 
 export interface TeamsJobData {
   webhookUrl: string;

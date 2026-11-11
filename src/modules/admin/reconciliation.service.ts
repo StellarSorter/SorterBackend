@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { StellarService } from '../../common/stellar/stellar.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { MetricsService } from '../../metrics/metrics.service';
-import { EngagementStatus, NotificationType } from '@prisma/client';
-import { DistributedLockService } from '../../common/lock/distributed-lock.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { StellarService } from "../../common/stellar/stellar.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { MetricsService } from "../../metrics/metrics.service";
+import { EngagementStatus, NotificationType } from "@prisma/client";
+import { DistributedLockService } from "../../common/lock/distributed-lock.service";
 
 export interface ReconciliationMismatch {
   engagementId: string;
@@ -15,7 +15,7 @@ export interface ReconciliationMismatch {
   onChainReleasedAmount: string;
   dbStatus: string;
   onChainStatus: string;
-  kind: 'BALANCE_DRIFT' | 'STATUS_DRIFT' | 'NOT_FOUND_ON_CHAIN';
+  kind: "BALANCE_DRIFT" | "STATUS_DRIFT" | "NOT_FOUND_ON_CHAIN";
   detectedAt: string;
 }
 
@@ -60,12 +60,15 @@ export class ReconciliationService {
   // CRON: nightly at 02:00 UTC
   // ----------------------------------------------------------
 
-  @Cron('0 2 * * *', { name: 'nightly-reconciliation', timeZone: 'UTC' })
+  @Cron("0 2 * * *", { name: "nightly-reconciliation", timeZone: "UTC" })
   async runNightly() {
-    const token = await this.lock.tryAcquireLock('cron:nightly-reconciliation', 3_600_000);
+    const token = await this.lock.tryAcquireLock(
+      "cron:nightly-reconciliation",
+      3_600_000,
+    );
     if (!token) return;
     try {
-      this.logger.log('Starting nightly on-chain/off-chain reconciliation');
+      this.logger.log("Starting nightly on-chain/off-chain reconciliation");
       try {
         const report = await this.runReconciliation();
         this.logger.log(
@@ -77,10 +80,10 @@ export class ReconciliationService {
           await this.notifyAdmins(report);
         }
       } catch (err) {
-        this.logger.error('Nightly reconciliation failed', err.message);
+        this.logger.error("Nightly reconciliation failed", err.message);
       }
     } finally {
-      await this.lock.releaseLock('cron:nightly-reconciliation', token);
+      await this.lock.releaseLock("cron:nightly-reconciliation", token);
     }
   }
 
@@ -123,13 +126,15 @@ export class ReconciliationService {
         // Count as a mismatch of kind NOT_FOUND_ON_CHAIN if the contract call fails hard
         mismatches.push({
           engagementId: engagement.id,
-          dbEscrowBalance: (engagement.totalAmount - engagement.releasedAmount).toString(),
-          onChainEscrowBalance: 'unknown',
+          dbEscrowBalance: (
+            engagement.totalAmount - engagement.releasedAmount
+          ).toString(),
+          onChainEscrowBalance: "unknown",
           dbReleasedAmount: engagement.releasedAmount.toString(),
-          onChainReleasedAmount: 'unknown',
+          onChainReleasedAmount: "unknown",
           dbStatus: engagement.status,
-          onChainStatus: 'unknown',
-          kind: 'NOT_FOUND_ON_CHAIN',
+          onChainStatus: "unknown",
+          kind: "NOT_FOUND_ON_CHAIN",
           detectedAt: new Date().toISOString(),
         });
       }
@@ -170,22 +175,24 @@ export class ReconciliationService {
     totalAmount: bigint;
     releasedAmount: bigint;
   }): Promise<ReconciliationMismatch | null> {
-    const { nativeToScVal } = await import('@stellar/stellar-sdk');
+    const { nativeToScVal } = await import("@stellar/stellar-sdk");
 
-    const onChain = await this.stellar.simulateContractCall('get_engagement', [
-      nativeToScVal(engagement.id, { type: 'string' }),
+    const onChain = await this.stellar.simulateContractCall("get_engagement", [
+      nativeToScVal(engagement.id, { type: "string" }),
     ]);
 
     if (!onChain) {
       return {
         engagementId: engagement.id,
-        dbEscrowBalance: (engagement.totalAmount - engagement.releasedAmount).toString(),
-        onChainEscrowBalance: '0',
+        dbEscrowBalance: (
+          engagement.totalAmount - engagement.releasedAmount
+        ).toString(),
+        onChainEscrowBalance: "0",
         dbReleasedAmount: engagement.releasedAmount.toString(),
-        onChainReleasedAmount: '0',
+        onChainReleasedAmount: "0",
         dbStatus: engagement.status,
-        onChainStatus: 'NotFound',
-        kind: 'NOT_FOUND_ON_CHAIN',
+        onChainStatus: "NotFound",
+        kind: "NOT_FOUND_ON_CHAIN",
         detectedAt: new Date().toISOString(),
       };
     }
@@ -202,8 +209,9 @@ export class ReconciliationService {
     const balanceDrift = onChainEscrowBalance !== dbEscrowBalance;
     const releasedDrift = onChainReleasedAmount !== engagement.releasedAmount;
 
-    const onChainStatusRaw = String(onChain.status ?? 'unknown');
-    const onChainStatus = ON_CHAIN_STATUS_MAP[onChainStatusRaw] ?? onChainStatusRaw;
+    const onChainStatusRaw = String(onChain.status ?? "unknown");
+    const onChainStatus =
+      ON_CHAIN_STATUS_MAP[onChainStatusRaw] ?? onChainStatusRaw;
     const statusDrift = onChainStatus !== engagement.status;
 
     if (!balanceDrift && !releasedDrift && !statusDrift) {
@@ -211,7 +219,7 @@ export class ReconciliationService {
     }
 
     const kind =
-      statusDrift && !balanceDrift ? 'STATUS_DRIFT' : 'BALANCE_DRIFT';
+      statusDrift && !balanceDrift ? "STATUS_DRIFT" : "BALANCE_DRIFT";
 
     this.logger.warn(
       `Mismatch on engagement ${engagement.id}: ` +
@@ -239,7 +247,7 @@ export class ReconciliationService {
 
   private async notifyAdmins(report: ReconciliationReport) {
     const admins = await this.prisma.user.findMany({
-      where: { role: 'ADMIN' },
+      where: { role: "ADMIN" },
       select: { stellarAddress: true },
     });
 
@@ -254,7 +262,7 @@ export class ReconciliationService {
           ? this.notifications.notifyUser(
               admin.stellarAddress,
               NotificationType.FUNDING_SHORTFALL_DETECTED,
-              'Reconciliation Drift Detected',
+              "Reconciliation Drift Detected",
               summary,
               {
                 totalChecked: report.totalChecked,

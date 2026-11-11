@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import * as Sentry from '@sentry/node';
-import { JwtKeyStore } from './jwt-keys/jwt-key-store.service';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import * as Sentry from "@sentry/node";
+import { JwtKeyStore } from "./jwt-keys/jwt-key-store.service";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,7 +13,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Resolve the key from the token's alg/kid so tokens signed by a
       // rotated-out (but still listed) key stay valid until expiry (#481).
       algorithms: keyStore.verifyAlgorithms(),
-      secretOrKeyProvider: (_req: unknown, rawJwtToken: string, done: (err: any, key?: any) => void) => {
+      secretOrKeyProvider: (
+        _req: unknown,
+        rawJwtToken: string,
+        done: (err: any, key?: any) => void,
+      ) => {
         try {
           done(null, keyStore.verificationKeyFor(rawJwtToken));
         } catch (err) {
@@ -24,8 +28,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    if (payload.type !== 'access') {
-      throw new UnauthorizedException('Invalid token type');
+    if (payload.type !== "access") {
+      throw new UnauthorizedException("Invalid token type");
     }
 
     const user = {

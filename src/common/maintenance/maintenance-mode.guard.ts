@@ -3,12 +3,12 @@ import {
   ExecutionContext,
   Injectable,
   ServiceUnavailableException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { MaintenanceModeService } from './maintenance-mode.service';
-import { MAINTENANCE_MODE_BYPASS_KEY } from './maintenance-mode.decorator';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { MaintenanceModeService } from "./maintenance-mode.service";
+import { MAINTENANCE_MODE_BYPASS_KEY } from "./maintenance-mode.decorator";
 
-const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 @Injectable()
 export class MaintenanceModeGuard implements CanActivate {
@@ -28,7 +28,7 @@ export class MaintenanceModeGuard implements CanActivate {
     if (bypass || !(await this.maintenanceMode.isEnabled())) return true;
 
     throw new ServiceUnavailableException(
-      'The API is in maintenance mode. Write operations are temporarily unavailable.',
+      "The API is in maintenance mode. Write operations are temporarily unavailable.",
     );
   }
 }

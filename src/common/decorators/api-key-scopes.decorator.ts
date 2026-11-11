@@ -1,4 +1,4 @@
-import { SetMetadata } from '@nestjs/common';
+import { SetMetadata } from "@nestjs/common";
 
 /**
  * All valid API key scopes.
@@ -12,15 +12,15 @@ import { SetMetadata } from '@nestjs/common';
  * access (backward-compatible with keys created before scopes were added).
  */
 export enum ApiKeyScope {
-  ENGAGEMENTS_READ    = 'engagements:read',
-  ENGAGEMENTS_WRITE   = 'engagements:write',
-  MILESTONES_READ     = 'milestones:read',
-  MILESTONES_WRITE    = 'milestones:write',
-  WEBHOOKS_MANAGE     = 'webhooks:manage',
-  NOTIFICATIONS_READ  = 'notifications:read',
+  ENGAGEMENTS_READ = "engagements:read",
+  ENGAGEMENTS_WRITE = "engagements:write",
+  MILESTONES_READ = "milestones:read",
+  MILESTONES_WRITE = "milestones:write",
+  WEBHOOKS_MANAGE = "webhooks:manage",
+  NOTIFICATIONS_READ = "notifications:read",
 }
 
-export const SCOPES_KEY = 'api_key_scopes';
+export const SCOPES_KEY = "api_key_scopes";
 
 /**
  * Declare which API key scope(s) are required to access a route.

@@ -139,7 +139,10 @@ export class GraphqlNotification {
   @Field()
   message: string;
 
-  @Field({ nullable: true, description: "Notification data serialized as JSON" })
+  @Field({
+    nullable: true,
+    description: "Notification data serialized as JSON",
+  })
   data: string | null;
 
   @Field()

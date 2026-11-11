@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 export interface PasswordPolicyConfig {
   minLength: number;
@@ -15,11 +15,11 @@ export class PasswordPolicyService {
 
   getPolicy(): PasswordPolicyConfig {
     return {
-      minLength: this.config.get<number>('PASSWORD_MIN_LENGTH', 8),
-      requireUppercase: this.parseBool('PASSWORD_REQUIRE_UPPERCASE', true),
-      requireLowercase: this.parseBool('PASSWORD_REQUIRE_LOWERCASE', true),
-      requireNumber: this.parseBool('PASSWORD_REQUIRE_NUMBER', true),
-      requireSpecial: this.parseBool('PASSWORD_REQUIRE_SPECIAL', false),
+      minLength: this.config.get<number>("PASSWORD_MIN_LENGTH", 8),
+      requireUppercase: this.parseBool("PASSWORD_REQUIRE_UPPERCASE", true),
+      requireLowercase: this.parseBool("PASSWORD_REQUIRE_LOWERCASE", true),
+      requireNumber: this.parseBool("PASSWORD_REQUIRE_NUMBER", true),
+      requireSpecial: this.parseBool("PASSWORD_REQUIRE_SPECIAL", false),
     };
   }
 
@@ -32,7 +32,7 @@ export class PasswordPolicyService {
     if (unmet.length > 0) {
       throw new BadRequestException({
         message: unmet,
-        error: 'Password does not meet complexity requirements',
+        error: "Password does not meet complexity requirements",
       });
     }
   }
@@ -44,17 +44,20 @@ export class PasswordPolicyService {
     if (!password || password.length < policy.minLength) {
       unmet.push(`Password must be at least ${policy.minLength} characters`);
     }
-    if (policy.requireUppercase && !/[A-Z]/.test(password ?? '')) {
-      unmet.push('Password must contain at least one uppercase letter');
+    if (policy.requireUppercase && !/[A-Z]/.test(password ?? "")) {
+      unmet.push("Password must contain at least one uppercase letter");
     }
-    if (policy.requireLowercase && !/[a-z]/.test(password ?? '')) {
-      unmet.push('Password must contain at least one lowercase letter');
+    if (policy.requireLowercase && !/[a-z]/.test(password ?? "")) {
+      unmet.push("Password must contain at least one lowercase letter");
     }
-    if (policy.requireNumber && !/[0-9]/.test(password ?? '')) {
-      unmet.push('Password must contain at least one number');
+    if (policy.requireNumber && !/[0-9]/.test(password ?? "")) {
+      unmet.push("Password must contain at least one number");
     }
-    if (policy.requireSpecial && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password ?? '')) {
-      unmet.push('Password must contain at least one special character');
+    if (
+      policy.requireSpecial &&
+      !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password ?? "")
+    ) {
+      unmet.push("Password must contain at least one special character");
     }
 
     return unmet;
@@ -63,7 +66,7 @@ export class PasswordPolicyService {
   private parseBool(key: string, defaultValue: boolean): boolean {
     const raw = this.config.get<string | boolean>(key);
     if (raw === undefined || raw === null) return defaultValue;
-    if (typeof raw === 'boolean') return raw;
-    return ['true', '1', 'yes'].includes(String(raw).toLowerCase());
+    if (typeof raw === "boolean") return raw;
+    return ["true", "1", "yes"].includes(String(raw).toLowerCase());
   }
 }

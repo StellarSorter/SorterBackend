@@ -4,12 +4,12 @@ import {
   ExecutionContext,
   CallHandler,
   Logger,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Observable, from, of } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
-import { IdempotencyService } from '../idempotency/idempotency.service';
-import { IDEMPOTENT_KEY } from '../decorators/idempotent.decorator';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { Observable, from, of } from "rxjs";
+import { switchMap, tap } from "rxjs/operators";
+import { IdempotencyService } from "../idempotency/idempotency.service";
+import { IDEMPOTENT_KEY } from "../decorators/idempotent.decorator";
 
 /**
  * IdempotencyInterceptor — drop-in protection against duplicate POST submissions.
@@ -37,17 +37,17 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     // Only activate on handlers decorated with @Idempotent()
-    const isIdempotent = this.reflector.getAllAndOverride<boolean>(IDEMPOTENT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const isIdempotent = this.reflector.getAllAndOverride<boolean>(
+      IDEMPOTENT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (!isIdempotent) {
       return next.handle();
     }
 
     const req = context.switchToHttp().getRequest();
     // NestJS / Express normalise header names to lowercase
-    const idempotencyKey: string | undefined = req.headers['idempotency-key'];
+    const idempotencyKey: string | undefined = req.headers["idempotency-key"];
 
     if (!idempotencyKey) {
       return next.handle();

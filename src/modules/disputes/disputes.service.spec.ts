@@ -8,6 +8,7 @@ import { DisputeSlaService } from './dispute-sla.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StellarService } from '../../common/stellar/stellar.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { S3Service } from '../../common/s3/s3.service';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -73,6 +74,7 @@ async function build(appealWindowHours = 72) {
       { provide: ConfigService, useValue: config },
       { provide: ArbiterAssignmentService, useValue: arbiters },
       { provide: DisputeSlaService, useValue: sla },
+      { provide: S3Service, useValue: { getPresignedUrl: jest.fn(), uploadFile: jest.fn() } },
     ],
   }).compile();
 
@@ -384,6 +386,7 @@ describe('DisputesService', () => {
           { provide: ConfigService, useValue: config },
           { provide: ArbiterAssignmentService, useValue: arbiters },
           { provide: DisputeSlaService, useValue: sla },
+          { provide: S3Service, useValue: { getPresignedUrl: jest.fn(), uploadFile: jest.fn() } },
         ],
       }).compile();
       const service = module.get(DisputesService);

@@ -5,9 +5,9 @@ import {
   NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../prisma/prisma.service";
 import {
   parseSystemConfigValue,
   serializeSystemConfigValue,
@@ -17,20 +17,20 @@ import {
   SystemConfigValidationError,
   SystemConfigValue,
   validateSystemConfigValue,
-} from './system-config.definitions';
+} from "./system-config.definitions";
 
 /** Other replicas pick up an admin change within this window. */
 const DEFAULT_REFRESH_MS = 30_000;
 
-export const SYSTEM_CONFIG_AUDIT_ENTITY = 'SystemConfig';
+export const SYSTEM_CONFIG_AUDIT_ENTITY = "SystemConfig";
 
-export type SystemConfigSource = 'override' | 'env' | 'default';
+export type SystemConfigSource = "override" | "env" | "default";
 
 export interface SystemConfigView {
   key: string;
   value: SystemConfigValue;
   source: SystemConfigSource;
-  type: SystemConfigDefinition['type'];
+  type: SystemConfigDefinition["type"];
   description: string;
   defaultValue: SystemConfigValue;
   min?: number | string;
@@ -65,13 +65,19 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     await this.refresh().catch((error) =>
-      this.logger.warn(`Initial SystemConfig load failed: ${error?.message ?? error}`),
+      this.logger.warn(
+        `Initial SystemConfig load failed: ${error?.message ?? error}`,
+      ),
     );
-    const intervalMs = Number(this.config.get('SYSTEM_CONFIG_REFRESH_MS', DEFAULT_REFRESH_MS));
+    const intervalMs = Number(
+      this.config.get("SYSTEM_CONFIG_REFRESH_MS", DEFAULT_REFRESH_MS),
+    );
     if (intervalMs > 0) {
       this.refreshTimer = setInterval(() => {
         void this.refresh().catch((error) =>
-          this.logger.warn(`SystemConfig refresh failed: ${error?.message ?? error}`),
+          this.logger.warn(
+            `SystemConfig refresh failed: ${error?.message ?? error}`,
+          ),
         );
       }, intervalMs);
       this.refreshTimer.unref?.();
@@ -96,7 +102,9 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
       }
       const value = parseSystemConfigValue(definition, row.value);
       if (value === undefined) {
-        this.logger.warn(`Ignoring invalid stored value for ${row.key}: ${row.value}`);
+        this.logger.warn(
+          `Ignoring invalid stored value for ${row.key}: ${row.value}`,
+        );
         continue;
       }
       next.set(row.key, { value, updatedAt: row.updatedAt });
@@ -130,13 +138,19 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
    * Validate, persist and audit a new value, then apply it in memory.
    * Throws 404 for unknown keys and 400 for invalid values.
    */
-  async set(key: string, rawValue: unknown, adminId: string, reason: string): Promise<SystemConfigView> {
+  async set(
+    key: string,
+    rawValue: unknown,
+    adminId: string,
+    reason: string,
+  ): Promise<SystemConfigView> {
     const definition = this.definition(key);
     let value: SystemConfigValue;
     try {
       value = validateSystemConfigValue(definition, rawValue);
     } catch (error) {
-      if (error instanceof SystemConfigValidationError) throw new BadRequestException(error.message);
+      if (error instanceof SystemConfigValidationError)
+        throw new BadRequestException(error.message);
       throw error;
     }
 
@@ -153,8 +167,11 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
         data: {
           entityType: SYSTEM_CONFIG_AUDIT_ENTITY,
           entityId: key,
-          action: 'SYSTEM_CONFIG_UPDATED',
-          oldValue: JSON.stringify({ value: previous.value, source: previous.source }),
+          action: "SYSTEM_CONFIG_UPDATED",
+          oldValue: JSON.stringify({
+            value: previous.value,
+            source: previous.source,
+          }),
           newValue: JSON.stringify({ value }),
           reason,
           changedBy: adminId,
@@ -164,12 +181,18 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.overrides.set(key, { value, updatedAt: row.updatedAt });
-    this.logger.log(`SystemConfig ${key} changed by ${adminId}: ${previous.value} -> ${value}`);
+    this.logger.log(
+      `SystemConfig ${key} changed by ${adminId}: ${previous.value} -> ${value}`,
+    );
     return this.describe(key);
   }
 
   /** Drop the override so the env/default value applies again. */
-  async reset(key: string, adminId: string, reason: string): Promise<SystemConfigView> {
+  async reset(
+    key: string,
+    adminId: string,
+    reason: string,
+  ): Promise<SystemConfigView> {
     const definition = this.definition(key);
     const previous = this.resolve(definition);
 
@@ -179,8 +202,11 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
         data: {
           entityType: SYSTEM_CONFIG_AUDIT_ENTITY,
           entityId: key,
-          action: 'SYSTEM_CONFIG_RESET',
-          oldValue: JSON.stringify({ value: previous.value, source: previous.source }),
+          action: "SYSTEM_CONFIG_RESET",
+          oldValue: JSON.stringify({
+            value: previous.value,
+            source: previous.source,
+          }),
           newValue: JSON.stringify({ value: this.fallback(definition).value }),
           reason,
           changedBy: adminId,
@@ -194,22 +220,32 @@ export class SystemConfigService implements OnModuleInit, OnModuleDestroy {
 
   private definition(key: string): SystemConfigDefinition {
     const definition = SYSTEM_CONFIG_DEFINITION_MAP.get(key);
-    if (!definition) throw new NotFoundException(`Unknown system config key "${key}"`);
+    if (!definition)
+      throw new NotFoundException(`Unknown system config key "${key}"`);
     return definition;
   }
 
-  private resolve(definition: SystemConfigDefinition): { value: SystemConfigValue; source: SystemConfigSource } {
+  private resolve(definition: SystemConfigDefinition): {
+    value: SystemConfigValue;
+    source: SystemConfigSource;
+  } {
     const override = this.overrides.get(definition.key);
-    if (override) return { value: override.value, source: 'override' };
+    if (override) return { value: override.value, source: "override" };
     return this.fallback(definition);
   }
 
-  private fallback(definition: SystemConfigDefinition): { value: SystemConfigValue; source: SystemConfigSource } {
+  private fallback(definition: SystemConfigDefinition): {
+    value: SystemConfigValue;
+    source: SystemConfigSource;
+  } {
     if (definition.envKey) {
-      const fromEnv = parseSystemConfigValue(definition, this.config.get(definition.envKey));
-      if (fromEnv !== undefined) return { value: fromEnv, source: 'env' };
+      const fromEnv = parseSystemConfigValue(
+        definition,
+        this.config.get(definition.envKey),
+      );
+      if (fromEnv !== undefined) return { value: fromEnv, source: "env" };
     }
-    return { value: definition.defaultValue, source: 'default' };
+    return { value: definition.defaultValue, source: "default" };
   }
 
   private view(definition: SystemConfigDefinition): SystemConfigView {

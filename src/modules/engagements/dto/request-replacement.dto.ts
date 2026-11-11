@@ -4,15 +4,17 @@
 // The company may optionally supply a short reason (≤ 500 chars)
 // explaining why a replacement candidate is needed.
 
-import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, MaxLength } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class RequestReplacementDto {
   @ApiProperty({
     required: false,
     maxLength: 500,
-    example: 'Candidate skills did not match the role requirements after onboarding.',
-    description: 'Optional reason for requesting a candidate replacement (max 500 characters)',
+    example:
+      "Candidate skills did not match the role requirements after onboarding.",
+    description:
+      "Optional reason for requesting a candidate replacement (max 500 characters)",
   })
   @IsOptional()
   @IsString()
