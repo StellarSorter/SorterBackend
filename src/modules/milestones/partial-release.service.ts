@@ -122,7 +122,8 @@ export class PartialReleaseService {
           milestoneId: milestone.id,
           engagementId,
           proposedById: user.id,
-          ...split,
+          releaseAmount: split.releaseAmount.toString(),
+          remainderAmount: split.remainderAmount.toString(),
           remainderAction: terms.remainderAction,
           reason: terms.reason ?? null,
           // Proposing counts as the proposer's approval.
