@@ -5,6 +5,7 @@ import { Queue } from 'bullmq';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import { signWebhookBody, WEBHOOK_SIGNATURE_HEADER } from './webhook-signing.util';
+import { buildWebhookRawBody } from './webhook-payload.util';
 
 export interface WebhookPayload {
   event:
