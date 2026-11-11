@@ -147,4 +147,10 @@ export class CreateEngagementDto {
   @IsInt()
   @Min(1)
   requiredApprovals?: number;
+
+  @ApiProperty({ required: false, type: [String], example: ['urgent', 'senior'], description: 'Free-form labels for dashboard filtering' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }
