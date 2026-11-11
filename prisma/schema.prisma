@@ -1398,16 +1398,16 @@ model MultisigSignature {
 
 model RecruiterPortfolioEntry {
   id          String   @id @default(uuid())
-  userId      String
-  title       String
-  description String?  @db.Text
-  url         String?
+  recruiterId String
+  role        String
+  industry    String?
+  year        Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user User @relation("RecruiterPortfolio", fields: [userId], references: [id], onDelete: Cascade)
+  recruiter User @relation("RecruiterPortfolio", fields: [recruiterId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([recruiterId])
   @@map("recruiter_portfolio_entries")
 }
 
