@@ -50,6 +50,9 @@ enum NotificationType {
   PROOF_SUBMITTED
   PROOF_REJECTED
   MILESTONE_CONFIRMED
+  PARTIAL_RELEASE_PROPOSED
+  PARTIAL_RELEASE_REJECTED
+  PARTIAL_RELEASE_EXECUTED
   DISPUTE_RAISED
   DISPUTE_RESOLVED
   REPLACEMENT_REQUESTED
@@ -1468,17 +1471,23 @@ model MilestoneProofVersion {
 }
 
 model MilestonePartialRelease {
-  id              String   @id @default(uuid())
-  milestoneId     String
-  engagementId    String
-  releaseAmount   Decimal  @db.Decimal(18, 7)
-  remainderAmount Decimal  @db.Decimal(18, 7) @default(0)
-  remainderAction String?
-  status          String   @default("PENDING")
-  proposedById    String?
-  txHash          String?
-  releasedAt      DateTime?
-  createdAt       DateTime @default(now())
+  id                  String                 @id @default(uuid())
+  milestoneId         String
+  engagementId        String
+  releaseAmount       Decimal                @db.Decimal(18, 7)
+  remainderAmount     Decimal                @db.Decimal(18, 7) @default(0)
+  remainderAction     PartialRemainderAction @default(RETAIN)
+  reason              String?
+  status              PartialReleaseStatus   @default(PROPOSED)
+  proposedById        String?
+  companyApproverId   String?
+  companyApprovedAt   DateTime?
+  recruiterApproverId String?
+  recruiterApprovedAt DateTime?
+  txHash              String?
+  executedAt          DateTime?
+  releasedAt          DateTime?
+  createdAt           DateTime               @default(now())
 
   milestone   Milestone  @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
   engagement  Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
