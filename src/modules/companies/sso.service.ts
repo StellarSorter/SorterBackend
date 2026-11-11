@@ -137,13 +137,15 @@ export class SsoService {
     const user = await this.prisma.user.upsert({
       where: { email },
       update: {
-        firstName: payload.given_name ?? undefined,
-        lastName: payload.family_name ?? undefined,
+        name: payload.given_name && payload.family_name
+          ? `${payload.given_name} ${payload.family_name}`
+          : (payload.given_name ?? undefined),
       },
       create: {
         email,
-        firstName: payload.given_name ?? '',
-        lastName: payload.family_name ?? '',
+        name: payload.given_name && payload.family_name
+          ? `${payload.given_name} ${payload.family_name}`
+          : (payload.given_name ?? email),
         passwordHash: '', // SSO users have no password
         role: cfg.defaultRole as any,
         isEmailVerified: true,
