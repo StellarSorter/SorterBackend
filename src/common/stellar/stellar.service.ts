@@ -919,6 +919,21 @@ export class StellarService implements OnModuleInit {
   }
 
   /**
+   * Verify that `signature` (hex or base64) was produced by signing `message`
+   * with the private key corresponding to `publicKey`.
+   */
+  verifySignature(publicKey: string, message: string, signature: string): boolean {
+    try {
+      const keypair = Keypair.fromPublicKey(publicKey);
+      const msgBuffer = Buffer.from(message, 'utf8');
+      const sigBuffer = Buffer.from(signature, signature.includes('=') || /[+/]/.test(signature) ? 'base64' : 'hex');
+      return keypair.verify(msgBuffer, sigBuffer);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Extract all decorated signatures from a signed XDR transaction envelope.
    */
   extractSignatures(signedXdr: string): xdr.DecoratedSignature[] {

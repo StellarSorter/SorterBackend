@@ -491,6 +491,7 @@ export class UsersService {
         avatarUrl: true,
         role: true,
         locale: true,
+        timezone: true,
       },
     });
 
