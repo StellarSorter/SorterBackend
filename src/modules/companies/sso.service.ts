@@ -148,7 +148,6 @@ export class SsoService {
           : (payload.given_name ?? email),
         passwordHash: '', // SSO users have no password
         role: cfg.defaultRole as any,
-        isEmailVerified: true,
       },
     });
 
