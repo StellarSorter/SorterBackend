@@ -48,6 +48,7 @@ enum NotificationType {
   ENGAGEMENT_CREATED
   MILESTONE_UNLOCKED
   PROOF_SUBMITTED
+  PROOF_REJECTED
   MILESTONE_CONFIRMED
   DISPUTE_RAISED
   DISPUTE_RESOLVED
@@ -1450,11 +1451,15 @@ model MilestoneProofVersion {
   milestoneId     String
   versionNumber   Int
   proofUrl        String?
+  content         String?            @db.Text
+  proofHash       String?
   ipfsHash        String?
   status          ProofVersionStatus @default(SUBMITTED)
   submittedAt     DateTime           @default(now())
   submittedById   String?
   rejectionReason String?
+  reviewedById    String?
+  reviewedAt      DateTime?
 
   milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
 
