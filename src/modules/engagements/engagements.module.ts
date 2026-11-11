@@ -32,6 +32,7 @@ import { ExchangeRatesModule } from '../../common/exchange-rates/exchange-rates.
     EngagementsService,
     SavedFiltersService,
     AuditLogService,
+    ActivityFeedService,
     IdempotencyInterceptor,
     // Focused sub-services extracted in #443
     EngagementNotesService,
@@ -42,6 +43,7 @@ import { ExchangeRatesModule } from '../../common/exchange-rates/exchange-rates.
   exports: [
     EngagementsService,
     AuditLogService,
+    ActivityFeedService,
     // Export sub-services so other modules (e.g. EventsModule) can inject them directly
     EngagementNotesService,
     EngagementWatchersService,

@@ -40,6 +40,7 @@ export function serializeCreditEntry(entry: CreditLedger) {
   return {
     ...entry,
     amount: entry.amount.toString(),
+    balance: entry.balance.toString(),
     balanceAfter: entry.balanceAfter.toString(),
   };
 }
@@ -67,7 +68,7 @@ export class CreditLedgerService {
 
   async getBalance(companyId: string): Promise<bigint> {
     const latest = await this.latest(this.prisma, companyId);
-    return latest?.balanceAfter ?? 0n;
+    return latest ? BigInt(latest.balanceAfter.toFixed(0)) : 0n;
   }
 
   async listEntries(
@@ -96,11 +97,11 @@ export class CreditLedgerService {
    * Append an entry with a fixed amount. Rejects entries that would take the
    * balance below zero.
    */
-  append(companyId: string, input: CreditEntryInput): Promise<CreditLedger> {
+  async append(companyId: string, input: CreditEntryInput): Promise<CreditLedger> {
     if (input.amount === 0n) {
       throw new BadRequestException("Credit entry amount must not be zero");
     }
-    return this.appendComputed(companyId, input.idempotencyKey, (balance) => {
+    const entry = await this.appendComputed(companyId, input.idempotencyKey, (balance) => {
       if (balance + input.amount < 0n) {
         throw new BadRequestException(
           `Insufficient credit: balance ${balance} cannot absorb ${input.amount}`,
@@ -108,6 +109,8 @@ export class CreditLedgerService {
       }
       return input;
     });
+    if (!entry) throw new BadRequestException('Credit append returned no entry');
+    return entry;
   }
 
   /**
@@ -135,12 +138,15 @@ export class CreditLedgerService {
       };
     });
 
-    const creditApplied = entry ? BigInt(-entry.amount) : 0n;
+    const creditApplied = entry ? BigInt(entry.amount.toFixed(0)) * -1n : 0n;
+    const balanceAfter = entry
+      ? BigInt(entry.balanceAfter.toFixed(0))
+      : await this.getBalance(companyId);
     return {
       feeAmount,
       creditApplied,
       amountDue: feeAmount - creditApplied,
-      balanceAfter: entry ? entry.balanceAfter : await this.getBalance(companyId),
+      balanceAfter,
       entry,
     };
   }
@@ -165,17 +171,19 @@ export class CreditLedgerService {
           }
 
           const latest = await this.latest(tx, companyId);
-          const balance = latest?.balanceAfter ?? 0n;
+          const balance = latest ? BigInt(latest.balanceAfter.toFixed(0)) : 0n;
           const input = compute(balance);
           if (!input) return null;
 
+          const newBalance = balance + input.amount;
           return tx.creditLedger.create({
             data: {
               companyId,
               sequence: (latest?.sequence ?? 0) + 1,
               type: input.type,
-              amount: input.amount,
-              balanceAfter: balance + input.amount,
+              amount: input.amount.toString(),
+              balance: newBalance.toString(),
+              balanceAfter: newBalance.toString(),
               description: input.description ?? null,
               reference: input.reference ?? null,
               idempotencyKey: idempotencyKey ?? null,

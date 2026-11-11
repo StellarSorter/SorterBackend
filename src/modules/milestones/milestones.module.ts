@@ -19,7 +19,7 @@ import { DisputesModule } from '../disputes/disputes.module';
 import { FileScanModule } from '../../common/file-scan/file-scan.module';
 
 @Module({
-  imports: [S3Module, EngagementsModule, IdempotencyModule, DisputesModule, FileScanModule],
+  imports: [S3Module, EngagementsModule, IdempotencyModule, DisputesModule, FileScanModule, NotificationsModule],
   controllers: [
     MilestonesController, MilestoneDetailController, AdminDisputesController, AdminMilestonesController,
     MilestoneCommentsController,

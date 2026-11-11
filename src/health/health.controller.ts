@@ -44,7 +44,7 @@ export class HealthController {
     } catch (err) {
       return {
         [key]: {
-          status: 'degraded',
+          status: 'down' as const,
           message: err instanceof Error ? err.message : 'S3 bucket unreachable',
         },
       };
@@ -66,12 +66,12 @@ export class HealthController {
       socket.setTimeout(5000);
       socket.once('connect', () => done({ [key]: { status: 'up' } }));
       socket.once('timeout', () =>
-        done({ [key]: { status: 'degraded', message: 'SMTP connection timed out' } }),
+        done({ [key]: { status: 'down' as const, message: 'SMTP connection timed out' } }),
       );
       socket.once('error', (err) =>
         done({
           [key]: {
-            status: 'degraded',
+            status: 'down' as const,
             message: err instanceof Error ? err.message : 'SMTP unreachable',
           },
         }),

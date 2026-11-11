@@ -8,9 +8,10 @@ import { PortfolioService } from './portfolio.service';
 import { PortfolioController, PublicPortfolioController } from './portfolio.controller';
 import { S3Module } from '../../common/s3/s3.module';
 import { PrismaModule } from '../../common/prisma/prisma.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [S3Module, PrismaModule],
+  imports: [S3Module, PrismaModule, CacheModule.register()],
   controllers: [RecruitersController, PortfolioController, PublicPortfolioController],
   providers: [RecruitersService, KycService, RecruiterReviewsService, FavoritesService, PortfolioService],
   exports: [RecruitersService, KycService, RecruiterReviewsService, FavoritesService, PortfolioService],

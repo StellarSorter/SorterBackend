@@ -7,6 +7,8 @@ import { SlackNotificationsService } from "./slack-notifications.service";
 import { DiscordNotificationsService } from "./discord-notifications.service";
 import { TeamsNotificationsService } from "./teams-notifications.service";
 import { EmailTemplateModule } from "../../common/email/email-template.module";
+import { notificationsPubSubProvider } from "./notification-pubsub";
+import { WebPushService } from "./web-push.service";
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { EmailTemplateModule } from "../../common/email/email-template.module";
       { name: "discord" },
       { name: "teams" },
     ),
+    EmailTemplateModule,
   ],
   providers: [
     NotificationsService,
@@ -23,6 +26,8 @@ import { EmailTemplateModule } from "../../common/email/email-template.module";
     SlackNotificationsService,
     DiscordNotificationsService,
     TeamsNotificationsService,
+    WebPushService,
+    notificationsPubSubProvider,
   ],
   controllers: [NotificationsController],
   exports: [
@@ -30,6 +35,8 @@ import { EmailTemplateModule } from "../../common/email/email-template.module";
     SlackNotificationsService,
     DiscordNotificationsService,
     TeamsNotificationsService,
+    WebPushService,
+    notificationsPubSubProvider,
   ],
 })
 export class NotificationsModule {}

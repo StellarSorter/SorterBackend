@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
@@ -33,7 +33,7 @@ export class EmailTemplateService {
   private readonly baseCache = new Map<string, EmailTemplateDelegate>();
   private readonly baseFallback: EmailTemplateDelegate = Handlebars.compile(BASE_FALLBACK_SOURCE);
 
-  constructor(templatesDir?: string) {
+  constructor(@Optional() @Inject('EMAIL_TEMPLATES_DIR') templatesDir?: string) {
     this.templatesDir = templatesDir ?? this.resolveTemplatesDir();
     this.logger.log(`Email templates directory: ${this.templatesDir}`);
   }

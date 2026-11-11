@@ -22,5 +22,20 @@
       "@common/*": ["src/common/*"]
     }
   },
-  "exclude": ["node_modules", "dist", "scripts", "test"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "scripts",
+    "test",
+    "prisma",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "src/admin",
+    "src/announcements",
+    "src/billing",
+    "src/engagements",
+    "src/notifications",
+    "src/recruiters",
+    "src/webhooks"
+  ]
 }

@@ -9,8 +9,10 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Response } from 'express';
-import { THROTTLER_LIMIT, THROTTLER_TTL } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
+
+const THROTTLER_LIMIT = 'throttler:limit';
+const THROTTLER_TTL = 'throttler:ttl';
 
 /**
  * Adds rate-limit headers to all successful responses.

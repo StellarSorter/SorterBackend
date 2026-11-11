@@ -1438,16 +1438,24 @@ model MilestoneComment {
 }
 
 model CreditLedger {
-  id        String                @id @default(uuid())
-  companyId String
-  type      CreditLedgerEntryType
-  amount    Decimal               @db.Decimal(18, 7)
-  balance   Decimal               @db.Decimal(18, 7)
-  note      String?
-  createdAt DateTime              @default(now())
+  id             String                @id @default(uuid())
+  companyId      String
+  sequence       Int
+  type           CreditLedgerEntryType
+  amount         Decimal               @db.Decimal(18, 7)
+  balance        Decimal               @db.Decimal(18, 7)
+  balanceAfter   Decimal               @db.Decimal(18, 7)
+  note           String?
+  description    String?
+  reference      String?
+  idempotencyKey String?
+  createdById    String?
+  createdAt      DateTime              @default(now())
 
   company User @relation("CompanyCreditLedger", fields: [companyId], references: [id], onDelete: Cascade)
 
+  @@unique([companyId, sequence])
+  @@unique([companyId, idempotencyKey])
   @@index([companyId])
   @@map("credit_ledger")
 }

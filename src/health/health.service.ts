@@ -44,7 +44,7 @@ export class HealthService {
       await this.s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
       return { s3: { status: 'up' } };
     } catch (err) {
-      return { s3: { status: 'degraded', message: (err as Error).message } };
+      return { s3: { status: 'down', message: (err as Error).message } };
     }
   }
 
@@ -59,8 +59,8 @@ export class HealthService {
       };
       socket.setTimeout(5000);
       socket.once('connect', () => done({ smtp: { status: 'up' } }));
-      socket.once('timeout', () => done({ smtp: { status: 'degraded', message: 'SMTP connection timed out' } }));
-      socket.once('error', (err) => done({ smtp: { status: 'degraded', message: err.message } }));
+      socket.once('timeout', () => done({ smtp: { status: 'down', message: 'SMTP connection timed out' } }));
+      socket.once('error', (err) => done({ smtp: { status: 'down', message: err.message } }));
     });
   }
 }

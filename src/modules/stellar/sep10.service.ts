@@ -38,7 +38,7 @@ const CHALLENGE_TTL_SECONDS = 300; // 5 minutes
 @Injectable()
 export class Sep10Service {
   private readonly logger = new Logger(Sep10Service.name);
-  private readonly serverKeypair: Keypair;
+  private _serverKeypair: Keypair | null = null;
   private readonly networkPassphrase: string;
   private readonly homeDomain: string;
 
@@ -46,16 +46,21 @@ export class Sep10Service {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    const secret = this.config.get<string>('STELLAR_SECRET_KEY');
-    if (!secret) throw new Error('STELLAR_SECRET_KEY is required for SEP-10');
-    this.serverKeypair = Keypair.fromSecret(secret);
-
     this.networkPassphrase =
       this.config.get<string>('STELLAR_NETWORK') === 'mainnet'
         ? Networks.PUBLIC
         : Networks.TESTNET;
 
     this.homeDomain = this.config.get<string>('APP_DOMAIN', 'stellarsorter.com');
+  }
+
+  private get serverKeypair(): Keypair {
+    if (!this._serverKeypair) {
+      const secret = this.config.get<string>('STELLAR_SECRET_KEY');
+      if (!secret) throw new Error('STELLAR_SECRET_KEY is required for SEP-10');
+      this._serverKeypair = Keypair.fromSecret(secret);
+    }
+    return this._serverKeypair;
   }
 
   /**
