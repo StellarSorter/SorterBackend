@@ -19,6 +19,7 @@ export class MilestonesService {
     private readonly notifications: NotificationsService,
     private readonly s3: S3Service,
     private readonly disputes: DisputesService,
+    private readonly proofVersions: ProofVersionsService,
     @Optional() private readonly fileScan?: FileScanService,
   ) {}
 
