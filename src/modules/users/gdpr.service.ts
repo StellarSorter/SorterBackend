@@ -31,6 +31,8 @@ export class GdprService {
         avatarUrl: true,
         role: true,
         slackWebhookUrl: true,
+        timezone: true,
+        locale: true,
         createdAt: true,
         updatedAt: true,
       },
