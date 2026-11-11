@@ -49,6 +49,8 @@ enum NotificationType {
   MILESTONE_UNLOCKED
   PROOF_SUBMITTED
   PROOF_REJECTED
+  PROOF_REVIEW_REMINDER
+  PROOF_SLA_ESCALATED
   MILESTONE_CONFIRMED
   PARTIAL_RELEASE_PROPOSED
   PARTIAL_RELEASE_REJECTED
@@ -1459,10 +1461,13 @@ model MilestoneProofVersion {
   ipfsHash        String?
   status          ProofVersionStatus @default(SUBMITTED)
   submittedAt     DateTime           @default(now())
-  submittedById   String?
-  rejectionReason String?
-  reviewedById    String?
-  reviewedAt      DateTime?
+  submittedById    String?
+  rejectionReason  String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  slaExpiredAt     DateTime?
+  reminder50SentAt DateTime?
+  reminder90SentAt DateTime?
 
   milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
 
